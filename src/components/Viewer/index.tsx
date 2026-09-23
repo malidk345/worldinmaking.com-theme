@@ -8,7 +8,7 @@ import EditorSearchProvider from 'components/Editor/SearchProvider'
 import { ViewerControls } from './ViewerControls'
 import { ViewerSidebar } from './ViewerSidebar'
 import { getProseClasses } from '../../constants/index'
-import { useApp } from '../../context/App'
+import { useAppActions, useAppWindows } from '../../context/App'
 import Share from 'components/Share'
 import { useWindow } from '../../context/Window'
 import BookmarkButton from 'components/BookmarkButton'
@@ -176,7 +176,8 @@ export function Viewer({
     const [isModifierKeyPressed, setIsModifierKeyPressed] = useState(false)
     const [isHovering, setIsHovering] = useState(false)
     const searchContentRef = useRef<HTMLDivElement>(null)
-    const { addWindow, focusedWindow } = useApp()
+    const { addWindow } = useAppActions()
+    const { focusedWindow } = useAppWindows()
     const { appWindow } = useWindow()
     const [maxWidth, setMaxWidth] = useState(initialMaxWidth ?? 768)
     const fullWidthContent = typeof maxWidth === 'string' && maxWidth === '100%'

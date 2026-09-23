@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { useApp } from '../context/App'
+import { useAppActions } from '../context/App'
 import { useWindow } from '../context/Window'
 
 const DEFAULT_GIFS: string[] = [
@@ -21,7 +21,7 @@ type DanceModeProps = {
 
 export default function DanceMode({ gifs = DEFAULT_GIFS }: DanceModeProps): JSX.Element | null {
     const { appWindow } = useWindow()
-    const { setWindowTitle } = useApp()
+    const { setWindowTitle } = useAppActions()
     const playlist = useMemo(() => gifs.filter(Boolean), [gifs])
     const [currentIndex, setCurrentIndex] = useState(0)
     const [isImageLoaded, setIsImageLoaded] = useState(false)

@@ -27,7 +27,7 @@ import usePostHog from 'hooks/usePostHog'
 import { IconFeatures } from '@posthog/icons'
 import Tooltip from 'components/RadixUI/Tooltip'
 import EditWrapper from './EditWrapper'
-import { useApp } from '../../../context/App'
+import { useAppActions } from '../../../context/App'
 import ReportSpamButton from './ReportSpamButton'
 import OSButton from 'components/OSButton'
 import LevelBadge from './LevelBadge'
@@ -214,7 +214,7 @@ const AIDisclaimer = ({ replyID, mutate, topic, confidence, resolvable }) => {
 const VoteButton = ({ id, type, voted, votes }: { id: number; type: 'up' | 'down'; voted: boolean; votes: number }) => {
     const { user } = useUser()
     const { voteReply } = useContext(CurrentQuestionContext)
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
 
     const handleClick = () => {
         if (!user) {

@@ -9,7 +9,7 @@ import Editor from 'components/Editor'
 import { Select } from 'components/RadixUI/Select'
 import OSButton from 'components/OSButton'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 interface CustomFieldOption {
     label: string
     value: string | number
@@ -374,7 +374,7 @@ export default function SalesforceForm({
     source,
     initialValues: initialValuesProp,
 }: IProps) {
-    const { setConfetti } = useApp()
+    const { setConfetti } = useAppActions()
     const posthog = usePostHog()
     const [openOptions, setOpenOptions] = useState<string[]>([])
     const [submitted, setSubmitted] = useState(false)

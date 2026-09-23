@@ -194,6 +194,8 @@ type AppActionKeys =
     | 'setChatOpen'
     | 'setChatParams'
     | 'updateTaskbarHeight'
+    | 'setIsAuthModalOpen'
+    | 'exitSharedRoom'
 
 export type AppActionsContextType = Pick<AppContextType, AppActionKeys> & {
     // A stable ref to the latest windowsInView, for consumers that need the value
@@ -218,8 +220,13 @@ type AppUIStateKeys =
     | 'closingAllWindowsAnimation'
     | 'confetti'
     | 'searchOpen'
+    | 'searchInitialFilter'
     | 'chatOpen'
     | 'chatParams'
+    | 'isAuthModalOpen'
+    | 'authModalView'
+    | 'authModalOnSuccess'
+    | 'visitingRoomToken'
 
 export type AppUIStateContextType = Pick<AppContextType, AppUIStateKeys>
 
@@ -367,6 +374,8 @@ export const ActionsContext = createContext<AppActionsContextType>({
     setChatOpen: () => {},
     setChatParams: () => {},
     updateTaskbarHeight: () => {},
+    setIsAuthModalOpen: () => {},
+    exitSharedRoom: () => {},
     windowsInViewRef: { current: [] },
 })
 
@@ -388,6 +397,7 @@ export const SettingsContext = createContext<AppSettingsContextType>({
     isMobile: false,
     posthogInstance: undefined,
     menu: [],
+    taskbarHeight: 0,
 })
 
 // Transient UI-flags context. Consumers reading only these (panels, confetti,
@@ -400,12 +410,20 @@ export const UIStateContext = createContext<AppUIStateContextType>({
     closingAllWindowsAnimation: false,
     confetti: false,
     searchOpen: false,
+    searchInitialFilter: '',
     chatOpen: false,
     chatParams: null,
+    isAuthModalOpen: false,
+    authModalView: 'sign-in',
+    authModalOnSuccess: null,
+    visitingRoomToken: null,
 })
 
 export const WindowsContext = createContext<AppWindowsContextType>({
     windows: [],
+    focusedWindow: undefined,
+    isActiveWindowsPanelOpen: false,
+    closingAllWindowsAnimation: false,
 })
 
 export interface AppSetting {
@@ -1676,6 +1694,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setChatParams,
         updateTaskbarHeight,
         setIsClaudeChatOpen,
+        setIsAuthModalOpen,
+        exitSharedRoom,
         windowsInViewRef,
     }
 
@@ -1716,6 +1736,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             setSearchOpen,
             setChatOpen,
             setChatParams,
+            setIsAuthModalOpen,
+            exitSharedRoom: (...args) => latestActionsRef.current!.exitSharedRoom(...args),
             constraintsRef,
             taskbarRef,
             windowsInViewRef,
@@ -1743,8 +1765,13 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             closingAllWindowsAnimation,
             confetti,
             searchOpen,
+            searchInitialFilter,
             chatOpen,
             chatParams,
+            isAuthModalOpen,
+            authModalView,
+            authModalOnSuccess,
+            visitingRoomToken,
         }),
         [
             isNotificationsPanelOpen,
@@ -1753,8 +1780,13 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             closingAllWindowsAnimation,
             confetti,
             searchOpen,
+            searchInitialFilter,
             chatOpen,
             chatParams,
+            isAuthModalOpen,
+            authModalView,
+            authModalOnSuccess,
+            visitingRoomToken,
         ]
     )
 

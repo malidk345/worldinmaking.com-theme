@@ -12,7 +12,7 @@ import { TreeMenu } from 'components/TreeMenu'
 import { internalToolsNav } from '../../navs/internalTools'
 import ReaderView from 'components/ReaderView'
 import OSButton from 'components/OSButton'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import { Select } from 'components/RadixUI/Select'
 import Tooltip from 'components/RadixUI/Tooltip'
 import dayjs from 'dayjs'
@@ -58,7 +58,7 @@ function SortableHeader({
 }
 
 function AccessDenied({ user }: { user: unknown }) {
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
 
     return (
         <>

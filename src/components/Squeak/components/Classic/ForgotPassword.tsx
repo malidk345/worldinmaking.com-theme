@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useFormik } from 'formik'
 import { CallToAction } from 'components/CallToAction'
-import { useApp } from '../../../../context/App'
+import { useAppActions } from '../../../../context/App'
 import { useWindow } from '../../../../context/Window'
 import { SQUEAK_HOST } from 'lib/strapi'
 
@@ -40,7 +40,7 @@ const Input = ({
 }
 
 const ForgotPasswordForm: React.FC = () => {
-    const { setWindowTitle, openSignIn } = useApp()
+    const { setWindowTitle, openSignIn } = useAppActions()
     const { appWindow } = useWindow()
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [emailSent, setEmailSent] = useState(false)

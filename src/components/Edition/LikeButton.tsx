@@ -2,10 +2,10 @@ import { useUser } from 'hooks/useUser'
 import React, { useEffect, useState } from 'react'
 import Tooltip from 'components/Tooltip'
 import { IconTriangleUpFilled } from '@posthog/icons'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 
 export default function LikeButton({ className = '', postID, slug }: { postID: number; slug: string }) {
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
     const [liked, setLiked] = useState(false)
     const { likePost, user } = useUser()
 

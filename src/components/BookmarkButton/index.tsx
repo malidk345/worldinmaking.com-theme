@@ -2,7 +2,7 @@ import { IconBookmarkSolid, IconBookmark } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 import { useUser } from 'hooks/useUser'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import React, { useMemo } from 'react'
 import { useWindow } from '../../context/Window'
 
@@ -19,7 +19,7 @@ export default function BookmarkButton({
     labels?: { add: string; remove: string }
 }) {
     const { user, addBookmark, removeBookmark } = useUser()
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
     const { appWindow } = useWindow()
 
     const isBookmarked = useMemo(

@@ -2,13 +2,13 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import Tooltip from 'components/RadixUI/Tooltip'
 import React, { useEffect, useState } from 'react'
 import MediaPlayer from 'components/MediaPlayer'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import { useWindow } from '../../context/Window'
 import { motion } from 'framer-motion'
 import { createPortal } from 'react-dom'
 
 export default function Cher({ active }: { active: boolean }) {
-    const { addWindow } = useApp()
+    const { addWindow } = useAppActions()
     const { appWindow } = useWindow()
 
     return active

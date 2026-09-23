@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { useWindow } from '../../../context/Window'
 import { MenuItem } from '../../../context/App'
-import { useApp } from '../../../context/App'
 
 interface ReaderViewContextType {
     isNavVisible: boolean

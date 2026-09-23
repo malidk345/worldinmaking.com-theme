@@ -1,7 +1,7 @@
 import React from 'react'
 import { useRouter } from 'next/router'
 import { useUser } from 'hooks/useUser'
-import { useApp } from 'context/App'
+import { useAppActions } from 'context/App'
 import OSButton from 'components/OSButton'
 import SEO from 'components/seo'
 import ProfileView from 'components/Profile/ProfileView'
@@ -9,7 +9,7 @@ import ProfileView from 'components/Profile/ProfileView'
 export default function ProfileIndexPage() {
     const router = useRouter()
     const { user, isValidating } = useUser()
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
 
     // If user is logged in (or validating session), render their profile view directly
     if (user) {

@@ -7,7 +7,7 @@ import {
     type NotebookPublishMeta,
 } from './notebookStorage'
 import { useToast } from '../../../context/Toast'
-import { useApp } from '../../../context/App'
+import { useAppActions } from '../../../context/App'
 import { useUser } from '../../../hooks/useUser'
 import { rememberAuthNextPath } from '../../../lib/auth-callback'
 import {
@@ -55,7 +55,7 @@ export function NotebookInvitePanel({
 }): JSX.Element | null {
     const { addToast } = useToast()
     const { user } = useUser()
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
     const notebook = useMemo(() => (isOpen ? getNotebook(notebookId) : undefined), [isOpen, notebookId])
     const signedIn = Boolean(user) || Boolean(getAuthUserId())
     const canInvite = signedIn && canManageNotebookPeople(notebook?.access_role || 'owner')

@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import { IconCheck, IconWarning } from '@posthog/icons'
 import { useUser } from 'hooks/useUser'
-import { useApp } from '../../../../context/App'
+import { useAppActions } from '../../../../context/App'
 import Tooltip from 'components/RadixUI/Tooltip'
 import OSButton from 'components/OSButton'
 
 export default function ReportSpamButton({ type, id }: { type: 'reply' | 'question'; id: number }): JSX.Element {
     const { user, reportSpam } = useUser()
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
     const [showConfirmation, setShowConfirmation] = useState(false)
     const [reported, setReported] = useState(false)
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useUser, User } from 'hooks/useUser'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import { addRoadmapEmojiReaction, fetchRoadmapReactions, EmojiReaction } from 'hooks/useRoadmaps'
 import { Popover } from 'components/RadixUI/Popover'
 import { IconEmojiAdd } from '@posthog/icons'
@@ -59,7 +59,7 @@ const emojiMap = {
 
 export const ChangelogEmojiReactions = ({ roadmapId }: { roadmapId: number | string }) => {
     const { user, getJwt } = useUser()
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
     const [reactions, setReactions] = useState<EmojiReaction[]>([])
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
 

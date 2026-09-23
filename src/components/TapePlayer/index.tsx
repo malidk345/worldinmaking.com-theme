@@ -9,7 +9,7 @@ import { useUser } from 'hooks/useUser'
 import { IconCheck, IconNotebook, IconPencil, IconPlus, IconVideoCamera } from '@posthog/icons'
 import { CassetteLabelBackground } from '../../data/cassetteBackgrounds'
 import MixtapeEditor from './MixtapeEditor'
-import { useApp } from '../../context/App'
+import { useAppActions, useAppWindows } from '../../context/App'
 import { useToast } from '../../context/Toast'
 import Mixtapes from './Mixtapes'
 import ScrollArea from 'components/RadixUI/ScrollArea'
@@ -27,7 +27,8 @@ interface TapePlayerProps {
 export default function TapePlayer({ id }: TapePlayerProps): JSX.Element {
     const { getJwt, user, isModerator } = useUser()
     const { appWindow } = useWindow()
-    const { addWindow, windows, closeWindow, updateWindow } = useApp()
+    const { addWindow, closeWindow, updateWindow } = useAppActions()
+    const { windows } = useAppWindows()
     const { addToast } = useToast()
     const [isPoweredOn, setIsPoweredOn] = useState(true)
     const [isPlaying, setIsPlaying] = useState(false)

@@ -2,7 +2,7 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import { useFormik } from 'formik'
 import { CallToAction } from 'components/CallToAction'
-import { useApp } from '../../../../context/App'
+import { useAppActions } from '../../../../context/App'
 import { useWindow } from '../../../../context/Window'
 import { useUser } from '../../../../hooks/useUser'
 import { requestPasswordReset } from 'lib/wim-auth'
@@ -43,7 +43,7 @@ const Input = ({
 
 const ResetPasswordForm: React.FC = () => {
     const { login } = useUser()
-    const { setWindowTitle, closeWindow, openSignIn } = useApp()
+    const { setWindowTitle, closeWindow, openSignIn } = useAppActions()
     const { appWindow } = useWindow()
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [code, setCode] = useState<string | null>(null)

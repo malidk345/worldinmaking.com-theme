@@ -2,14 +2,14 @@ import { useRouter } from 'next/router'
 import React, { useEffect } from 'react'
 import SEO from 'components/seo'
 import { useUser } from 'hooks/useUser'
-import { useApp } from '../../../context/App'
+import { useAppActions } from '../../../context/App'
 import OSButton from 'components/OSButton'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 
 export default function MyProfilePage() {
     const router = useRouter()
     const { user, isValidating } = useUser()
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
 
     useEffect(() => {
         if (!isValidating && user?.username) {

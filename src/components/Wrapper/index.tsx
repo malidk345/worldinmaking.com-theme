@@ -1,6 +1,6 @@
 import React from 'react'
 import dynamic from 'next/dynamic'
-import { useAppActions, useAppSettings, useAppWindows } from '../../context/App'
+import { useAppActions, useAppSettings, useAppUIState, useAppWindows } from '../../context/App'
 import Desktop from 'components/Desktop'
 import GuestHomeGate from 'components/Home/GuestHomeGate'
 import TaskBarMenu from 'components/TaskBarMenu'
@@ -44,10 +44,9 @@ const WindowList = React.memo(function WindowList() {
     )
 })
 
-import { useApp } from '../../context/App'
-
 function VisitingRoomBanner() {
-    const { visitingRoomToken, exitSharedRoom } = useApp()
+    const { visitingRoomToken } = useAppUIState()
+    const { exitSharedRoom } = useAppActions()
     if (!visitingRoomToken) return null
     return (
         <div className="pointer-events-auto absolute left-1/2 top-2 z-[80] flex max-w-[min(36rem,calc(100%-1rem))] -translate-x-1/2 flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-md border border-primary bg-primary/90 px-3 py-1.5 text-xs text-primary shadow-md backdrop-blur-sm">
@@ -64,16 +63,10 @@ function VisitingRoomBanner() {
 }
 
 export default function Wrapper() {
-    const { constraintsRef } = useAppActions()
+    const { constraintsRef, setIsAuthModalOpen } = useAppActions()
     const { compact } = useAppSettings()
-    const {
-        isAuthModalOpen,
-        setIsAuthModalOpen,
-        authModalView,
-        authModalOnSuccess,
-        searchOpen,
-        isActiveWindowsPanelOpen,
-    } = useApp() as any
+    const { isActiveWindowsPanelOpen } = useAppWindows()
+    const { isAuthModalOpen, authModalView, authModalOnSuccess, searchOpen } = useAppUIState()
     const [searchMounted, setSearchMounted] = React.useState(false)
     const [authMounted, setAuthMounted] = React.useState(false)
     const [windowsPanelMounted, setWindowsPanelMounted] = React.useState(false)

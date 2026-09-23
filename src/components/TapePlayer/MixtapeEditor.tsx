@@ -31,7 +31,7 @@ import SEO from 'components/seo'
 import { useUser } from 'hooks/useUser'
 import { useToast } from '../../context/Toast'
 import Link from 'next/link'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import { useWindow } from '../../context/Window'
 import { extractVideoId } from './utils'
 import { debounce } from 'lodash'
@@ -227,7 +227,7 @@ export default function MixtapeEditor({ id, onSubmit }: MixtapeEditorProps): JSX
     const { addToast } = useToast()
     const { getJwt, user } = useUser()
     const { appWindow } = useWindow()
-    const { closeWindow } = useApp()
+    const { closeWindow } = useAppActions()
     const isEditMode = !!id
     const [isLoading, setIsLoading] = React.useState(isEditMode)
     const [showErrors, setShowErrors] = React.useState(false)

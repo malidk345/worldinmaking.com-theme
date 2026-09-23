@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { IconBolt, IconBook, IconCoffee, IconNight, IconScreen, IconTerminal } from '@posthog/icons';
-import { useApp } from 'context/App'
+import { useAppActions, useAppSettings } from 'context/App'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import OSButton from 'components/OSButton'
 
@@ -46,7 +46,8 @@ const STATIONS = [
 ]
 
 export default function AtmosphericStations() {
-    const { siteSettings, updateSiteSettings } = useApp()
+    const { siteSettings } = useAppSettings()
+    const { updateSiteSettings } = useAppActions()
     const [activeHover, setActiveHover] = useState<string | null>(null)
 
     const handleApplyStation = (settings: Partial<typeof siteSettings>) => {

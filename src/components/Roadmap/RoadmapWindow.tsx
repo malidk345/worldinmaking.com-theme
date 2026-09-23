@@ -6,7 +6,7 @@ import qs from 'qs'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import ProgressBar from 'components/ProgressBar'
 import { useWindow } from '../../context/Window'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import { useToast } from '../../context/Toast'
 
 interface Team {
@@ -70,7 +70,7 @@ export default function RoadmapWindow({
     const { addToast } = useToast()
     const { user, getJwt } = useUser()
     const [initialValues, setInitialValues] = useState<Record<string, unknown> | null>(null)
-    const { closeWindow } = useApp()
+    const { closeWindow } = useAppActions()
     const { appWindow } = useWindow()
 
     const fetchRoadmapItem = async () => {

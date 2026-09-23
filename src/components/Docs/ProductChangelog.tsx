@@ -6,7 +6,7 @@ import Markdown from 'components/Squeak/components/Markdown'
 import { ChangelogEmojiReactions } from 'components/EmojiReactions'
 import { ChangelogPRMetadata } from 'components/ChangelogPRMetadata'
 import { useUser } from 'hooks/useUser'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import { IconPencil, IconPlus, IconShieldLock } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
@@ -54,7 +54,7 @@ const buildRoadmapFilters = (config: ProductConfig) => {
 
 export const ProductChangelog = ({ product }: { product: string }) => {
     const { isModerator } = useUser()
-    const { addWindow } = useApp()
+    const { addWindow } = useAppActions()
     const config = productConfigMap[product.toLowerCase()] || {}
     const orFilters = buildRoadmapFilters(config)
     const fiveMonthsAgo = dayjs().subtract(5, 'month').format('YYYY-MM-DD')

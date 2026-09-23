@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { IconSparkles } from '@posthog/icons'
 import { useLayoutData } from 'components/Layout/hooks'
 import usePostHog from 'hooks/usePostHog'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import { usePathname } from 'next/navigation'
 import { useWindow } from '../../context/Window'
 import OSButton from 'components/OSButton'
@@ -20,7 +20,7 @@ export default function AskAIInput({ placeholder = DEFAULT_PLACEHOLDER, classNam
     const [question, setQuestion] = useState('')
     const posthog = usePostHog()
     const { compact } = useLayoutData()
-    const { openNewChat } = useApp()
+    const { openNewChat } = useAppActions()
     const { appWindow } = useWindow()
     const pathname = usePathname()
 

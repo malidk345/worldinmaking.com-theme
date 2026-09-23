@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { ToolTrace } from '../types'
 import { IconNotebook, IconChevronDown, IconExternal, IconDocument } from '@posthog/icons'
-import { useApp } from '../../../context/App'
+import { useAppActions } from '../../../context/App'
 
 interface AgentScratchpadViewerProps {
   toolTrace?: ToolTrace[]
@@ -14,7 +14,7 @@ interface ParsedNote {
 
 export const AgentScratchpadViewer: React.FC<AgentScratchpadViewerProps> = ({ toolTrace }) => {
   const [isOpen, setIsOpen] = useState(true)
-  const { addWindow } = useApp()
+  const { addWindow } = useAppActions()
 
   if (!toolTrace || toolTrace.length === 0) return null
 

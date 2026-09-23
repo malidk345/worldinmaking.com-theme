@@ -15,7 +15,7 @@ import {
     IconStar,
     IconX,
 } from '@posthog/icons'
-import { useApp, SiteSettings } from '../../context/App'
+import { useAppActions, useAppSettings, type SiteSettings } from '../../context/App'
 import { applyWallpaperBrowserChrome } from '../../lib/wallpaperChrome'
 import { useToast } from '../../context/Toast'
 import { themeOptions } from '../../hooks/useTheme'
@@ -49,12 +49,12 @@ export type SpotlightAction = {
  */
 export const useSpotlightActions = (): SpotlightAction[] => {
     const {
-        siteSettings,
         updateSiteSettings,
         closeAllWindows,
         setConfetti,
         copyDesktopParams,
-    } = useApp()
+    } = useAppActions()
+    const { siteSettings } = useAppSettings()
     const { addToast } = useToast()
     const [hedgehogModeEnabled, setHedgehogModeEnabled] = useHedgehogMode()
 

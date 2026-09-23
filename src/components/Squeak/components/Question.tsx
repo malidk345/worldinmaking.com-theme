@@ -29,7 +29,7 @@ import ReportSpamButton from './ReportSpamButton'
 import OSButton from 'components/OSButton'
 import { useToast } from '../../../context/Toast'
 import { useWindow } from '../../../context/Window'
-import { useApp } from '../../../context/App'
+import { useAppActions } from '../../../context/App'
 import { runAdminAction } from 'lib/admin-client'
 
 type QuestionProps = {
@@ -168,7 +168,7 @@ export function Question(props: QuestionProps) {
         mutate,
     } = useQuestion(id, { data: question })
 
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
 
     const questionUpvoted = React.useMemo(
         () =>

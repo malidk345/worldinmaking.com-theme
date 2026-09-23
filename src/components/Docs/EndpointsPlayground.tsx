@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Highlight, { defaultProps } from 'prism-react-renderer'
 import { darkTheme, lightTheme } from 'components/CodeBlock/theme'
-import { useApp } from '../../context/App'
+import { useAppSettings } from '../../context/App'
 import { IconChevronDown, IconTerminal } from '@posthog/icons'
 import { AnimatePresence, motion } from 'framer-motion'
 import OSButton from 'components/OSButton'
@@ -186,7 +186,7 @@ interface EndpointsPlaygroundProps {
 }
 
 export default function EndpointsPlayground({ scenarioId }: EndpointsPlaygroundProps): JSX.Element {
-    const { siteSettings } = useApp()
+    const { siteSettings } = useAppSettings()
     const websiteTheme = siteSettings?.theme || 'light'
     const codeTheme = websiteTheme === 'dark' ? darkTheme : lightTheme
 

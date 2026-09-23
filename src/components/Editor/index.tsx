@@ -25,7 +25,7 @@ import { IconLink } from '../OSIcons/Icons'
 import { SearchProvider } from './SearchProvider'
 import { SearchBar } from './SearchBar'
 import { getProseClasses } from '../../constants/index'
-import { useApp } from '../../context/App'
+import { useAppActions, useAppWindows } from '../../context/App'
 import Share from 'components/Share'
 import { useWindow } from '../../context/Window'
 import Cher from 'components/Cher'
@@ -238,7 +238,8 @@ export function Editor({
     const [isModifierKeyPressed, setIsModifierKeyPressed] = useState(false)
     const [isHovering, setIsHovering] = useState(false)
     const searchContentRef = useRef(null)
-    const { addWindow, focusedWindow } = useApp()
+    const { addWindow } = useAppActions()
+    const { focusedWindow } = useAppWindows()
     const hasShareButton = !cta?.url || !cta?.label
     const { appWindow } = useWindow()
     const [maxWidth, setMaxWidth] = useState(initialMaxWidth ?? 768)

@@ -17,7 +17,7 @@ import Input from 'components/OSForm/input'
 import { OSSelect } from 'components/OSForm'
 import { postSupabaseCommunityQuestion } from 'lib/supabaseCommunity'
 import { IconX } from '@posthog/icons'
-import { useApp } from 'context/App'
+import { useAppSettings } from 'context/App'
 
 type QuestionFormValues = {
     subject: string
@@ -285,7 +285,7 @@ export const QuestionForm = ({
     ...other
 }: QuestionFormProps) => {
     const { user, getJwt, logout } = useUser()
-    const { isMobile } = useApp()
+    const { isMobile } = useAppSettings()
     const [formValues, setFormValues] = useState<QuestionFormValues | null>(null)
     const [view, setView] = useState<string | null>(initialView || null)
     const [loading, setLoading] = useState(false)

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { QuestionForm } from 'components/Squeak'
 import { useRouter } from 'next/router'
-import { useApp } from 'context/App'
+import { useAppActions } from 'context/App'
 import { readForumDraft, QuestionFormInitialValues } from 'lib/wim-os-action-drafts'
 
 export default function PostEditorWindow(): JSX.Element {
     const router = useRouter()
-    const { closeWindow } = useApp()
+    const { closeWindow } = useAppActions()
     const [initialValues, setInitialValues] = useState<QuestionFormInitialValues | undefined>(undefined)
 
     useEffect(() => {

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { IRoadmap } from '.'
 import { Question } from 'components/Squeak'
 import { useUser } from 'hooks/useUser'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import Spinner from 'components/Spinner'
 import { useToast } from '../../context/Toast'
 import useSWR from 'swr'
@@ -104,7 +104,7 @@ export function InProgress(
     const [updates, setUpdates] = useState([])
     const [modalOpen, setModalOpen] = useState(false)
     const [addingUpdate, setAddingUpdate] = useState(false)
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
     const isModerator = user?.role?.type === 'moderator'
 
     const [more, setMore] = useState(props.more ?? false)

@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Dialog as RadixDialog } from 'radix-ui'
 import usePostHog from 'hooks/usePostHog'
 import { useLocalSearch } from '../../hooks/useLocalSearch'
-import { useApp, useAppActions } from '../../context/App'
+import { useAppActions, useAppUIState } from '../../context/App'
 import { useSpotlightActions } from './actions'
 import type { SpotlightAction } from './actions'
 import { configForType, filterOptions, matchCategory } from './categories'
@@ -40,8 +40,7 @@ function SpotlightSearchContent({
     onClose: () => void
     initialFilter?: string
 }): JSX.Element {
-    const { openNewChat } = useApp()
-    const { addWindow } = useAppActions()
+    const { openNewChat, addWindow } = useAppActions()
     const posthog = usePostHog()
     const [query, setQuery] = useState('')
     const [filterQuery, setFilterQuery] = useState('')
@@ -512,7 +511,8 @@ export default function SpotlightSearch(props: {
 }
 
 export const SearchOverlay = () => {
-    const { searchOpen, setSearchOpen, searchInitialFilter } = useApp()
+    const { setSearchOpen } = useAppActions()
+    const { searchOpen, searchInitialFilter } = useAppUIState()
     return (
         <SpotlightSearch
             open={searchOpen}

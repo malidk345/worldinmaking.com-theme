@@ -44,7 +44,7 @@ import {
 import { useSearch } from 'components/Editor/SearchProvider'
 import ProgressBar from 'components/ProgressBar'
 import { Scroll } from 'lucide-react'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import RoadmapWindow from './RoadmapWindow'
 import ViewerFilters from 'components/Viewer/ViewerFilters'
 
@@ -117,7 +117,7 @@ export const VoteBox = ({ likeCount, liked }) => {
 
 export const Feature = ({ id, title, teams, description, likeCount, onLike, onUpdate, githubUrls }) => {
     const { user, likeRoadmap } = useUser()
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
     const { search } = useLocation()
     const [loading, setLoading] = useState(false)
     const teamName = teams?.data?.[0]?.attributes?.name
@@ -261,7 +261,7 @@ export default function Roadmap({ searchQuery = '' }: RoadmapProps) {
     const [expandedDescriptions, setExpandedDescriptions] = useState<Record<number, boolean>>({})
     const [filteredRoadmaps, setFilteredRoadmaps] = useState<any[] | null>(null)
     const [groupByValue, setGroupByValue] = useState<string | null>(null)
-    const { addWindow, openSignIn } = useApp()
+    const { addWindow, openSignIn } = useAppActions()
     const isModerator = user?.role?.type === 'moderator'
 
     // Get search context if available (from Editor)

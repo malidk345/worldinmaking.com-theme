@@ -21,7 +21,7 @@ import { useInView } from 'react-intersection-observer'
 import { useWindow } from '../../context/Window'
 import Tooltip from 'components/RadixUI/Tooltip'
 import { flattenStrapiResponse } from '../../utils'
-import { useApp, useAppActions } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import { Select } from 'components/RadixUI/Select'
 import SEO from 'components/seo'
 dayjs.extend(relativeTime)
@@ -364,7 +364,7 @@ const ForumSidebar = ({
     onSelectTopic: (id: ForumTopicId) => void
     onSubmitQuestion: () => void
 }) => {
-    const { addWindow } = useApp()
+    const { addWindow } = useAppActions()
 
     return (
         <div className="flex flex-col h-full min-h-0">
@@ -428,7 +428,7 @@ const ForumSidebar = ({
 const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
     const { addToast } = useToast()
     const { appWindow } = useWindow()
-    const { closeWindow, setWindowTitle } = useApp()
+    const { closeWindow, setWindowTitle } = useAppActions()
     const navigate = useDesktopNavigate()
 
     useEffect(() => {

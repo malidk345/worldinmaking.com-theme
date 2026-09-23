@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useFormik } from 'formik'
 import { CallToAction } from 'components/CallToAction'
-import { useApp } from '../../../../context/App'
+import { useAppActions } from '../../../../context/App'
 import { useWindow } from '../../../../context/Window'
 import { User, useUser } from '../../../../hooks/useUser'
 import Wizard from 'components/Wizard'
@@ -25,7 +25,7 @@ interface SignInFormProps {
 const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
     const { addToast } = useToast()
     const { login } = useUser()
-    const { setWindowTitle, closeWindow, openRegister, openForgotPassword } = useApp()
+    const { setWindowTitle, closeWindow, openRegister, openForgotPassword } = useAppActions()
     const { appWindow } = useWindow()
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const { handleSubmit, submitForm, touched, errors, getFieldProps, isSubmitting } = useFormik({

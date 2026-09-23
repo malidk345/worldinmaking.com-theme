@@ -4,7 +4,7 @@ import OSButton from 'components/OSButton'
 import Link from 'components/Link'
 import { IconCheckCircle } from '@posthog/icons'
 import { IconDiscord } from 'components/OSIcons/Icons'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import usePostHog from '../../hooks/usePostHog'
 import usePrimeEarlyAccessFeatures from '../../hooks/usePrimeEarlyAccessFeatures'
 
@@ -60,7 +60,7 @@ export function SurveySignup({
     className = '',
 }: SurveySignupProps): JSX.Element {
     const posthog = usePostHog()
-    const { setConfetti } = useApp()
+    const { setConfetti } = useAppActions()
     const [email, setEmail] = useState('')
     const [submitted, setSubmitted] = useState(false)
     const [error, setError] = useState('')

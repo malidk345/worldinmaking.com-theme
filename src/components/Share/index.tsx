@@ -5,7 +5,7 @@ import OSButton from 'components/OSButton'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import OSTabs from 'components/OSTabs'
 import { useWindow } from '../../context/Window'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import { CallToAction } from 'components/CallToAction'
 import { IconXNotTwitter } from 'components/OSIcons'
 
@@ -809,7 +809,7 @@ URL: ${url}
 
 export default function Share({ url, title }: { url: string; title: string }) {
     const { appWindow } = useWindow()
-    const { setWindowTitle } = useApp()
+    const { setWindowTitle } = useAppActions()
 
     useEffect(() => {
         setWindowTitle(appWindow, `Share page`)

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import OSButton from 'components/OSButton'
-import { useApp } from '../../../context/App'
+import { useAppActions } from '../../../context/App'
 import { useUser } from '../../../hooks/useUser'
 import { rememberAuthNextPath } from '../../../lib/auth-callback'
 import {
@@ -23,7 +23,7 @@ function personName(person?: { first_name?: string; last_name?: string; username
 
 export function NotebookInviteScene({ token, onJoined, onBack }: NotebookInviteSceneProps): JSX.Element {
     const { user } = useUser()
-    const { openSignIn } = useApp()
+    const { openSignIn } = useAppActions()
     const [preview, setPreview] = useState<NotebookInvitePreview | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)

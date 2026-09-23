@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useFormik } from 'formik'
 import { CallToAction } from 'components/CallToAction'
-import { useApp } from '../../../../context/App'
+import { useAppActions } from '../../../../context/App'
 import { useWindow } from '../../../../context/Window'
 import { useUser } from '../../../../hooks/useUser'
 import Wizard from 'components/Wizard'
@@ -51,7 +51,7 @@ const errorMessages: Record<string, string> = {
 
 const RegisterForm: React.FC = () => {
     const { signUp } = useUser()
-    const { setWindowTitle, closeWindow, openSignIn } = useApp()
+    const { setWindowTitle, closeWindow, openSignIn } = useAppActions()
     const { appWindow } = useWindow()
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const { handleSubmit, submitForm, touched, errors, getFieldProps, isSubmitting } = useFormik({

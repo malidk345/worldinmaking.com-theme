@@ -1,11 +1,11 @@
 import React from 'react'
-import { useApp, useAppWindows } from '../../context/App'
+import { useAppActions, useAppWindows } from '../../context/App'
 import { ASK_AI_KEY, findAskAiWindow } from '../../lib/open-ask-ai-window'
 import ChatApp from './index'
 
 /** Ask AI as window content — same chrome as every other AppWindow. */
 export default function AskAiWindow(): JSX.Element {
-    const { closeWindow } = useApp()
+    const { closeWindow } = useAppActions()
     const { windows } = useAppWindows()
 
     return (
