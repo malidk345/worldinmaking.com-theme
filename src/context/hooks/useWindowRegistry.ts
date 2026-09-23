@@ -165,10 +165,12 @@ export function useWindowRegistry({
         layoutRestoredRef.current = true
     }, [hasMounted, isMobile])
 
-    useEffect(() => {
-        if (!layoutRestoredRef.current || isMobile || isVisitingRoom()) return
+    const windowsForLayoutRef = useRef(windows)
+    windowsForLayoutRef.current = windows
 
-        const layout = windows.reduce<Record<string, unknown>>((result, win) => {
+    const persistWindowLayout = useCallback(() => {
+        if (!layoutRestoredRef.current || isMobile || isVisitingRoom()) return
+        const layout = windowsForLayoutRef.current.reduce<Record<string, unknown>>((result, win) => {
             if (win.path.startsWith('/') && win.size.width > 0 && win.size.height > 0) {
                 result[win.path] = {
                     size: win.size,
@@ -180,13 +182,24 @@ export function useWindowRegistry({
             }
             return result
         }, {})
-
         try {
             localStorage.setItem('worldinmaking-window-layout:v1', JSON.stringify(layout))
         } catch {
             // Storage can be unavailable in private browsing or embedded contexts.
         }
-    }, [windows, isMobile])
+    }, [isMobile])
+
+    useEffect(() => {
+        if (!layoutRestoredRef.current || isMobile || isVisitingRoom()) return
+        const timer = window.setTimeout(persistWindowLayout, 400)
+        return () => window.clearTimeout(timer)
+    }, [windows, isMobile, persistWindowLayout])
+
+    useEffect(() => {
+        const flush = () => persistWindowLayout()
+        window.addEventListener('pagehide', flush)
+        return () => window.removeEventListener('pagehide', flush)
+    }, [persistWindowLayout])
     const desktopParams = useMemo(() => {
         if (isSSR) return undefined
         const innerWidth = window.innerWidth
