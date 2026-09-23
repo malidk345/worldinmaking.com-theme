@@ -51,10 +51,8 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IN PROGRESS]`
-- **Owner:** Grok Bot / Cursor (malidk345)
-- **Task:** COMPLETE AUDIT notebook OS/tool write handlers — bound-target + markdownRef + fail-closed nack parity after #818/#821/#822; fix-all or CLEAN checklist
-- **Started:** 2026-09-23 ~13:47 Europe/Istanbul
+- **Status:** `[IDLE]`
+- **Task:** —
 
 ---
 
