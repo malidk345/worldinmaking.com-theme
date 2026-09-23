@@ -78,4 +78,29 @@ test.describe('Fail-closed nacks are present', () => {
     );
   });
 
+  test('bound replace/annotate/footnote never use another editor markdownRef', async () => {
+    const src = fs.readFileSync(path.join(process.cwd(), 'src/notebook-app/App.tsx'), 'utf-8');
+    for (const name of ['handleReplaceSelection', 'handleAddAnnotation', 'handleAddFootnote', 'handlePatchText'] as const) {
+      const start = src.indexOf(`const ${name}`);
+      expect(start, name).toBeGreaterThan(-1);
+      const end =
+        name === 'handleAddFootnote'
+          ? src.indexOf("window.addEventListener('wimNotebookAddFootnote'")
+          : name === 'handlePatchText'
+            ? src.indexOf('const handleSetTitle')
+            : name === 'handleReplaceSelection'
+              ? src.indexOf('const handleAddAnnotation')
+              : src.indexOf('const handleAddFootnote');
+      expect(end, name).toBeGreaterThan(start);
+      const fn = src.slice(start, end);
+      // Missing bound id must nack — never silently keep current notebook.
+      expect(fn).toContain("error: 'no_target'");
+      expect(fn).toContain('const requestedId');
+      expect(fn).toContain('getNotebook(requestedId)');
+      // Live buffer only when editor belongs to target (insert/patch parity).
+      expect(fn).toContain("notebookRef.current?.id === target.id");
+      expect(fn).not.toMatch(/const current = markdownRef\.current \|\| target\.content/);
+    }
+  });
+
 });

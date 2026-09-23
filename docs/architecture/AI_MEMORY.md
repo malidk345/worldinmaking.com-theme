@@ -58,6 +58,15 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: bound replace/annotate/footnote buffer parity)
+
+- **Scope:** P0 HARDEN-ONLY after #820 — notebook OS wrong-target write; no memo polish, no redesign.
+- **Survey (file evidence):** Continue/human-interrupt look solid (empty answer gated, inFlight, checkpoint resume). Share/like already gated by canSyncChatsToRemote. IDB migrate/write-through helpers intentional. finalize_plan soft gate architectural. Gateway abort-before-finish + searchInflight done. Residual: soft-keyboard/iOS theme-color P2; mid-cluster THINK parked.
+- **Bug fixed:** Bound `replace` / `annotate` / `footnote` (and missing-id `patch`/`setTitle`) used `markdownRef.current` even when `notebookId` targeted a different notebook — could overwrite bound B with open editor A's buffer + edit. Missing bound id silently fell through to current notebook. Now insert/patch parity: resolve bound id fail-closed (`no_target`), open requested notebook, live buffer only when `notebookRef.id === target.id`.
+- **Files:** `notebook-app/App.tsx`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/notebook-ack-fail.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked.
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: parallel web_search inflight + footnote unique-match)
 
 - **Scope:** P0 HARDEN-ONLY after #819 — research cache correctness + notebook footnote fail-closed; no memo polish, no mid-cluster THINK, no iOS theme-color invent.

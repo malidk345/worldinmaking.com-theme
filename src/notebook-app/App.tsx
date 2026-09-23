@@ -898,9 +898,19 @@ export function App() {
         spanText?: string
       }>
       let target = notebookRef.current
-      if (customEvent.detail?.notebookId) {
-        const bound = getNotebook(customEvent.detail.notebookId)
-        if (bound) target = bound
+      const requestedId = customEvent.detail?.notebookId
+      if (requestedId) {
+        const bound = getNotebook(requestedId)
+        if (!bound) {
+          addToast({ description: 'Patch failed: No open notebook.', error: true })
+          window.dispatchEvent(new CustomEvent('wimNotebookPatchAck', { detail: { ok: false, error: 'no_target' } }))
+          return
+        }
+        target = bound
+        // Bound patch must target the requested id — never silently use another open editor.
+        if (routeRef.current.page !== 'editor' || notebookRef.current?.id !== target.id) {
+          openNotebookWindow(target.id, target.title)
+        }
       }
       if (!target) {
         addToast({ description: 'Patch failed: No open notebook.', error: true })
@@ -941,9 +951,14 @@ export function App() {
       const newTitle = String(customEvent.detail?.title || '').trim()
       if (!newTitle) return
       let target: StoredNotebook | null = notebookRef.current
-      if (customEvent.detail?.notebookId) {
-        const bound = getNotebook(customEvent.detail.notebookId)
-        if (bound) target = bound
+      const requestedId = customEvent.detail?.notebookId
+      if (requestedId) {
+        const bound = getNotebook(requestedId)
+        if (!bound) {
+          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+          return
+        }
+        target = bound
       }
       if (!target) return
       setTitle(newTitle)
@@ -965,16 +980,30 @@ export function App() {
         return
       }
       let target: StoredNotebook | null = notebookRef.current
-      if (customEvent.detail?.notebookId) {
-        const bound = getNotebook(customEvent.detail.notebookId)
-        if (bound) target = bound
+      const requestedId = customEvent.detail?.notebookId
+      if (requestedId) {
+        const bound = getNotebook(requestedId)
+        if (!bound) {
+          appActions?.addToast({ type: 'error', message: 'No notebook found' })
+          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+          return
+        }
+        target = bound
+        // Bound replace must open/use the requested id — never apply markdownRef from another editor.
+        if (routeRef.current.page !== 'editor' || notebookRef.current?.id !== target.id) {
+          openNotebookWindow(target.id, target.title)
+        }
       }
       if (!target) {
         appActions?.addToast({ type: 'error', message: 'No notebook found' })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
         return
       }
-      const current = markdownRef.current || target.content || ''
+      // Insert/patch parity: only use live editor buffer when it belongs to the target notebook.
+      const current =
+        routeRef.current.page === 'editor' && notebookRef.current?.id === target.id
+          ? markdownRef.current || target.content || ''
+          : target.content || ''
       const spanText = String(customEvent.detail?.spanText || '').trim()
       const selection = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : ''
       const targetPhrase = spanText || selection || ''
@@ -1027,9 +1056,18 @@ export function App() {
       }
 
       let target: StoredNotebook | null = notebookRef.current
-      if (customEvent.detail?.notebookId) {
-        const bound = getNotebook(customEvent.detail.notebookId)
-        if (bound) target = bound
+      const requestedId = customEvent.detail?.notebookId
+      if (requestedId) {
+        const bound = getNotebook(requestedId)
+        if (!bound) {
+          appActions?.addToast({ type: 'error', message: 'No notebook found' })
+          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+          return
+        }
+        target = bound
+        if (routeRef.current.page !== 'editor' || notebookRef.current?.id !== target.id) {
+          openNotebookWindow(target.id, target.title)
+        }
       }
       if (!target) {
         appActions?.addToast({ type: 'error', message: 'No notebook found' })
@@ -1037,7 +1075,11 @@ export function App() {
         return
       }
 
-      const current = markdownRef.current || target.content || ''
+      // Insert/patch parity: never search/write the open editor buffer into a different notebookId.
+      const current =
+        routeRef.current.page === 'editor' && notebookRef.current?.id === target.id
+          ? markdownRef.current || target.content || ''
+          : target.content || ''
       const document = parseMarkdownNotebook(current)
       const used = collectExistingRefSpans(document.nodes)
       const placement = resolveAutonomousPlacement(document.nodes, spanText, 'span', used)
@@ -1085,16 +1127,29 @@ export function App() {
         return
       }
       let target: StoredNotebook | null = notebookRef.current
-      if (customEvent.detail?.notebookId) {
-        const bound = getNotebook(customEvent.detail.notebookId)
-        if (bound) target = bound
+      const requestedId = customEvent.detail?.notebookId
+      if (requestedId) {
+        const bound = getNotebook(requestedId)
+        if (!bound) {
+          appActions?.addToast({ type: 'error', message: 'No notebook found' })
+          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+          return
+        }
+        target = bound
+        if (routeRef.current.page !== 'editor' || notebookRef.current?.id !== target.id) {
+          openNotebookWindow(target.id, target.title)
+        }
       }
       if (!target) {
         appActions?.addToast({ type: 'error', message: 'No notebook found' })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
         return
       }
-      const current = markdownRef.current || target.content || ''
+      // Insert/patch parity: never pin footnotes using another notebook's live markdownRef.
+      const current =
+        routeRef.current.page === 'editor' && notebookRef.current?.id === target.id
+          ? markdownRef.current || target.content || ''
+          : target.content || ''
       const spanText = String(customEvent.detail?.spanText || '').trim()
 
       let marker = String(customEvent.detail?.marker || '').trim()
