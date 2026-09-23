@@ -52,13 +52,27 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** LOCAL-FIRST chat persistence — IndexedDB primary + optional Supabase sync (`feat/wim-ai-chat-idb-local-first`).
+- **Task:** HARDEN-ONLY — make EXISTING desk + WIM AI + notebook paths complete every time (abort, persist/rehydrate, notebook tool writes, wallpaper chrome).
 
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-23 — Grok Bot / Cursor (harden: abort/host-search + dual-device chat fields + wallpaper cycle chrome)
+
+- **Scope:** HARDEN-ONLY card — proven gaps only; no product redesign.
+- **Bugs fixed:**
+  1. **Abort:** Host Tavily/Brave fallback in `orchestrate.ts` called `searchWebSources` **without** `input.abortSignal`; AbortError was swallowed and held public tokens could flush after Stop. Now passes signal, treats AbortError as cancel, returns aborted **before** `demux.finish`.
+  2. **Persist / two devices:** `agentMode` change and new notebook-bound chat only wrote local; remote `wim_chats.agent_mode` / `notebook_id` lagged until next send. Now `pushChatToRemote` on mode change + bind create (same pattern as rename/star).
+  3. **Anthropic tool loop:** `timeoutMs` was destructured in `loop.ts` but never passed into `anthropicToolCompletion` (gated typecheck TS6133 + no provider timeout). Wired `timeoutMs` + timer abort in anthropic completion (parity with OpenAI/Gemini paths).
+  4. **Wallpaper:** `\\` cycle and Spotlight wallpaper action updated settings only — chrome waited for React effect (one-frame / race vs DisplayOptions). Now sync `applyWallpaperBrowserChrome` + `data-wallpaper` like DisplayOptions. Wallpapers.tsx remains full scenes (not PLACEHOLDER).
+- **Already solid (no change):** client AbortController Stop/Meta+./unmount; Edge `req.signal` + tool-loop signal; notebook OS dispatch retry + fail-closed nack; chat merge keeps notebookId/agentMode/activePlan; IDB local-first hydrate.
+- **Files:** `orchestrate.ts`, `loop.ts`, `anthropic.ts`, `ClaudeWorkspaceChat/index.tsx`, `App.tsx`, `SpotlightSearch/actions.tsx`, `tests/harden-desk-paths.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/harden-desk-paths.spec.ts tests/notebook-ack-fail.spec.ts`; `pnpm exec vitest run src/lib/wallpaperChrome.test.ts src/lib/bots/web-search.abort.test.ts --environment node`
+- **Residual:** Soft-keyboard / iOS theme-color bounce may still need visibility relock (existing); host search abort still depends on provider fetch honoring signal (covered by web-search.abort tests).
+
 
 ### 2026-09-22 — Grok Bot / Cursor (feat: chat local-first IndexedDB + open-thread sync guards)
 

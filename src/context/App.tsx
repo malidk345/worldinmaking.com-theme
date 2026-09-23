@@ -1405,9 +1405,23 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 const nextIndex = (currentIndex + 1) % themeOptions.length
                 const nextWallpaper = themeOptions[nextIndex]
 
+                const wallpaper = nextWallpaper.value as SiteSettings['wallpaper']
+                // Paint scene attrs + browser chrome in the same turn (DisplayOptions parity).
+                applyWallpaperBrowserChrome({
+                    wallpaper,
+                    colorMode: siteSettings.colorMode,
+                    theme:
+                        document.documentElement.classList.contains('dark') ||
+                        document.body.classList.contains('dark')
+                            ? 'dark'
+                            : 'light',
+                    force: true,
+                })
+                document.documentElement.setAttribute('data-wallpaper', wallpaper)
+                document.body.setAttribute('data-wallpaper', wallpaper)
                 updateSiteSettings({
                     ...siteSettings,
-                    wallpaper: nextWallpaper.value as SiteSettings['wallpaper'],
+                    wallpaper,
                 })
 
                 // Add toast notification
