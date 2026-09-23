@@ -2654,9 +2654,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       if (action.type === 'create_notebook') {
         const nb = createNotebook(action.payload.title || 'AI Generated Notes', action.payload.content || '');
         if (addWindow) addWindow({ path: notebookWindowPath(nb.id) });
-        // Bind immediately — notebook App only binds on Ask AI click, so Apply used to leave
-        // the chat on the previous/null bind while the new notebook window opened (race).
-        bindNotebookChat({ notebookId: nb.id, title: nb.title || action.payload.title })
+        // Stamp BEFORE bind — bindNotebookChat dispatches NOTEBOOK_CHAT_BIND_EVENT sync; applyBind
+        // creates chat-nb-* when no chat already has that notebookId. Binding first (#827 order)
+        // raced the stamp and orphaned an empty chat while yanking activeChatId off the Apply thread.
         setChats((prev) => {
           const next = prev.map((c) =>
             c.id === chatId
@@ -2667,6 +2667,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (stamped) void pushChatToRemote(stamped)
           return next
         })
+        bindNotebookChat({ notebookId: nb.id, title: nb.title || action.payload.title })
         // Manually fire the ack since createNotebook doesn't via the event listener paths in App.tsx
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nb.id } }));
       } else if (action.type === 'insert_notebook_block') {

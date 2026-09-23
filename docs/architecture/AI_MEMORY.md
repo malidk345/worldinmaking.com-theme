@@ -58,6 +58,16 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: create_notebook stamp-before-bind)
+
+- **Scope:** P0 HARDEN-ONLY residual of #827 — bind-before-stamp orphan `chat-nb-*` race. No THINK / iOS / re-polish of exhausted classes.
+- **Survey:** plan_approval skipPendingAskRedirect parity CLEAN (gate is ask_user-only; run/revise never hit redirect). Other OS Apply actions already use bound id / fail-closed. human-turn checkpoint resume + Continue×pending already covered.
+- **Bug fixed:**
+  1. **create_notebook bind-before-stamp orphan:** #827 called `bindNotebookChat` then stamped `chat.notebookId`. Sync `NOTEBOOK_CHAT_BIND_EVENT` → `applyBind` creates `chat-nb-${id}` when no chat yet has that id, yanks `activeChatId`, and `pushChatToRemote`s an empty orphan — while the Apply thread gets the stamp one updater later. Now stamp `setChats` **before** `bindNotebookChat` so batched functional updaters see the stamped row and skip orphan create.
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/notebook-ack-fail.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked (product).
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: create_notebook bind + ask_user re-entry)
 
 - **Scope:** P0 HARDEN-ONLY after #826 — underexplored create_notebook OS+bind race + ask_user answer path beyond Continue hide. No THINK, no iOS chrome, no re-polish of #820/#825/#826/abort/Continue/export.
