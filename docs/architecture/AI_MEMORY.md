@@ -58,6 +58,18 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: Sidebar memo + MessageList handlers + stable handleNewChat)
+
+- **Scope:** P1 HARDEN-ONLY micro-pass after #815 — stream list/sidebar churn; no redesign, no P2 iOS theme-color, no mid-cluster THINK.
+- **Survey:** Bare useCallback on ChatMessage handlers is a no-op for skip (custom memo already ignores identity). Real wins: (1) Sidebar remapped every rAF because `chats` is new; (2) per-row Continue/artifact/BYOK arrows in messages.map; (3) `handleNewChat` not useCallback → keyboard effect rebound every paint.
+- **Change:**
+  1. **Sidebar + ChatItem:** `React.memo` comparing isOpen/activeChatId + each chat id/title (ignore handler identity).
+  2. **MessageList:** hoist openArtifact / addToNotebook / BYOK / Continue outside map; `Boolean(onContinue)` in ChatMessage memo (Continue gates UI without message-field churn).
+  3. **handleNewChat:** `useCallback` so Cmd/Ctrl+N keydown listener stops thrashing mid-stream.
+- **Files:** `Sidebar.tsx`, `ChatMessage.tsx`, `ClaudeWorkspaceChat/index.tsx`, `tests/harden-desk-paths.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/harden-desk-paths.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color bounce (P2, needs device Safari); mid-cluster THINK latency parked; named handlers (edit/retry/feedback/stop) still recreated each paint but memo ignores them — optional further useCallback if another child starts comparing them; Header still unmemoized (tiny).
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: ChatMessage memo + index updateAssistantMessage)
 
 - **Scope:** P1 HARDEN-ONLY — stream list correctness/perf; no redesign, no P2 iOS theme-color, no mid-cluster THINK.

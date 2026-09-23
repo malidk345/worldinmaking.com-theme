@@ -17,7 +17,7 @@ interface SidebarProps {
     onToggleStarChat?: (id: string) => void
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
+const SidebarComponent: React.FC<SidebarProps> = ({
     isOpen,
     onClose,
     chats,
@@ -96,6 +96,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     )
 }
 
+/**
+ * Stream token flushes rewrite `chats` (new array + message refs) every rAF.
+ * Sidebar UI only depends on open/active + each row's id/title — ignore handler
+ * identity (parent often passes inline arrows) so history stays quiet mid-stream.
+ */
+export const Sidebar = React.memo(SidebarComponent, (prev, next) => {
+    if (prev.isOpen !== next.isOpen || prev.activeChatId !== next.activeChatId) return false
+    if (prev.chats.length !== next.chats.length) return false
+    for (let i = 0; i < prev.chats.length; i++) {
+        const a = prev.chats[i]
+        const b = next.chats[i]
+        if (a.id !== b.id || a.title !== b.title) return false
+    }
+    return true
+})
+
 const SidebarUsageMeter: React.FC = () => {
     const { quota } = useTokenQuota()
     const [byokActive, setByokActive] = React.useState(false)
@@ -153,7 +169,7 @@ interface ChatItemProps {
     onDelete: (e: React.MouseEvent) => void
 }
 
-const ChatItem: React.FC<ChatItemProps> = ({
+const ChatItemComponent: React.FC<ChatItemProps> = ({
     chat,
     isActive,
     onSelect,
@@ -187,3 +203,12 @@ const ChatItem: React.FC<ChatItemProps> = ({
         </div>
     )
 }
+
+// Stream paints replace `chats` every rAF; ChatItem only paints id/title/active.
+const ChatItem = React.memo(ChatItemComponent, (prev, next) => {
+    return (
+        prev.isActive === next.isActive &&
+        prev.chat.id === next.chat.id &&
+        prev.chat.title === next.chat.title
+    )
+})
