@@ -232,7 +232,7 @@ function TaskBarMenu() {
                 >
                     <div
                         aria-hidden="true"
-                        className="absolute top-0 left-0 right-0 bg-accent pointer-events-none"
+                        className="absolute top-0 left-0 right-0 bg-accent pointer-events-none hidden sm:block"
                         style={{
                             height: '20px',
                             transform: 'rotateX(-90deg)',
@@ -241,7 +241,7 @@ function TaskBarMenu() {
                     />
                     <div
                         aria-hidden="true"
-                        className="absolute bottom-0 left-0 right-0 bg-accent pointer-events-none"
+                        className="absolute bottom-0 left-0 right-0 bg-accent pointer-events-none hidden sm:block"
                         style={{
                             height: '20px',
                             transform: 'rotateX(90deg)',
