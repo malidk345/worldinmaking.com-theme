@@ -942,8 +942,8 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         fullText += token
         demux.push(token, onToken, (thinkingChunk) => onThinkingChunk?.(thinkingChunk))
     }
-    demux.finish(onToken, (thinkingChunk) => onThinkingChunk?.(thinkingChunk))
-
+    // Abort before finish so held public tokens are not flushed after Stop mid gateway-fallback stream
+    // (parity with tool-loop / host-search abort-before-finish).
     if (input.abortSignal?.aborted) {
         return {
             success: false,
@@ -968,6 +968,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             taskType,
         }
     }
+    demux.finish(onToken, (thinkingChunk) => onThinkingChunk?.(thinkingChunk))
 
     const { thinking, reply } = parseThinkingAndReply(fullText, taskType, input.thinkingDepth, {
         philosopher: persona.name,

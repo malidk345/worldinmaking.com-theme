@@ -58,6 +58,15 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: gateway-fallback abort-before-finish)
+
+- **Scope:** P0 HARDEN-ONLY — #818 residual; same class as host-search before #810. No redesign; skip iOS theme-color / mid-cluster THINK.
+- **Proof:** Gateway-fallback path (`streamWithGateway` recovery) called `demux.finish` then checked `abortSignal`. `ThinkingStreamDemux.finish` flushes held public buffer via `onPublic` — Stop mid-stream could flush after abort while tool-loop already returns aborted before finish.
+- **Fix:** Abort check + aborted return **before** `demux.finish` (parity with tool-loop/host-search). Adjacent scan: only two `demux.finish` sites in orchestrate; tool-loop already guarded.
+- **Files:** `orchestrate.ts`, `tests/harden-desk-paths.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/harden-desk-paths.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked.
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: bound insert target + OS Apply in-flight)
 
 - **Scope:** P0 HARDEN-ONLY correctness after #817 — no memo polish, no redesign, no quality-gate flip.
@@ -67,7 +76,7 @@
   2. **OS Apply in-flight false success:** second click while `executedActionsRef` held the key forced `executed: true` before ack/nack.
 - **Files:** `notebook-app/App.tsx`, `ClaudeWorkspaceChat/index.tsx`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
 - **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/notebook-ack-fail.spec.ts`
-- **Residual:** Gateway-fallback demux.finish still runs before abort check (tool-loop path already aborts-before-finish); soft-keyboard / iOS theme-color P2; mid-cluster THINK parked.
+- **Residual:** Gateway-fallback demux.finish abort-before-finish → fixed in follow-up harden; soft-keyboard / iOS theme-color P2; mid-cluster THINK parked.
 
 
 ### 2026-09-23 — Grok Bot / Cursor (harden: ThinkingBlock memo + EMPTY thinking + stable Stop)

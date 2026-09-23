@@ -14,6 +14,20 @@ test.describe('HARDEN desk / WIM AI / notebook path locks', () => {
     )
   })
 
+  test('gateway-fallback aborts before demux.finish (held tokens not flushed after Stop)', async () => {
+    const src = fs.readFileSync(path.join(root, 'src/lib/bots/orchestrate.ts'), 'utf-8')
+    const marker =
+      'Abort before finish so held public tokens are not flushed after Stop mid gateway-fallback stream'
+    const markerIdx = src.indexOf(marker)
+    expect(markerIdx).toBeGreaterThan(-1)
+    const finishIdx = src.indexOf('demux.finish(onToken, (thinkingChunk) => onThinkingChunk?.(thinkingChunk))', markerIdx)
+    expect(finishIdx).toBeGreaterThan(markerIdx)
+    const abortReturnIdx = src.indexOf("error: 'aborted'", markerIdx)
+    expect(abortReturnIdx).toBeGreaterThan(markerIdx)
+    expect(abortReturnIdx).toBeLessThan(finishIdx)
+    expect(src).toContain("attempts: ['client aborted during gateway stream']")
+  })
+
   test('agentMode + notebook bind push remote for dual-device rehydrate', async () => {
     const src = fs.readFileSync(path.join(root, 'src/components/ClaudeWorkspaceChat/index.tsx'), 'utf-8')
     const modeStart = src.indexOf('const handleAgentModeChange')
