@@ -290,6 +290,47 @@ function clip(value: string, max: number): string {
     return text.length <= max ? text : text.slice(0, max)
 }
 
+
+/** Explicit id/title: fail-closed when missing (export_notebook / generate_flashcards parity —
+ * never return ok:true + action under a wrong id that OS Apply will nack). */
+function resolveNotebookWriteTarget(
+    host: HostSnapshot | undefined,
+    notebookId: string | undefined,
+    unboundError: string
+): { ok: true; id: string; title: string; content?: string } | { ok: false; error: string } {
+    const notebooks = host?.notebooks || []
+    const requested = clip((notebookId || '').trim(), 80)
+    if (requested) {
+        const match = notebooks.find(
+            (n) => n.id === requested || n.title.toLowerCase() === requested.toLowerCase()
+        )
+        if (!match) {
+            return {
+                ok: false,
+                error: `Notebook "${requested}" not found. Call list_notebooks to see available notebooks.`,
+            }
+        }
+        return {
+            ok: true,
+            id: match.id,
+            title: match.title || host?.notebookTitle || 'Notebook',
+            content: match.content,
+        }
+    }
+    const targetId = host?.notebookId || notebooks[0]?.id || ''
+    if (!targetId) {
+        return { ok: false, error: unboundError }
+    }
+    const known = notebooks.find((item) => item.id === targetId)
+    return {
+        ok: true,
+        id: targetId,
+        title: known?.title || host?.notebookTitle || 'Notebook',
+        content: known?.content,
+    }
+}
+
+
 export function resolveOpenPath(raw: string): string | null {
     const value = String(raw || '').trim()
     if (!value) return null
@@ -537,27 +578,22 @@ export function executeInsertNotebookBlock(
 ): { ok: boolean; result: string; action?: HostOsAction } {
     const body = clip(content.trim(), 8_000)
     if (!body) return { ok: false, result: JSON.stringify({ ok: false, error: 'content required' }) }
-    const requested = clip((notebookId || '').trim(), 80)
-    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
-    if (!targetId) {
-        return {
-            ok: false,
-            result: JSON.stringify({
-                ok: false,
-                error: 'No notebook is bound. Call create_notebook first or ask the user to open one.',
-            }),
-        }
+    const target = resolveNotebookWriteTarget(
+        host,
+        notebookId,
+        'No notebook is bound. Call create_notebook first or ask the user to open one.'
+    )
+    if (!target.ok) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: target.error }) }
     }
-    const known = host?.notebooks?.find((item) => item.id === targetId)
-    const title = known?.title || host?.notebookTitle || 'Notebook'
     return {
         ok: true,
-        result: JSON.stringify({ ok: true, notebookId: targetId, title }),
+        result: JSON.stringify({ ok: true, notebookId: target.id, title: target.title }),
         action: {
             type: 'insert_notebook_block',
-            title: `Insert into ${title}`,
+            title: `Insert into ${target.title}`,
             description: 'Append a block to the notebook',
-            payload: { notebookId: targetId, title, content: body },
+            payload: { notebookId: target.id, title: target.title, content: body },
         },
     }
 }
@@ -569,27 +605,22 @@ export function executeRewriteNotebookDocument(
 ): { ok: boolean; result: string; action?: HostOsAction } {
     const body = clip(content.trim(), 20_000)
     if (!body) return { ok: false, result: JSON.stringify({ ok: false, error: 'content required' }) }
-    const requested = clip((notebookId || '').trim(), 80)
-    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
-    if (!targetId) {
-        return {
-            ok: false,
-            result: JSON.stringify({
-                ok: false,
-                error: 'No notebook is bound. Call create_notebook first or ask the user to open one.',
-            }),
-        }
+    const target = resolveNotebookWriteTarget(
+        host,
+        notebookId,
+        'No notebook is bound. Call create_notebook first or ask the user to open one.'
+    )
+    if (!target.ok) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: target.error }) }
     }
-    const known = host?.notebooks?.find((item) => item.id === targetId)
-    const title = known?.title || host?.notebookTitle || 'Notebook'
     return {
         ok: true,
-        result: JSON.stringify({ ok: true, notebookId: targetId, title }),
+        result: JSON.stringify({ ok: true, notebookId: target.id, title: target.title }),
         action: {
             type: 'rewrite_notebook_document',
-            title: `Rewrite ${title}`,
+            title: `Rewrite ${target.title}`,
             description: 'Rewrite and restructure the entire notebook content',
-            payload: { notebookId: targetId, title, content: body },
+            payload: { notebookId: target.id, title: target.title, content: body },
         },
     }
 }
@@ -610,28 +641,23 @@ export function executeReplaceNotebookSelection(
             }),
         }
     }
-    const requested = clip((notebookId || '').trim(), 80)
-    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
-    if (!targetId) {
-        return {
-            ok: false,
-            result: JSON.stringify({
-                ok: false,
-                error: 'No notebook is bound. Call create_notebook first or ask the user to open one.',
-            }),
-        }
+    const target = resolveNotebookWriteTarget(
+        host,
+        notebookId,
+        'No notebook is bound. Call create_notebook first or ask the user to open one.'
+    )
+    if (!target.ok) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: target.error }) }
     }
-    const known = host?.notebooks?.find((item) => item.id === targetId)
-    const title = known?.title || host?.notebookTitle || 'Notebook'
     const span_text = clip(host.selection.trim(), 2_500)
     return {
         ok: true,
-        result: JSON.stringify({ ok: true, notebookId: targetId, title, span_text }),
+        result: JSON.stringify({ ok: true, notebookId: target.id, title: target.title, span_text }),
         action: {
             type: 'replace_notebook_selection',
-            title: `Replace selection in ${title}`,
+            title: `Replace selection in ${target.title}`,
             description: 'Replace the active user selection with rewritten text',
-            payload: { notebookId: targetId, title, content: body, span_text },
+            payload: { notebookId: target.id, title: target.title, content: body, span_text },
         },
     }
 }
@@ -643,25 +669,22 @@ export function executeUpdateNotebookTitle(
 ): { ok: boolean; result: string; action?: HostOsAction } {
     const name = clip(title.trim(), 120)
     if (!name) return { ok: false, result: JSON.stringify({ ok: false, error: 'title required' }) }
-    const requested = clip((notebookId || '').trim(), 80)
-    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
-    if (!targetId) {
-        return {
-            ok: false,
-            result: JSON.stringify({
-                ok: false,
-                error: 'No notebook is bound. Call create_notebook first or ask the user to open one.',
-            }),
-        }
+    const target = resolveNotebookWriteTarget(
+        host,
+        notebookId,
+        'No notebook is bound. Call create_notebook first or ask the user to open one.'
+    )
+    if (!target.ok) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: target.error }) }
     }
     return {
         ok: true,
-        result: JSON.stringify({ ok: true, notebookId: targetId, title: name }),
+        result: JSON.stringify({ ok: true, notebookId: target.id, title: name }),
         action: {
             type: 'update_notebook_title',
             title: `Rename notebook: ${name}`,
             description: 'Update the notebook title',
-            payload: { notebookId: targetId, title: name },
+            payload: { notebookId: target.id, title: name },
         },
     }
 }
@@ -719,27 +742,28 @@ export function executeAnnotateNotebook(
     if (!quote || !comment) {
         return { ok: false, result: JSON.stringify({ ok: false, error: 'span_text and note are both required' }) }
     }
-    const requested = clip((notebookId || '').trim(), 80)
-    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
-    if (!targetId) {
-        return {
-            ok: false,
-            result: JSON.stringify({
-                ok: false,
-                error: 'No notebook is bound. Open a notebook first to add annotations.',
-            }),
-        }
+    const target = resolveNotebookWriteTarget(
+        host,
+        notebookId,
+        'No notebook is bound. Open a notebook first to add annotations.'
+    )
+    if (!target.ok) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: target.error }) }
     }
-    const known = host?.notebooks?.find((item) => item.id === targetId)
-    const title = known?.title || host?.notebookTitle || 'Notebook'
     return {
         ok: true,
-        result: JSON.stringify({ ok: true, notebookId: targetId, title, span_text: quote, note: comment }),
+        result: JSON.stringify({
+            ok: true,
+            notebookId: target.id,
+            title: target.title,
+            span_text: quote,
+            note: comment,
+        }),
         action: {
             type: 'annotate_notebook',
-            title: `Annotate in ${title}`,
+            title: `Annotate in ${target.title}`,
             description: 'Attach inline critique or margin note',
-            payload: { notebookId: targetId, title, span_text: quote, note: comment },
+            payload: { notebookId: target.id, title: target.title, span_text: quote, note: comment },
         },
     }
 }
@@ -775,24 +799,19 @@ export function executeAddNotebookFootnote(
     if (!fnText) {
         return { ok: false, result: JSON.stringify({ ok: false, error: 'text (footnote explanation or citation) is required' }) }
     }
-    const requested = clip((notebookId || '').trim(), 80)
-    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
-    if (!targetId) {
-        return {
-            ok: false,
-            result: JSON.stringify({
-                ok: false,
-                error: 'No notebook is bound. Open or create a notebook first to add footnotes.',
-            }),
-        }
+    const target = resolveNotebookWriteTarget(
+        host,
+        notebookId,
+        'No notebook is bound. Open or create a notebook first to add footnotes.'
+    )
+    if (!target.ok) {
+        return { ok: false, result: JSON.stringify({ ok: false, error: target.error }) }
     }
-    const known = host?.notebooks?.find((item) => item.id === targetId)
-    const title = known?.title || host?.notebookTitle || 'Notebook'
     const quote = spanText ? clip(spanText.trim(), 500) : undefined
 
     let resolvedMarker = marker ? clip(marker.trim(), 40) : ''
     if (!resolvedMarker) {
-        const content = known?.content || host?.selection || ''
+        const content = target.content || host?.selection || ''
         const matches = content.match(/\[\^([0-9]+)\]/g) || []
         const existingNums = matches
             .map((m) => parseInt(m.slice(2, -1), 10))
@@ -805,19 +824,21 @@ export function executeAddNotebookFootnote(
         ok: true,
         result: JSON.stringify({
             ok: true,
-            notebookId: targetId,
-            title,
+            notebookId: target.id,
+            title: target.title,
             marker: resolvedMarker,
             text: fnText,
             span_text: quote,
         }),
         action: {
             type: 'add_notebook_footnote',
-            title: `Add footnote [^${resolvedMarker}] in ${title}`,
-            description: quote ? `Attach footnote [^${resolvedMarker}] to "${clip(quote, 36)}"` : `Append footnote [^${resolvedMarker}] to notebook`,
+            title: `Add footnote [^${resolvedMarker}] in ${target.title}`,
+            description: quote
+                ? `Attach footnote [^${resolvedMarker}] to "${clip(quote, 36)}"`
+                : `Append footnote [^${resolvedMarker}] to notebook`,
             payload: {
-                notebookId: targetId,
-                title,
+                notebookId: target.id,
+                title: target.title,
                 marker: resolvedMarker,
                 text: fnText,
                 span_text: quote,

@@ -330,6 +330,23 @@ test.describe('Fail-closed nacks are present', () => {
     expect(execSrc).toContain('Notebook "${requested}" not found');
   });
 
+  test('host write unknown-id fail-closed + preview error textContent', async () => {
+    const hostSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/bots/tools/host.ts'),
+      'utf-8'
+    );
+    const previewSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/components/ClaudeWorkspaceChat/sandbox/reactPreview.ts'),
+      'utf-8'
+    );
+    expect(hostSrc).toContain('export_notebook / generate_flashcards parity');
+    expect(hostSrc).toContain('resolveNotebookWriteTarget');
+    expect(hostSrc).toContain('Notebook "${requested}" not found');
+    expect(previewSrc).toContain("root.textContent = '';");
+    expect(previewSrc).toContain('pre.textContent = text');
+    expect(previewSrc).not.toContain("root.innerHTML = '<pre");
+  });
+
   test('plan soft-gate checkpoints usedPlanResearch + IDB chat persist queue', async () => {
     const checkpointSrc = fs.readFileSync(
       path.join(process.cwd(), 'src/lib/bots/agent/checkpoint.ts'),

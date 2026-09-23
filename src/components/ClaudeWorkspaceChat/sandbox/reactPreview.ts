@@ -1260,8 +1260,12 @@ ${SLATE_CSS}
           text = 'The preview hit a script error. Try again, or simplify the screen.';
         }
         if (root) {
-          root.innerHTML = '<pre style="margin:0;padding:16px;color:#b91c1c;white-space:pre-wrap;font:13px ui-monospace,monospace">' +
-            text.replace(/</g, '&lt;') + '</pre>';
+          // Fail-closed XSS: never concatenate error text into innerHTML (even with < escapes).
+          root.textContent = '';
+          var pre = document.createElement('pre');
+          pre.style.cssText = 'margin:0;padding:16px;color:#b91c1c;white-space:pre-wrap;font:13px ui-monospace,monospace';
+          pre.textContent = text;
+          root.appendChild(pre);
         }
       }
       window.addEventListener('error', function (event) {
