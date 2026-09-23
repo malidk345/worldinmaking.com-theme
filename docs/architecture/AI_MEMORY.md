@@ -73,6 +73,12 @@
 - **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/harden-desk-paths.spec.ts tests/notebook-ack-fail.spec.ts`; `pnpm exec vitest run src/lib/wallpaperChrome.test.ts src/lib/bots/web-search.abort.test.ts --environment node`
 - **Residual:** Soft-keyboard / iOS theme-color bounce may still need visibility relock (existing); host search abort still depends on provider fetch honoring signal (covered by web-search.abort tests).
 
+### 2026-09-23 — Grok 4.7 (fix: Anthropic tool loop matches provider deadline standard)
+- **Gap:** Groq, Gemini, NVIDIA, and OpenAI completions abort on `timeoutMs` (45s) and retry transient 429/5xx. Anthropic ignored the loop's `timeoutMs` (TS6133, and `typecheck:shell` failed on it), used a bare `fetch`, and split SSE on each chunk so a tool-call JSON line cut mid-chunk was dropped.
+- **Fix:** `anthropicToolCompletion` takes `timeoutMs`, aborts with `request timed out` (client abort stays `client request aborted`), uses `fetchWithTransientRetry`, buffers SSE lines, and forwards `thinking_delta` to `onThinking`. `loop.ts` passes `timeoutMs` through. Rebased onto #810, which had already wired the timer; SSE buffering and transient retry stayed.
+- **Files:** `src/lib/bots/tools/anthropic.ts`, `anthropic.test.ts`, `loop.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm exec vitest run src/lib/bots/tools/anthropic.test.ts` — 2 passed. `pnpm typecheck:shell` PASS (gated 0).
+- **Leftover (not this change):** notebook retrieval stays lexical (Vectorize is still planned). Quality-gate outage stays fail-open. No second orchestrator.
 
 ### 2026-09-22 — Grok Bot / Cursor (feat: chat local-first IndexedDB + open-thread sync guards)
 

@@ -682,6 +682,7 @@ export async function runToolLoop(params: {
                         onThinking,
                         omitTools,
                         maxTokens,
+                        timeoutMs,
                         tools: toolsForAgentMode(agentMode),
                         signal: params.signal,
                         timeoutMs,
