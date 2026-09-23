@@ -12,6 +12,7 @@ import {
     PLAN_RESEARCH_CLUSTER_N,
     PUBLIC_CONTINUE_NUDGE,
     runAgentNodePipeline,
+    normalizeFetchUrlCacheKey,
     researchToolCacheKey,
     shareInflight,
     thinkInstructionFor,
@@ -853,10 +854,109 @@ describe('researchToolCacheKey academic/corpus parity', () => {
 
     it('returns null for non-research tools and short queries', () => {
         expect(
-            researchToolCacheKey({ id: '1', name: 'fetch_url', argumentsJson: JSON.stringify({ url: 'https://x' }) })
+            researchToolCacheKey({ id: '1', name: 'read_document', argumentsJson: JSON.stringify({ url: 'https://x.com' }) })
         ).toBeNull()
         expect(
             researchToolCacheKey({ id: '2', name: 'search_academic_corpus', argumentsJson: JSON.stringify({ query: 'a' }) })
         ).toBeNull()
+    })
+})
+
+describe('researchToolCacheKey fetch_url identical-URL inflight', () => {
+    it('normalizes host case, default port, hash, and trailing whitespace', () => {
+        const a = normalizeFetchUrlCacheKey('  HTTPS://Example.COM:443/path?q=1#frag  ')
+        const b = normalizeFetchUrlCacheKey('https://example.com/path?q=1')
+        expect(a).toBe(b)
+        expect(a).toBe('https://example.com/path?q=1')
+    })
+
+    it('rejects invalid / non-http(s)', () => {
+        expect(normalizeFetchUrlCacheKey('')).toBeNull()
+        expect(normalizeFetchUrlCacheKey('ftp://example.com/x')).toBeNull()
+        expect(normalizeFetchUrlCacheKey('not a url')).toBeNull()
+        expect(normalizeFetchUrlCacheKey(null)).toBeNull()
+    })
+
+    it('keys fetch_url by normalized URL (aliases uri/href/link/page)', () => {
+        const a = researchToolCacheKey({
+            id: '1',
+            name: 'fetch_url',
+            argumentsJson: JSON.stringify({ url: 'https://Example.com/essay' }),
+        })
+        const b = researchToolCacheKey({
+            id: '2',
+            name: 'browse',
+            argumentsJson: JSON.stringify({ href: 'https://example.com/essay#top' }),
+        })
+        const c = researchToolCacheKey({
+            id: '3',
+            name: 'fetch_url',
+            argumentsJson: JSON.stringify({ uri: 'https://example.com/essay?x=1' }),
+        })
+        expect(a).toBe('fetch_url:https://example.com/essay')
+        expect(a).toBe(b)
+        expect(a).not.toBe(c)
+    })
+
+    it('returns null when url missing or invalid (no share)', () => {
+        expect(
+            researchToolCacheKey({ id: '1', name: 'fetch_url', argumentsJson: JSON.stringify({ url: 'notaurl' }) })
+        ).toBeNull()
+        expect(researchToolCacheKey({ id: '2', name: 'fetch_url', argumentsJson: '{}' })).toBeNull()
+    })
+})
+
+describe('shareInflight fetch_url parallel dedupe', () => {
+    it('shares one factory across concurrent identical URL keys (Promise.all TOCTOU)', async () => {
+        let runs = 0
+        const map = new Map<string, Promise<string>>()
+        const factory = () =>
+            new Promise<string>((resolve) => {
+                runs += 1
+                setTimeout(() => resolve('page-body'), 5)
+            })
+        const key = 'fetch_url:https://example.com/a'
+        const [a, b] = await Promise.all([shareInflight(map, key, factory), shareInflight(map, key, factory)])
+        expect(a).toBe('page-body')
+        expect(b).toBe('page-body')
+        expect(runs).toBe(1)
+        expect(map.size).toBe(0)
+    })
+
+    it('distinct URLs do not share (no cross-URL coalesce)', async () => {
+        let runs = 0
+        const map = new Map<string, Promise<number>>()
+        const factory = () => {
+            runs += 1
+            return Promise.resolve(runs)
+        }
+        const [a, b] = await Promise.all([
+            shareInflight(map, 'fetch_url:https://example.com/a', factory),
+            shareInflight(map, 'fetch_url:https://example.com/b', factory),
+        ])
+        expect(a).toBe(1)
+        expect(b).toBe(2)
+        expect(runs).toBe(2)
+    })
+
+    it('abort/reject clears inflight so a later call can retry', async () => {
+        let runs = 0
+        const map = new Map<string, Promise<string>>()
+        const key = 'fetch_url:https://example.com/abort'
+        const failing = () => {
+            runs += 1
+            return Promise.reject(new Error('client request aborted'))
+        }
+        await expect(Promise.all([shareInflight(map, key, failing), shareInflight(map, key, failing)])).rejects.toThrow(
+            /aborted/
+        )
+        expect(runs).toBe(1)
+        expect(map.size).toBe(0)
+        const ok = await shareInflight(map, key, () => {
+            runs += 1
+            return Promise.resolve('recovered')
+        })
+        expect(ok).toBe('recovered')
+        expect(runs).toBe(2)
     })
 })

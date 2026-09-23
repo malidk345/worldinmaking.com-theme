@@ -73,6 +73,16 @@ test.describe('HARDEN desk / WIM AI / notebook path locks', () => {
     expect(src).toContain('RESEARCH_CACHE_TOOLS')
   })
 
+  test('fetch_url identical-URL uses researchToolCacheKey + same inflight map', async () => {
+    const src = fs.readFileSync(path.join(root, 'src/lib/bots/tools/pipeline.ts'), 'utf-8')
+    expect(src).toContain('export function normalizeFetchUrlCacheKey')
+    expect(src).toContain("'fetch_url'")
+    expect(src).toContain('fetch_url:${normalized}')
+    expect(src).toContain('shareInflight(state.searchInflight, key,')
+    // Still parallelizable with other research reads
+    expect(src).toMatch(/PARALLEL_READ_TOOLS[\s\S]*'fetch_url'/)
+  })
+
   test('notebook OS dispatch stays fail-closed on missing listener', async () => {
     const dispatch = fs.readFileSync(path.join(root, 'src/lib/notebook-os-dispatch.ts'), 'utf-8')
     expect(dispatch).toContain('fail-closed')

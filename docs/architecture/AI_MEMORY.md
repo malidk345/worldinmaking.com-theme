@@ -58,6 +58,16 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: fetch_url identical-URL inflight)
+
+- **Scope:** P0 HARDEN-ONLY — #825 residual optional leftover; parity with searchInflight (#820/#825). No mid-cluster THINK, no iOS chrome.
+- **Proof:** `fetch_url` already in `PARALLEL_READ_TOOLS` (Promise.all fan-out) but excluded from `RESEARCH_CACHE_TOOLS` / `researchToolCacheKey` (unit test asserted null) — identical URLs in one ACT double-fetched (same TOCTOU class as web_search before #820).
+- **Bug fixed:**
+  1. **fetch_url identical-URL inflight:** `normalizeFetchUrlCacheKey` (host lowercased, hash stripped, default ports dropped, credentials cleared; invalid/non-http(s) → null) + `researchToolCacheKey` covers `fetch_url` (+ uri/href/link/page aliases). Same `searchInflight`/`searchCache` path — concurrent identical URLs share one fetch; abort/reject clears map for retry; failures not cached.
+- **Files:** `pipeline.ts`, `pipeline.test.ts`, `tests/harden-desk-paths.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; vitest researchToolCacheKey|shareInflight|normalizeFetchUrl; `pnpm exec playwright test tests/harden-desk-paths.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color P2 (needs device Safari); mid-cluster THINK parked (product).
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: academic/corpus parallel inflight)
 
 - **Scope:** P0 HARDEN-ONLY after #824 — expand parked/deep leftovers; ship only proven same-class bugs.

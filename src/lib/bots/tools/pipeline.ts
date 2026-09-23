@@ -384,9 +384,9 @@ export interface AgentState {
     researchClusterAwaitingScratchpad: boolean
     /** Plan mode: at least one research tool succeeded (finalize soft gate). */
     usedPlanResearch: boolean
-    /** Per-pipeline dedupe for identical web_search queries (same turn only). */
+    /** Per-pipeline dedupe for identical research reads (web_search / academic / corpus / fetch_url; same turn only). */
     searchCache: Map<string, ToolExecution>
-    /** In-flight web_search promises — parallel identical queries in one ACT share one fetch. */
+    /** In-flight research promises — parallel identical keys in one ACT share one fetch. */
     searchInflight: Map<string, Promise<ToolExecution>>
     execNudges: number
     writeNudges: number
@@ -924,6 +924,7 @@ const RESEARCH_CACHE_TOOLS = new Set([
     'web_search',
     'search_academic_corpus',
     'verified_corpus_search',
+    'fetch_url',
 ])
 
 function asCacheQuery(value: unknown): string {
@@ -938,8 +939,37 @@ function asCacheToken(value: unknown, max = 60): string {
 }
 
 /**
+ * Normalize a fetch_url target for per-turn cache / inflight sharing.
+ * Hostname lowercased, hash stripped, default ports dropped, credentials cleared.
+ * Invalid / non-http(s) → null (caller executes without share).
+ * Exported for unit tests.
+ */
+export function normalizeFetchUrlCacheKey(raw: unknown): string | null {
+    if (typeof raw !== 'string') return null
+    const trimmed = raw.trim()
+    if (!trimmed) return null
+    let parsed: URL
+    try {
+        parsed = new URL(trimmed)
+    } catch {
+        return null
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+    const host = parsed.hostname.toLowerCase()
+    if (!host) return null
+    parsed.hostname = host
+    parsed.hash = ''
+    parsed.username = ''
+    parsed.password = ''
+    if ((parsed.protocol === 'http:' && parsed.port === '80') || (parsed.protocol === 'https:' && parsed.port === '443')) {
+        parsed.port = ''
+    }
+    return parsed.href
+}
+
+/**
  * Per-turn cache + inflight key for identical parallel research reads.
- * web_search (#820) plus academic/corpus (same Promise.all TOCTOU class).
+ * web_search (#820), academic/corpus (#825), fetch_url identical-URL (same Promise.all TOCTOU class).
  * Exported for unit tests.
  */
 export function researchToolCacheKey(call: ToolCall): string | null {
@@ -950,6 +980,13 @@ export function researchToolCacheKey(call: ToolCall): string | null {
         if (name === 'web_search') {
             const q = asCacheQuery(parsed.query)
             return q.length >= 2 ? `web_search:${q}` : null
+        }
+        if (name === 'fetch_url') {
+            // Aliases match execute.ts ARG_ALIASES.fetch_url
+            const normalized = normalizeFetchUrlCacheKey(
+                parsed.url ?? parsed.uri ?? parsed.href ?? parsed.link ?? parsed.page
+            )
+            return normalized ? `fetch_url:${normalized}` : null
         }
         if (name === 'search_academic_corpus') {
             const q = asCacheQuery(parsed.query ?? parsed.q ?? parsed.search)
