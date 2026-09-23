@@ -46,11 +46,12 @@ function openPath(path: string): void {
 }
 
 function resolveNotebook(id?: string) {
+    // Fail-closed when a notebookId is supplied but missing (#818 class) —
+    // never silently write into the most-recent notebook.
     if (id) {
-        const found = getNotebook(id)
-        if (found) return found
+        return getNotebook(id) || null
     }
-    return getNotebooks().filter((nb) => !nb.isTemplate)[0] || getNotebooks()[0]
+    return getNotebooks().filter((nb) => !nb.isTemplate)[0] || getNotebooks()[0] || null
 }
 
 export function applyAssistantAction(action: AssistantAction, source: 'nag' | 'answer' = 'nag'): string | null {
