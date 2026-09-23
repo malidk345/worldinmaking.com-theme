@@ -811,19 +811,35 @@ export function App() {
       }>
       const text = (customEvent.detail?.text || '').trim()
       const mode = customEvent.detail?.mode || 'append'
-      if (!text) return
-
-      let target = notebookRef.current
-      if (customEvent.detail?.notebookId) {
-        const bound = getNotebook(customEvent.detail.notebookId)
-        if (bound) target = bound
+      if (!text) {
+        // Fail-closed nack (parity with replace/annotate) — do not hang on the 5s card timeout.
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'empty_text' } }))
+        return
       }
-      if (routeRef.current.page !== 'editor' || !target) {
+
+      const requestedId = customEvent.detail?.notebookId
+      let target = notebookRef.current
+      if (requestedId) {
+        const bound = getNotebook(requestedId)
+        if (!bound) {
+          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+          return
+        }
+        target = bound
+        // Bound insert/rewrite must never fall back to "most recent" when not on editor —
+        // that silently wrote the wrong notebook while the chat card waited for a matching ack.
+        if (routeRef.current.page !== 'editor' || notebookRef.current?.id !== target.id) {
+          openNotebookWindow(target.id, target.title)
+        }
+      } else if (routeRef.current.page !== 'editor' || !target) {
         const recent = getNotebooks().sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0]
         target = recent || target
         if (target) openNotebookWindow(target.id, target.title)
       }
-      if (!target) return
+      if (!target) {
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+        return
+      }
 
       const current =
         routeRef.current.page === 'editor' && notebookRef.current?.id === target.id
