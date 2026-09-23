@@ -1,5 +1,6 @@
 /**
- * Browser helper for workspace chat ↔ Supabase sync.
+ * Browser helper for workspace chat ↔ Supabase sync (signed-in only).
+ * Guests stay on IndexedDB + localStorage; cloud sync starts after login/claim.
  * Failures are silent: IndexedDB is primary local cache; localStorage is write-through / cold-start.
  */
 import type { Chat } from '../components/ClaudeWorkspaceChat/types'
@@ -32,6 +33,16 @@ const CHAT_DELETED_BASE = 'wim_chat_deleted_ids'
 
 export function getChatOwnerKey(): string {
     return getActiveOwnerKey(DEVICE_CHAT_OWNER_KEY)
+}
+
+/**
+ * Cloud push/pull/realtime only when signed in.
+ * Guests keep IndexedDB + localStorage; on login, adoptGuestChatsIntoAccount
+ * + claimDeviceAccountOnLogin + pushDirty cover guest→account without burning
+ * anonymous device-bound Supabase rows / realtime / poll egress.
+ */
+export function canSyncChatsToRemote(): boolean {
+    return Boolean(getAuthUserId())
 }
 
 export function getChatStorageKey(): string {
@@ -259,6 +270,7 @@ export async function claimDeviceAccountOnLogin(): Promise<boolean> {
 
 export async function pullChatsFromRemote(): Promise<{ chats: Chat[]; deletedIds: string[] } | null> {
     if (typeof window === 'undefined') return null
+    if (!canSyncChatsToRemote()) return null
     const ownerKey = getChatOwnerKey()
     try {
         const res = await fetch(`/api/chats?owner_key=${encodeURIComponent(ownerKey)}`, {
@@ -281,6 +293,7 @@ export async function pullChatsFromRemote(): Promise<{ chats: Chat[]; deletedIds
 /** Load one chat with full messages (active/open chat path). */
 export async function pullChatByIdFromRemote(chatId: string): Promise<Chat | null> {
     if (typeof window === 'undefined' || !chatId) return null
+    if (!canSyncChatsToRemote()) return null
     try {
         const res = await fetch(
             `/api/chats/${encodeURIComponent(chatId)}?owner_key=${encodeURIComponent(getChatOwnerKey())}`,
@@ -349,6 +362,7 @@ async function postChatToRemote(chat: Chat, opts?: PushOptions): Promise<Chat | 
  */
 export async function pushChatToRemote(chat: Chat, opts?: PushOptions): Promise<Chat | null> {
     if (typeof window === 'undefined') return null
+    if (!canSyncChatsToRemote()) return null
     if (readLocalDeletedChatIds().includes(chat.id)) return null
 
     if (opts?.keepalive) {
@@ -405,6 +419,7 @@ function chatLooksDirty(chat: Chat): boolean {
  */
 export async function pushDirtyLocalChats(chats: Chat[], limit = 6): Promise<number> {
     if (typeof window === 'undefined') return 0
+    if (!canSyncChatsToRemote()) return 0
     const dirty = chats
         .filter(chatLooksDirty)
         .sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0))
@@ -423,12 +438,14 @@ export async function pushDirtyLocalChats(chats: Chat[], limit = 6): Promise<num
 /** Best-effort flush for pagehide/unmount — uses fetch keepalive so the browser can finish after teardown. */
 export function flushChatToRemoteKeepalive(chat: Chat): void {
     if (typeof window === 'undefined') return
+    if (!canSyncChatsToRemote()) return
     if (!chat?.id || readLocalDeletedChatIds().includes(chat.id)) return
     void pushChatToRemote(chat, { keepalive: true })
 }
 
 export async function deleteChatOnRemote(chatId: string): Promise<boolean> {
     if (typeof window === 'undefined') return false
+    if (!canSyncChatsToRemote()) return false
     try {
         const res = await fetch(`/api/chats/${encodeURIComponent(chatId)}?owner_key=${encodeURIComponent(getChatOwnerKey())}`, {
             method: 'DELETE',
@@ -442,6 +459,7 @@ export async function deleteChatOnRemote(chatId: string): Promise<boolean> {
 
 export async function setRemoteChatShare(chatId: string, enabled: boolean): Promise<Chat | null> {
     if (typeof window === 'undefined') return null
+    if (!canSyncChatsToRemote()) return null
     try {
         const res = await fetch(`/api/chats/${encodeURIComponent(chatId)}`, {
             method: 'PATCH',
@@ -458,6 +476,7 @@ export async function setRemoteChatShare(chatId: string, enabled: boolean): Prom
 
 export async function setRemoteMessageLiked(chatId: string, messageId: string, liked: boolean | null): Promise<boolean> {
     if (typeof window === 'undefined') return false
+    if (!canSyncChatsToRemote()) return false
     try {
         const res = await fetch(`/api/chats/${encodeURIComponent(chatId)}`, {
             method: 'PATCH',
@@ -476,6 +495,10 @@ export async function setRemoteMessageLiked(chatId: string, messageId: string, l
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function subscribeToWorkspaceChats(onChange: (payload?: any) => void, onStatusChange?: (status: string) => void): () => void {
     if (typeof window === 'undefined' || !isSupabaseConfigured) {
+        return () => {}
+    }
+    // Guests: no realtime — local-only until sign-in.
+    if (!canSyncChatsToRemote()) {
         return () => {}
     }
     const userId = getAuthUserId()
@@ -552,6 +575,8 @@ export function subscribeToWorkspaceChats(onChange: (payload?: any) => void, onS
 
 export function startWorkspaceChatPolling(onTick: () => void, intervalMs = 12000): () => void {
     if (typeof window === 'undefined') return () => {}
+    // Guests: no 12s poll egress — local-only until sign-in.
+    if (!canSyncChatsToRemote()) return () => {}
     let timer = window.setInterval(() => {
         if (document.visibilityState === 'visible') onTick()
     }, intervalMs)

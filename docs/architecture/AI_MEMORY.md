@@ -51,12 +51,23 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IDLE]`
-- **Task:** Build errors resolved (TS1117 duplicate property & Pages Router global CSS in _app.tsx); shell & notebook drag re-render performance optimized.
+- **Status:** `[DONE by Grok Bot / Cursor]`
+- **Task:** P0 HARDEN-ONLY — Gate guest chat remote sync (#806 notebook parity): canSyncChatsToRemote; gate pull/push/subscribe/poll; keep adopt/claim.
+
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-23 — Grok Bot / Cursor (harden: guest chat remote sync gate / notebook parity)
+
+- **Scope:** P0 HARDEN-ONLY — stop anonymous chat pull/push/realtime/12s poll via device `owner_key` (same asymmetry notebooks fixed in #806).
+- **Change:** Added `canSyncChatsToRemote()` (`Boolean(getAuthUserId())`). Gated `pullChatsFromRemote`, `pullChatByIdFromRemote`, `pushChatToRemote`, `pushDirtyLocalChats`, `flushChatToRemoteKeepalive`, `deleteChatOnRemote`, `setRemoteChatShare`, `setRemoteMessageLiked`, `subscribeToWorkspaceChats`, `startWorkspaceChatPolling`. ClaudeWorkspaceChat hydrates local always; live remote + initial claim/pull only when signed in; `WIM_IDENTITY_EVENT` restarts live sync + claim/pull after login.
+- **Preserved:** `adoptGuestChatsIntoAccount`, `claimDeviceAccountOnLogin`, post-login `pushDirtyLocalChats` (via syncFromRemote).
+- **Files:** `src/lib/chat-remote.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `tests/chat-guest-sync-gate.spec.ts`, `docs/architecture/NOTEBOOK_MULTI_DEVICE.md`, `docs/architecture/WIM_AI.md`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/chat-guest-sync-gate.spec.ts tests/notebook-guest-sync-gate.spec.ts`
+- **Residual:** Legacy device-bound remote chat rows (if any from before this gate) still need claim-on-login; guests with no prior cloud rows are local-only by design. Share/like remote APIs remain signed-in-only (same gate).
+- **CI unblock (tiny, same PR):** `lint:shell` was red on main — empty `releaseLock` in `anthropic.test.ts` + `eslint-disable` for missing `react-hooks/exhaustive-deps` in `useWindowRegistry.ts`.
 
 ### 2026-09-23 — Antigravity (feat: standardize WIM AI and Notebook loading to taskbar music IconSpinner)
 - **Scope:** Clean, distraction-free loading state across all WIM AI and Notebook entry points.

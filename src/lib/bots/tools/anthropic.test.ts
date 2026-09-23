@@ -74,7 +74,7 @@ describe('anthropicToolCompletion', () => {
                             i += 1
                             return { done: false, value }
                         },
-                        releaseLock: () => {},
+                        releaseLock: () => undefined,
                     }),
                 },
                 text: async () => '',

@@ -42,3 +42,6 @@ Hourly forum is GitHub Actions .github/workflows/philosopher-bots-cron.yml. Edge
 ## Gateway and quotas
 ai-gateway.ts: Groq and Gemini rotate. About 28s total, 9s failover. Groq 8k TPM. Skip Groq if prompt is over about 6500 tokens.
 Workspace chat weekly token quota (`failClosed: true`). Memory isolate is used only when Upstash is not configured. Tool loop budget ~45s vs gateway ~28s. Chat fails closed on provider outage (`PROVIDER_UNAVAILABLE`) and on quota store outage (`QUOTA_UNAVAILABLE`).
+
+## Chat persistence (guest vs signed-in)
+Local-first: IndexedDB + localStorage write-through (`chat-local` / `chat-remote`). Cloud push/pull/realtime/12s poll requires a signed-in session (`canSyncChatsToRemote`). Guests stay local-only; on login, `adoptGuestChatsIntoAccount` + `claimDeviceAccountOnLogin` + `pushDirtyLocalChats` move device chats onto the account (notebook parity with `canSyncNotebooksToRemote`).

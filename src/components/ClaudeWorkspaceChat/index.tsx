@@ -94,6 +94,7 @@ import { extractNotebookId, notebookWindowPath, windowPathMatches } from '../../
 import { dispatchNotebookOsEvent } from '../../lib/notebook-os-dispatch';
 import {
   adoptGuestChatsIntoAccount,
+  canSyncChatsToRemote,
   chatAuthHeaders,
   chatAuthHeadersFresh,
   claimDeviceAccountOnLogin,
@@ -702,11 +703,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         /* IDB unavailable — LS cold start already applied */
       }
     })()
-    void syncFromRemote(true)
 
     let pullTimer: number | undefined
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const schedulePull = (payload?: any) => {
+      if (!canSyncChatsToRemote()) return
       if (payload?.table === 'wim_chat_messages' && payload.new?.chat_id) {
          const chatId = String(payload.new.chat_id)
          if (!knownChatIdsRef.current.has(chatId)) return
@@ -723,22 +724,41 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
 
     let isRealtimeActive = false
+    let stopRealtime = () => {}
+    let stopPolling = () => {}
+    const startLiveRemote = () => {
+      stopRealtime()
+      stopPolling()
+      isRealtimeActive = false
+      // Guests: local IndexedDB/localStorage only — no realtime/poll/push egress.
+      if (!canSyncChatsToRemote()) return
+      stopRealtime = subscribeToWorkspaceChats(schedulePull, (status) => {
+        isRealtimeActive = status === 'SUBSCRIBED'
+      })
+      stopPolling = startWorkspaceChatPolling(() => {
+        if (!isRealtimeActive) schedulePull()
+      })
+    }
+
+    // Signed-in only: claim + pull + live sync. Guests stay local until login.
+    if (canSyncChatsToRemote()) {
+      void syncFromRemote(true)
+    }
+    startLiveRemote()
+
     const onIdentity = () => {
       adoptGuestChatsIntoAccount()
       persistOwnerRef.current = getChatStorageKey()
       const stored = readLocalChats<Chat[]>([])
       // Keep sticky messages mounted across owner-key swap; do not pin-to-bottom unless chat id changes.
       setChats(settleInterruptedStreams(Array.isArray(stored) ? stored : []))
-      void syncFromRemote(true)
+      startLiveRemote()
+      if (canSyncChatsToRemote()) {
+        void syncFromRemote(true)
+      }
     }
 
     window.addEventListener(WIM_IDENTITY_EVENT, onIdentity)
-    const stopRealtime = subscribeToWorkspaceChats(schedulePull, (status) => {
-      isRealtimeActive = status === 'SUBSCRIBED'
-    })
-    const stopPolling = startWorkspaceChatPolling(() => {
-      if (!isRealtimeActive) schedulePull()
-    })
 
     return () => {
       cancelled = true
