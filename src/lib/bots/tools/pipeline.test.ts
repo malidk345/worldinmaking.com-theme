@@ -12,6 +12,7 @@ import {
     PLAN_RESEARCH_CLUSTER_N,
     PUBLIC_CONTINUE_NUDGE,
     runAgentNodePipeline,
+    shareInflight,
     thinkInstructionFor,
     THINK_MAX_TOKENS,
     THINK_TIMEOUT_MS,
@@ -744,5 +745,39 @@ describe('model3d compaction + weaker enrich guard', () => {
         }
         expect(isWeakerModel3dRevision(enrich, scaffold)).toBe(true)
         expect(isWeakerModel3dRevision(scaffold, enrich)).toBe(false)
+    })
+})
+
+describe('shareInflight web_search parallel dedupe', () => {
+    it('shares one factory across concurrent identical keys', async () => {
+        let runs = 0
+        const map = new Map<string, Promise<number>>()
+        const factory = () =>
+            new Promise<number>((resolve) => {
+                runs += 1
+                setTimeout(() => resolve(42), 5)
+            })
+        const [a, b] = await Promise.all([
+            shareInflight(map, 'web_search:nietzsche', factory),
+            shareInflight(map, 'web_search:nietzsche', factory),
+        ])
+        expect(a).toBe(42)
+        expect(b).toBe(42)
+        expect(runs).toBe(1)
+        expect(map.size).toBe(0)
+    })
+
+    it('allows a later call after the first settles (cache layer owns reuse)', async () => {
+        let runs = 0
+        const map = new Map<string, Promise<string>>()
+        const factory = () => {
+            runs += 1
+            return Promise.resolve(`run-${runs}`)
+        }
+        const first = await shareInflight(map, 'web_search:q', factory)
+        const second = await shareInflight(map, 'web_search:q', factory)
+        expect(first).toBe('run-1')
+        expect(second).toBe('run-2')
+        expect(runs).toBe(2)
     })
 })

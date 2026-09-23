@@ -17,9 +17,13 @@ test.describe('Fail-closed nacks are present', () => {
     const footnoteFn = src.slice(footnoteStart, footnoteEnd);
     expect(footnoteFn).toContain("error: 'span_not_found'");
     expect(footnoteFn).toContain("error: 'selection_not_found'");
-    // Fail-closed: no silent append-to-end of footnote anchor
+    expect(footnoteFn).toContain("error: 'selection_ambiguous'");
+    expect(footnoteFn).toContain('findUniqueMatch');
+    // Fail-closed: no silent append-to-end of footnote anchor; no first-hit indexOf
     expect(footnoteFn).not.toContain('${footnoteAnchor}\n\n');
     expect(footnoteFn).not.toContain('fnMatch');
+    expect(footnoteFn).not.toContain('indexOf(spanText)');
+    expect(footnoteFn).not.toContain('indexOf(selection)');
   });
 
   test('replace selection uses Diff Apply unique-match parity', async () => {
