@@ -1435,11 +1435,31 @@ export function executeExportNotebook(
     host?: HostSnapshot
 ): { ok: boolean; result: string; artifact?: ArtifactDocument } {
     const requested = (notebookId || '').trim()
-    const targetId = requested || host?.notebookId || host?.notebooks?.[0]?.id || ''
-    const match = host?.notebooks?.find((n) => n.id === targetId || n.title.toLowerCase() === requested.toLowerCase())
+    const notebooks = host?.notebooks || []
+    // Explicit id/title: fail-closed when missing (same class as notebook write no_target —
+    // never silently export selection/empty under a wrong id).
+    let match = requested
+        ? notebooks.find(
+              (n) => n.id === requested || n.title.toLowerCase() === requested.toLowerCase()
+          )
+        : undefined
+    if (requested && !match) {
+        return {
+            ok: false,
+            result: JSON.stringify({
+                ok: false,
+                error: `Notebook "${requested}" not found. Call list_notebooks to see available notebooks.`,
+            }),
+        }
+    }
+    if (!match) {
+        const targetId = host?.notebookId || notebooks[0]?.id || ''
+        match = targetId ? notebooks.find((n) => n.id === targetId) : undefined
+    }
+    const targetId = match?.id || host?.notebookId || notebooks[0]?.id || ''
 
     const title = match?.title || host?.notebookTitle || 'Exported Notebook'
-    const rawContent = match?.content || host?.selection || '(Empty Notebook)'
+    const rawContent = match?.content || (!requested ? host?.selection : undefined) || '(Empty Notebook)'
     const content = processFootnotes(rawContent, includeFootnotes)
     const fmt = format.toLowerCase().trim() || 'markdown'
 

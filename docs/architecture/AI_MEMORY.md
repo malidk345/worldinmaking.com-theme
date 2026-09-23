@@ -51,12 +51,27 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IDLE]`
-- **Task:** —
+- **Status:** `[IN PROGRESS]`
+- **Task:** Harden post-#823 — Continue×pending-human gate + export_notebook fail-closed missing id (Grok Bot / Cursor)
+- **Owner:** Grok Bot / Cursor
+- **Started:** 2026-09-23
 
 ---
 
 ## 5. AI Change History & Log
+
+
+### 2026-09-23 — Grok Bot / Cursor (harden: Continue×human gate + export_notebook fail-closed)
+
+- **Scope:** P0 HARDEN-ONLY after #823 — survey Chat continue/interrupt + notebook READ/export; no memo polish, no plan soft-gate invent, no iOS/THINK.
+- **Survey (file evidence):** Continue/human-interrupt resume + stop→partial + preferLocal + guest gate + share/like + demux abort-before-finish + searchInflight + academic abort + finalize_plan soft gate look solid. Plan soft gates architectural. Residuals still P2 iOS theme-color / mid-cluster THINK.
+- **Bugs fixed:**
+  1. **Continue × pending humanTurn:** `continueHandlerForMessages` only gated execute-plan busy. An older `stopped` message still offered Continue while ask_user/plan_approval was pending — click sent `Continue.` into `handleSendMessage`, which answers pending `ask_user` with that literal (or starts a parallel stream during plan_approval). Now hide Continue whenever `pendingHumanTurn` is set (parity with next-section chip).
+  2. **export_notebook missing-id fail-open:** supplied but unknown `notebookId` still `ok:true` and exported `host.selection` / empty under the wrong id (READ sibling of #818–#823 write fail-open). Now fail-closed `not found`; selection fallback only when no id was requested.
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `tools/execute.ts`, `tests/harden-desk-paths.spec.ts`, `execute-roadmap-tools.test.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; vitest export fail-closed; `pnpm exec playwright test tests/harden-desk-paths.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked; academic parallel inflight (web_search-only today) optional later.
+
 
 ### 2026-09-23 — Grok Bot / Cursor (harden: notebook write-handler audit + adopt title parity)
 

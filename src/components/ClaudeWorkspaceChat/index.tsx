@@ -3221,14 +3221,16 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     void handleSendMessageRef.current('Continue.', [])
   }, [])
 
-  // Hide Continue while execute-mode plan still has open steps (same gate as before).
+  // Hide Continue while a human turn is pending (Continue. would answer ask_user /
+  // or start a parallel stream during plan_approval) or execute-mode plan still has open steps.
   const continueHandlerForMessages = useMemo(() => {
+    if (pendingHumanTurn) return undefined
     const mode = activeChat?.agentMode || 'ask'
     const plan = activeChat?.activePlan || []
     const planBusy =
       mode === 'execute' && plan.some((item) => item.status === 'in_progress' || item.status === 'pending')
     return planBusy ? undefined : handleContinueFromMessage
-  }, [activeChat?.agentMode, activeChat?.activePlan, handleContinueFromMessage])
+  }, [pendingHumanTurn, activeChat?.agentMode, activeChat?.activePlan, handleContinueFromMessage])
 
   const handleSelectChatFromSidebar = useCallback(
     (id: string) => {
