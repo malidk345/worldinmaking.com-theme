@@ -682,6 +682,7 @@ export function useWindowRegistry({
 
         const key = item.key || item.path
         const path = canonicalWindowPath(item.path || '/')
+        const alreadyOpen = windowsRef.current.some((w) => w.key === key || w.path === path)
         if (path === '/login' || path.startsWith('/login')) {
             setAuthModalView('sign-in')
             setIsAuthModalOpen(true)
@@ -766,15 +767,16 @@ export function useWindowRegistry({
                     w.key === existing.key
                         ? {
                               ...w,
+                              path,
                               zIndex: maxZ + 1,
                               minimized: false,
                               ...(refreshPreview
                                   ? {
                                         element: item.element ?? w.element,
                                         title: item.title || w.title,
-                                        props: { ...w.props, ...(item.props || {}) },
+                                        props: { ...w.props, ...(item.props || {}), path },
                                     }
-                                  : {}),
+                                  : { props: { ...w.props, path } }),
                               ...applySnapOverrides(w),
                           }
                         : w
@@ -863,7 +865,7 @@ export function useWindowRegistry({
             return [...prev, newWin]
         })
 
-        if (typeof window !== 'undefined' && window.history) {
+        if (!alreadyOpen && typeof window !== 'undefined' && window.history) {
             try {
                 window.history.pushState({ windowKey: key }, '', path)
             } catch (e) {

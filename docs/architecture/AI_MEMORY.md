@@ -52,13 +52,21 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok 4.7]`
-- **Task:** WIM AI — model web search reads top pages; Ask AI composer tracks the keyboard. Remote #810 is in.
+- **Task:** Shell notebook bind, already-open window focus, and cobalt chrome fallback are on main with the WIM AI commits.
 
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-23 — Grok 4.7 (fix: shell wallpaper fallback, window focus, notebook bind)
+- **Scope:** Shell only. Cherry-picked onto current main. Did not edit `/api/chat`, `orchestrate.ts`, `tools/loop.ts`, `execute.ts`.
+- **Wallpaper:** Unqualified `html` / `html.dark` chrome tokens were still keyboard-mint after the product default moved to cobalt. Mint and hogzilla stops were not changed. `\` wallpaper cycle calls `applyWallpaperBrowserChrome` once, then sets `data-wallpaper`.
+- **Windows:** Already-open notebooks go through `addWindow`, which raises z-index, clears minimized, and adopts the path. A second open does not `pushState`.
+- **Notebook bind:** Bind is written to localStorage as well as sessionStorage. Sending stamps a missing `notebookId` and does not replace an existing id.
+- **Files:** `global.css`, `App.tsx`, `useWindowRegistry.ts`, `open-notebook-window.ts`, `notebook-chat-bind.ts`, `ClaudeWorkspaceChat/index.tsx`, tests, `AI_MEMORY.md`
+- **Verify:** cherry-pick auto-merged; duplicate wallpaper `const` from overlapping #810 edit was removed before commit.
 
 ### 2026-09-23 — Grok Bot / Cursor (harden: abort/host-search + dual-device chat fields + wallpaper cycle chrome)
 

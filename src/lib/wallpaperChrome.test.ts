@@ -162,6 +162,17 @@ describe('every kept wallpaper has chrome coverage', () => {
         expect(mobileCss).toContain('safe-area-inset-top')
         expect(mobileCss).toContain('safe-area-inset-bottom')
     })
+
+    it('unqualified html chrome fallback matches DEFAULT_WALLPAPER, not leftover keyboard-mint', () => {
+        const light = WALLPAPER_FIELDS[DEFAULT_WALLPAPER].light
+        const dark = WALLPAPER_FIELDS[DEFAULT_WALLPAPER].dark
+        const css = globalCss.replace(/\r\n/g, '\n')
+        expect(css).toContain(`--browser-chrome: ${light.top.toLowerCase()};`)
+        expect(css).toContain(`--browser-chrome-field: ${light.css.toLowerCase()};`)
+        expect(css).toContain(`html.dark {\n    --browser-chrome: ${dark.top.toLowerCase()};`)
+        expect(css).toContain("html[data-wallpaper='keyboard-mint']")
+        expect(css).not.toMatch(/html \{\s*--browser-chrome: #4a8f7c;/)
+    })
 })
 
 

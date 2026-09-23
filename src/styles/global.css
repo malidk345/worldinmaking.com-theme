@@ -572,14 +572,15 @@
 }
 
 html {
-    --browser-chrome: #4a8f7c;
-    --browser-chrome-bottom: #74b8a8;
-    --browser-chrome-field: linear-gradient(180deg, #4a8f7c 0%, #5fa996 42%, #74b8a8 100%);
+    /* Unqualified fallback must match DEFAULT_WALLPAPER (cobalt), not keyboard-mint. */
+    --browser-chrome: #2f7ed4;
+    --browser-chrome-bottom: #5eb0f0;
+    --browser-chrome-field: linear-gradient(180deg, #2f7ed4 0%, #4a9ee6 42%, #5eb0f0 100%);
 }
 html.dark {
-    --browser-chrome: #2e6b5c;
-    --browser-chrome-bottom: #4e9a86;
-    --browser-chrome-field: linear-gradient(180deg, #2e6b5c 0%, #3f8572 50%, #4e9a86 100%);
+    --browser-chrome: #1e5dad;
+    --browser-chrome-bottom: #3d8fdc;
+    --browser-chrome-field: linear-gradient(180deg, #1e5dad 0%, #2f7ed4 50%, #3d8fdc 100%);
 }
 html[data-wallpaper='keyboard-mint'] {
     --browser-chrome: #4a8f7c;

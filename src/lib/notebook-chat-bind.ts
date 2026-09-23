@@ -6,29 +6,75 @@ export type NotebookChatBind = {
 const STORAGE_KEY = 'wim_chat_notebook_bind'
 export const NOTEBOOK_CHAT_BIND_EVENT = 'wimNotebookChatBind'
 
-export function readNotebookChatBind(): NotebookChatBind | null {
-    if (typeof window === 'undefined') return null
+function bindStores(): Storage[] {
+    if (typeof window === 'undefined') return []
+    const stores: Storage[] = []
     try {
-        const raw = sessionStorage.getItem(STORAGE_KEY)
-        if (!raw) return null
+        if (window.sessionStorage) stores.push(window.sessionStorage)
+    } catch {
+        /* private mode */
+    }
+    try {
+        if (window.localStorage) stores.push(window.localStorage)
+    } catch {
+        /* private mode */
+    }
+    return stores
+}
+
+function parseBind(raw: string | null): NotebookChatBind | null {
+    if (!raw) return null
+    try {
         const parsed = JSON.parse(raw) as NotebookChatBind
         if (!parsed?.notebookId || typeof parsed.notebookId !== 'string') return null
-        return parsed
+        return { notebookId: parsed.notebookId, title: parsed.title }
     } catch {
         return null
     }
 }
 
+export function readNotebookChatBind(): NotebookChatBind | null {
+    for (const store of bindStores()) {
+        try {
+            const parsed = parseBind(store.getItem(STORAGE_KEY))
+            if (parsed) return parsed
+        } catch {
+            /* ignore */
+        }
+    }
+    return null
+}
+
 export function bindNotebookChat(bind: NotebookChatBind): void {
-    if (typeof window === 'undefined') return
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(bind))
+    if (typeof window === 'undefined' || !bind?.notebookId) return
+    const payload = JSON.stringify({ notebookId: bind.notebookId, title: bind.title })
+    for (const store of bindStores()) {
+        try {
+            store.setItem(STORAGE_KEY, payload)
+        } catch {
+            /* quota */
+        }
+    }
     window.dispatchEvent(new CustomEvent(NOTEBOOK_CHAT_BIND_EVENT, { detail: bind }))
 }
 
 export function clearNotebookChatBind(): void {
     if (typeof window === 'undefined') return
-    sessionStorage.removeItem(STORAGE_KEY)
+    for (const store of bindStores()) {
+        try {
+            store.removeItem(STORAGE_KEY)
+        } catch {
+            /* ignore */
+        }
+    }
     window.dispatchEvent(new CustomEvent(NOTEBOOK_CHAT_BIND_EVENT, { detail: null }))
+}
+
+/** Stamp a missing notebook id onto a chat row so reload and the other device can rehydrate. Does not replace an existing id. */
+export function withNotebookBind<T extends { notebookId?: string }>(chat: T, notebookId?: string | null): T {
+    const id = typeof notebookId === 'string' ? notebookId.trim() : ''
+    if (!id || chat.notebookId) return chat
+    return { ...chat, notebookId: id }
 }
 
 export function extractNotebookOutline(markdown: string, limit = 12): string[] {

@@ -54,6 +54,7 @@ import {
   buildNotebookAgentContext,
   readNotebookChatBind,
   readNotebookSelection,
+  withNotebookBind,
 } from '../../lib/notebook-chat-bind';
 import { IconDocument } from '@posthog/icons';
 import { messageToNotebookMarkdown } from '../../lib/notebook-artifact-block';
@@ -1321,23 +1322,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       prev.map((c) => {
         if (c.id === targetChatId) {
           if (continued) {
-            return {
+            return withNotebookBind({
               ...c,
               agentMode: turnAgentMode,
               updatedAt: new Date().toISOString(),
               messages: c.messages.map((message) => (message.id === assistantMessageId ? assistantMessage : message)),
-            }
+            }, notebookBind?.notebookId)
           }
           const nextMessages = options?.skipUserAppend
             ? [...baseMessages, assistantMessage]
             : [...baseMessages, userMessage, assistantMessage];
           const isFirstUserMsg = baseMessages.length === 0;
-          return {
+          return withNotebookBind({
             ...c,
             title: isFirstUserMsg ? promptText.slice(0, 32) || attachments[0]?.name || 'New chat' : c.title,
             updatedAt: new Date().toISOString(),
             messages: nextMessages,
-          };
+          }, notebookBind?.notebookId);
         }
         return c;
       })

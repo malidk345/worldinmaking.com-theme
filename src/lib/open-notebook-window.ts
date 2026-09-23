@@ -6,7 +6,6 @@ export function openNotebookWindow({
     windows,
     isMobile,
     addWindow,
-    updateWindow,
     mark,
 }: {
     notebookId: string
@@ -14,7 +13,8 @@ export function openNotebookWindow({
     windows: AppWindow[]
     isMobile?: boolean
     addWindow: (item: Record<string, unknown>) => void
-    updateWindow: (windowItem: AppWindow, updates: Partial<AppWindow>) => void
+    /** Kept so existing call sites typecheck. Focus goes through addWindow — mergeWindowUpdate drops minimized/focused. */
+    updateWindow?: (windowItem: AppWindow, updates: Partial<AppWindow>) => void
     mark?: 'mention' | 'comment' | string
 }): void {
     const suffix = mark ? `?mark=${encodeURIComponent(mark)}` : ''
@@ -24,7 +24,11 @@ export function openNotebookWindow({
     )
 
     if (existing) {
-        updateWindow(existing, { minimized: false, focused: true, path: targetPath })
+        addWindow({
+            key: existing.key || `notebook-${notebookId}`,
+            path: targetPath,
+            title: notebookTitle || existing.title || 'Notebook',
+        })
         return
     }
 

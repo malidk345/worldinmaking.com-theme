@@ -1402,8 +1402,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 // Cycle to next wallpaper (wrap around to first if at end)
                 const nextIndex = (currentIndex + 1) % themeOptions.length
                 const nextWallpaper = themeOptions[nextIndex]
-
-                const wallpaper = nextWallpaper.value as SiteSettings['wallpaper']
+                const wallpaper = resolveKeptWallpaper(nextWallpaper.value) as SiteSettings['wallpaper']
                 // Paint scene attrs + browser chrome in the same turn (DisplayOptions parity).
                 applyWallpaperBrowserChrome({
                     wallpaper,
