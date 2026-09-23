@@ -31,4 +31,11 @@ test.describe('API Security Defenses', () => {
         const response = await request.get('/api/search?q=test')
         expect(response.status()).toBe(200)
     })
+
+    test('chat-quota endpoint rejects unauthenticated requests with 401', async ({ request }) => {
+        const response = await request.get('/api/chat-quota')
+        expect(response.status()).toBe(401)
+        const body = await response.json()
+        expect(body).toEqual({ error: 'sign in required' })
+    })
 })

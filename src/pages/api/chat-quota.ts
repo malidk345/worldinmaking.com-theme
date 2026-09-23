@@ -21,12 +21,14 @@ export default async function handler(req: Request) {
 
     try {
         const user = await getSupabaseUserFromRequest(req)
-        const isPro = user ? isUserPro(user as any) : false
+        if (!user) return json({ error: 'sign in required' }, 401)
+
+        const isPro = isUserPro(user as any)
         const clientIp = getClientIp(req)
         const isDev = process.env.NODE_ENV === 'development' || clientIp === '127.0.0.1' || clientIp === '::1'
 
-        const tier: UserTier = isDev ? 'dev' : isPro ? 'pro' : user ? 'member' : 'guest'
-        const quotaSubject = user ? `user:${user.id}` : `ip:${clientIp}`
+        const tier: UserTier = isDev ? 'dev' : isPro ? 'pro' : 'member'
+        const quotaSubject = `user:${user.id}`
 
         const quota = await getTokenQuota(quotaSubject, tier)
         return json(quota as any, 200)
