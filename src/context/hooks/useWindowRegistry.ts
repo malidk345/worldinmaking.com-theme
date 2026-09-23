@@ -69,13 +69,9 @@ export function useWindowRegistry({
 }: UseWindowRegistryOptions) {
     const layoutRestoredRef = useRef(false)
     const addWindowRef = useRef<(item: WindowElement | React.ReactElement) => void>()
-    const [windowsInView, setWindowsInView] = useState<AppWindow[]>([])
     // Stable ref mirror of windowsInView so consumers that only need the latest value
     // lazily can read it without subscribing to the volatile context and re-rendering on every provider render.
-    const windowsInViewRef = useRef(windowsInView)
-    useEffect(() => {
-        windowsInViewRef.current = windowsInView
-    }, [windowsInView])
+    const windowsInViewRef = useRef<AppWindow[]>([])
     const [windows, setWindows] = useState<AppWindow[]>(() => {
         const rawPath = location?.pathname || '/'
         if (rawPath === '/' || rawPath === '/desktop') {
@@ -200,6 +196,9 @@ export function useWindowRegistry({
         window.addEventListener('pagehide', flush)
         return () => window.removeEventListener('pagehide', flush)
     }, [persistWindowLayout])
+    const desktopLayoutKey = windows
+        .map((win) => `${win.key}:${win.path}:${win.zIndex}:${win.snapped || ''}:${win.minimized ? 1 : 0}`)
+        .join('|')
     const desktopParams = useMemo(() => {
         if (isSSR) return undefined
         const innerWidth = window.innerWidth
@@ -232,7 +231,9 @@ export function useWindowRegistry({
         }
 
         return `${location.pathname}?${qs.stringify(allParams, { encode: false })}`
-    }, [windows, taskbarHeight, location, isSSR])
+        // Positions change every drag frame. The share string only needs structure.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [desktopLayoutKey, taskbarHeight, location, isSSR])
 
     useEffect(() => {
         const handleArrangeWorkspace = (e: Event) => {
@@ -1110,7 +1111,7 @@ export function useWindowRegistry({
         }
     }, [stateWindows])
 
-    useEffect(() => {
+    const windowsInView = useMemo(() => {
         const visibleWindows = windows.filter((window) => {
             if (window.minimized) return false
             if (window.expanded) return true
@@ -1140,8 +1141,8 @@ export function useWindowRegistry({
             const coverageRatio = currentArea > 0 ? coveredArea / currentArea : 0
             return coverageRatio < 0.8
         })
-
-        setWindowsInView(visibleWindows)
+        windowsInViewRef.current = visibleWindows
+        return visibleWindows
     }, [windows])
 
     // Keep addWindow ref fresh for registry-owned listeners (wimArrangeWorkspace)
