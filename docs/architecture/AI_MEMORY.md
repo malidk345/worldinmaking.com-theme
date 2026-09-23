@@ -58,6 +58,19 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: archive/dismiss/history identity residuals)
+
+- **Scope:** #832 audit residuals (same identity-leak class, not AI-fed). HARDEN-ONLY. Skip THINK / iOS.
+- **Shipped:**
+  1. **`wim_os_archived_items_v2`** — owner-namespaced (`archive-storage.ts` + ArchiveContext reload on `WIM_IDENTITY_EVENT`); freeform `note` was cross-account content. Guest-only legacy migrate.
+  2. **`wim_dismissed_notebook_notes`** — owner-namespaced in `wim-notifications.ts`; global dismiss set could suppress next account's invites/collabs. Guest-only legacy.
+  3. **`wim_notebook_history_{id}`** — clear-on-identity-owner-change via `notebook-history-identity.ts` (same-owner token refresh keeps). Not namespaced: keys are per notebook id across push/pull/trash; clear is safer than renaming every path.
+- **Left alone:** theme/chrome/pins/presence intentional device globals (no cross-account content proven).
+- **Files:** `archive-storage.ts`(+test), `ArchiveContext.tsx`, `wim-notifications.ts`(+dismiss test), `notebook-history-identity.ts`(+test), `notebookStorage.ts` re-export, `notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm run typecheck:shell`; vitest archive-storage|wim-notifications-dismiss|notebook-history-identity|workspace-local|notebook-chat-bind|scratchpad-store
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked (product).
+
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: AI digest + notebook LS owner scope)
 
 - **Scope:** COMPLETE AUDIT of localStorage/sessionStorage (WIM AI + notebook + workspace) after #831. HARDEN-ONLY. Skip THINK / iOS.

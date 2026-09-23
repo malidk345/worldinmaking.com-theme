@@ -11,6 +11,12 @@ import { matchPhilosopherId } from './philosopher-avatar'
 import { dismissAssistantNotice, isAssistantNoticeId, listAssistantNotifications } from './assistant-notices'
 import { notebookNotificationUrl } from './notebook-notification-url'
 import { PHILOSOPHER_BOTS } from '../notebook-app/lib/philosophers'
+import {
+    DEVICE_NOTEBOOK_OWNER_KEY,
+    getActiveOwnerKey,
+    getAuthUserId,
+    namespacedStorageKey,
+} from './wim-identity'
 
 export type WimNotification = {
     id: number | string
@@ -40,15 +46,43 @@ type NotificationRow = {
     created_at: string
 }
 
-const DISMISSED_NOTEBOOK_NOTIFICATIONS_KEY = 'wim_dismissed_notebook_notes'
+/** Base key — always read/write via `getDismissedNotebookNotesStorageKey()` (owner-namespaced). */
+export const DISMISSED_NOTEBOOK_NOTIFICATIONS_BASE = 'wim_dismissed_notebook_notes'
+
+export function getDismissedNotebookNotesStorageKey(): string {
+    return namespacedStorageKey(DISMISSED_NOTEBOOK_NOTIFICATIONS_BASE, getActiveOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY))
+}
+
+function parseDismissedIds(raw: string | null): Set<string> {
+    if (!raw) return new Set()
+    try {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) return new Set(parsed.map(String))
+    } catch {
+        /* ignore */
+    }
+    return new Set()
+}
 
 function getDismissedNotebookNotificationIds(): Set<string> {
     if (typeof window === 'undefined') return new Set()
     try {
-        const raw = localStorage.getItem(DISMISSED_NOTEBOOK_NOTIFICATIONS_KEY)
-        if (!raw) return new Set()
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed)) return new Set(parsed.map(String))
+        const fromNs = parseDismissedIds(window.localStorage.getItem(getDismissedNotebookNotesStorageKey()))
+        if (fromNs.size > 0) return fromNs
+        // Never copy a previous guest/account dismiss set into a signed-in user.
+        if (getAuthUserId()) return new Set()
+        const legacy = parseDismissedIds(window.localStorage.getItem(DISMISSED_NOTEBOOK_NOTIFICATIONS_BASE))
+        if (legacy.size > 0) {
+            try {
+                window.localStorage.setItem(
+                    getDismissedNotebookNotesStorageKey(),
+                    JSON.stringify(Array.from(legacy).slice(-200))
+                )
+            } catch {
+                /* quota */
+            }
+            return legacy
+        }
     } catch {
         /* ignore */
     }
@@ -61,7 +95,7 @@ function markDismissedNotebookNotificationId(id: string): void {
         const set = getDismissedNotebookNotificationIds()
         set.add(String(id))
         const arr = Array.from(set).slice(-200)
-        localStorage.setItem(DISMISSED_NOTEBOOK_NOTIFICATIONS_KEY, JSON.stringify(arr))
+        window.localStorage.setItem(getDismissedNotebookNotesStorageKey(), JSON.stringify(arr))
     } catch {
         /* ignore */
     }
