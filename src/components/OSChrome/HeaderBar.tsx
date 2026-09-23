@@ -18,7 +18,7 @@ import { IconPDF } from 'components/OSIcons'
 import { useWindow } from '../../context/Window'
 import SearchBar from 'components/Editor/SearchBar'
 import Tooltip from 'components/RadixUI/Tooltip'
-import { useApp } from '../../context/App'
+import { useAppSettings, useAppWindows } from '../../context/App'
 import { HeaderCartButton } from './HeaderCartButton'
 import { exportToPdf as exportPresentationToPdf } from '../../lib/exportToPdf'
 import Loading from 'components/Loading'
@@ -103,7 +103,8 @@ export default function HeaderBar({
     onOrderHistoryClose,
     className = '',
 }: HeaderBarProps) {
-    const { compact, focusedWindow } = useApp()
+    const { compact } = useAppSettings()
+    const { focusedWindow } = useAppWindows()
     const { goBack, goForward, canGoBack, canGoForward, appWindow, menu } = useWindow()
     const [searchOpen, setSearchOpen] = useState(false)
     const [isExportingPdf, setIsExportingPdf] = useState(false)

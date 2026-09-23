@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { LEGAL_PATHS } from 'lib/legal-paths'
 import type { AppWindow } from '../../context/Window'
 import { WINDOW_BG } from '../../constants/frostedSurfaces'
-import { useApp } from '../../context/App'
+import { useAppActions } from '../../context/App'
 import { Spinner } from '../Spinner'
 import { useWindow } from '../../context/Window'
 import { isAskAiPath } from '../../lib/open-ask-ai-window'
@@ -88,7 +88,7 @@ export interface WindowRouterProps {
 
 function AuthWindow() {
     const { appWindow } = useWindow()
-    const { closeWindow } = useApp()
+    const { closeWindow } = useAppActions()
     return (
         <WimAuthPortal
             onSuccess={() => {

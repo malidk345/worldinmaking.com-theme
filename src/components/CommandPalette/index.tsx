@@ -9,7 +9,7 @@ import {
     IconArrowRight,
     IconApps,
 } from '@posthog/icons'
-import { useApp, useAppActions, useAppWindows } from '../../context/App'
+import { useAppActions, useAppSettings, useAppWindows } from '../../context/App'
 import { searchSupabasePosts, SupabasePost } from '../../lib/supabaseBlog'
 
 export default function CommandPalette({
@@ -21,7 +21,7 @@ export default function CommandPalette({
 }) {
     const { windows } = useAppWindows()
     const { addWindow, updateWindow, updateSiteSettings } = useAppActions()
-    const { siteSettings } = useApp()
+    const { siteSettings } = useAppSettings()
 
     const [query, setQuery] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)

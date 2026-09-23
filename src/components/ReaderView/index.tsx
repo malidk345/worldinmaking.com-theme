@@ -116,7 +116,7 @@ import { isMarkdownContentPath } from '../../constants'
 
 import { PANEL_BG } from 'constants/frostedSurfaces'
 import { useWindow } from 'context/Window'
-import { MenuItem, useApp } from 'context/App'
+import { MenuItem, useAppSettings } from 'context/App'
 import { useActiveFeatureFlags, filterMenuByFlags } from 'hooks/useActiveFeatureFlags'
 import { Questions } from 'components/Squeak'
 import { DocsPageSurvey } from 'components/DocsPageSurvey'
@@ -1610,7 +1610,7 @@ function ReaderViewContent({
     className = '',
     stickyHeader,
 }: ReaderViewProps) {
-    const { compact } = useApp()
+    const { compact } = useAppSettings()
     const { appWindow, activeInternalMenu } = useWindow()
     const { hash } = useLocation()
     const contentRef = useRef<HTMLDivElement>(null)

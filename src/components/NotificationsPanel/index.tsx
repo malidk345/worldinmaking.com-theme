@@ -7,7 +7,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useApp } from '../../context/App'
+import { useAppActions, useAppSettings, useAppUIState } from '../../context/App'
 import * as Portal from '@radix-ui/react-portal'
 import { dismissUserNotification } from 'lib/wim-notifications'
 import { notebookNotificationUrl } from 'lib/notebook-notification-url'
@@ -129,7 +129,9 @@ const Achievement = ({ date, title, points, onItemClick, onDismiss }: Achievemen
 
 export default function NotificationsPanel() {
     const { notifications, setNotifications, fetchUser, user } = useUser()
-    const { isNotificationsPanelOpen, setIsNotificationsPanelOpen, taskbarHeight, taskbarRef } = useApp()
+    const { setIsNotificationsPanelOpen, taskbarRef, addWindow } = useAppActions()
+    const { isNotificationsPanelOpen } = useAppUIState()
+    const { taskbarHeight } = useAppSettings()
     const panelRef = useRef<HTMLDivElement>(null)
 
     const taskbarRect = taskbarRef.current?.getBoundingClientRect()
@@ -144,7 +146,6 @@ export default function NotificationsPanel() {
               }
 
     const router = useRouter()
-    const { addWindow } = useApp()
 
     const closeNotificationsPanel = () => {
         setIsNotificationsPanelOpen(false)

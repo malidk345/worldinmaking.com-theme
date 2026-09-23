@@ -16,7 +16,7 @@ import { useWindow } from '../../context/Window'
 import { getProseClasses } from '../../constants'
 import AddressBar from 'components/OSChrome/AddressBar'
 import Fuse from 'fuse.js'
-import { useApp } from '../../context/App'
+import { useAppSettings } from '../../context/App'
 import OrderHistory from 'components/Merch/OrderHistory'
 import { useUser } from 'hooks/useUser'
 import MobileDrawer from 'components/MobileDrawer'
@@ -197,7 +197,7 @@ export default function Collection(props: CollectionProps): React.ReactElement {
     const [asideWidth, setAsideWidth] = useState(defaultAsideWidth)
     const [orders, setOrders] = useState([])
     const { appWindow } = useWindow()
-    const { isMobile: appIsMobile } = useApp()
+    const { isMobile: appIsMobile } = useAppSettings()
     const { getJwt, user } = useUser()
     const isMobile = appIsMobile || (appWindow?.size?.width && appWindow.size.width <= 768)
     const addToCart = useCartStore((state) => state.update)

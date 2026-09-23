@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { ToggleGroup, ToggleOption } from 'components/RadixUI/ToggleGroup'
 import { IconDay, IconInfo, IconLaptop, IconNight } from '@posthog/icons'
 import { SEO } from 'components/seo'
-import { useApp } from '../../context/App'
+import { useAppActions, useAppSettings } from '../../context/App'
 import type { SiteSettings } from '../../context/App'
 import Tooltip from 'components/RadixUI/Tooltip'
 import useTheme from '../../hooks/useTheme'
@@ -98,7 +98,8 @@ const WallpaperSelect = ({ value, onValueChange, title }: WallpaperSelectProps) 
 }
 
 export default function DisplayOptions(): JSX.Element {
-    const { siteSettings, updateSiteSettings } = useApp()
+    const { siteSettings } = useAppSettings()
+    const { updateSiteSettings } = useAppActions()
 
     const handleColorModeChange = (value: string) => {
         if (typeof window !== 'undefined' && window.__setPreferredTheme) {

@@ -14,7 +14,7 @@ import {
     IconKeyboard,
     IconBrightness,
 } from '@posthog/icons'
-import { useApp, useAppActions } from '../../context/App'
+import { useAppActions, useAppWindows } from '../../context/App'
 
 import MenuBar, { MenuType } from 'components/RadixUI/MenuBar'
 
@@ -34,13 +34,10 @@ function TaskBarMenu() {
         openSearch,
         openSignIn,
         setIsNotificationsPanelOpen,
+        setIsActiveWindowsPanelOpen,
         taskbarRef,
     } = useAppActions()
-    const {
-        windows,
-        isActiveWindowsPanelOpen,
-        setIsActiveWindowsPanelOpen,
-    } = useApp()
+    const { windows, isActiveWindowsPanelOpen } = useAppWindows()
     const totalWindows = windows.length
     const [isAnimating, setIsAnimating] = useState(false)
 
