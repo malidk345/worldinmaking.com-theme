@@ -211,12 +211,12 @@ export function useWindowRegistry({
             .map((win) => ({
                 path: win.path,
                 position: {
-                    x: (win.position.x / innerWidth) * 100,
-                    y: (win.position.y / (innerHeight - taskbarHeight)) * 100,
+                    x: ((win.position?.x || 0) / innerWidth) * 100,
+                    y: ((win.position?.y || 0) / Math.max(1, innerHeight - taskbarHeight)) * 100,
                 },
                 size: {
-                    width: (win.size.width / innerWidth) * 100,
-                    height: (win.size.height / innerHeight) * 100,
+                    width: ((win.size?.width || 0) / innerWidth) * 100,
+                    height: ((win.size?.height || 0) / Math.max(1, innerHeight)) * 100,
                 },
                 zIndex: win.zIndex,
                 snapped: win.snapped,

@@ -54,9 +54,10 @@ export function useWorldSnapshot<TSettings extends WorldSnapshotSettings>({
     layoutRestoredRef,
     getSnapDimensions,
     setVisitingRoomToken,
-    desktopParams,
+    desktopParams: _desktopParams,
     pinEpoch,
 }: UseWorldSnapshotOptions<TSettings>) {
+    void _desktopParams
     const collectSnapshot = useCallback((): WorldSnapshot => {
         const innerWidth = typeof window !== 'undefined' ? window.innerWidth : 1280
         const innerHeight = typeof window !== 'undefined' ? window.innerHeight : 800
@@ -139,9 +140,16 @@ export function useWorldSnapshot<TSettings extends WorldSnapshotSettings>({
         ]
     )
 
+    // Positions live in desktopParams and change on every drag frame. Syncing on
+    // that string re-enters account save/apply for the whole shell. Open windows
+    // and appearance are enough.
+    const windowEpoch = windows
+        .map((win) => `${win.path}:${win.minimized ? 1 : 0}`)
+        .sort()
+        .join(',')
     const worldEpoch = `${siteSettings.wallpaper}|${siteSettings.colorMode}|${
         siteSettings.reduceTransparency ? '1' : '0'
-    }|${siteSettings.clickBehavior || 'double'}|${desktopParams || ''}|${pinEpoch}`
+    }|${siteSettings.clickBehavior || 'double'}|${windowEpoch}|${pinEpoch}`
 
     useWorldAccountSync({
         worldEpoch,
