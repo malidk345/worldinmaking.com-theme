@@ -11,16 +11,15 @@ const SharedChatView = dynamic(() =>
     import('../components/Share/SharedChatView').then((m) => ({ default: m.SharedChatView }))
 )
 
+import { IconSpinner } from '@posthog/icons'
+
 const NotebookAppProxy = dynamic(
     () => import('../notebook-app/App').then((mod) => mod.App),
     {
         ssr: false,
         loading: () => (
-            <div
-                className="flex items-center justify-center w-full h-full"
-                style={{ background: 'var(--bg-3000, #f3f4f5)', color: 'var(--text-3000, #1d1f27)' }}
-            >
-                <div className="text-sm animate-pulse opacity-60">loading notebooks...</div>
+            <div className="flex items-center justify-center w-full h-full min-h-[200px]">
+                <IconSpinner className="size-5 animate-spin text-primary" />
             </div>
         ),
     }

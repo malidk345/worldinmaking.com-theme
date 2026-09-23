@@ -237,7 +237,13 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [dismissedNotebookId, setDismissedNotebookId] = useState<string | null>(null);
   const selectedModelIdRef = useRef<ModelId>(settings.defaultModel);
 
-  // Extract active open notebook or explicitly bound notebook
+  // Extract active open notebook or explicitly bound notebook.
+  // Key on notebook window paths/titles/minimized state so drag frames do not recompute context.
+  const notebookWindowsKey = appWindows
+    .filter((w) => typeof w.path === 'string' && /^\/notebooks/.test(w.path))
+    .map((w) => `${w.path}:${w.title || ''}:${w.minimized ? 1 : 0}`)
+    .join('|');
+
   const activeNotebookInfo = React.useMemo(() => {
     if (notebookBind?.notebookId) {
       if (dismissedNotebookId === notebookBind.notebookId) return null;
@@ -252,7 +258,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       id: nbId,
       title: bound?.title || openNb.title || 'Notebook',
     };
-  }, [appWindows, notebookBind, dismissedNotebookId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notebookWindowsKey, notebookBind, dismissedNotebookId]);
 
   // Extract full active notebook text content from open notebook windows
   const activeNotebookContext = React.useMemo(() => {

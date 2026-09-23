@@ -6,7 +6,7 @@ import WimLogo from 'components/WimLogo'
 import { Fieldset } from 'components/OSFieldset'
 import { AppIcon } from 'components/OSIcons/AppIcon'
 import { useUser } from 'hooks/useUser'
-import { useAppActions, useAppWindows, useAppSettings } from 'context/App'
+import { useAppActions, useAppSettings } from 'context/App'
 import { useWindow } from 'context/Window'
 import { openAskAiWindow } from 'lib/open-ask-ai-window'
 import { fetchSupabaseCommunityPosts } from 'lib/supabaseCommunity'
@@ -20,8 +20,7 @@ function clip(text: string, n: number) {
 
 export default function HomeWindow() {
     const { user, isValidating } = useUser()
-    const { openSignIn, closeWindow, addWindow, updateWindow, handleSnapToSide } = useAppActions()
-    const { windows } = useAppWindows()
+    const { openSignIn, closeWindow, addWindow, updateWindow, handleSnapToSide, windowsRef } = useAppActions()
     const { isMobile } = useAppSettings()
     const { appWindow } = useWindow()
     const [thread, setThread] = useState<LatestThread | null>(null)
@@ -59,7 +58,7 @@ export default function HomeWindow() {
 
     const openAi = () => {
         openAskAiWindow({
-            windows,
+            windows: windowsRef.current,
             isMobile,
             addWindow,
             updateWindow,

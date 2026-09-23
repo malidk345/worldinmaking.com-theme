@@ -74,13 +74,14 @@ import {
   releaseNotebookProductStyles,
   NOTEBOOK_PRODUCT_SCOPE_CLASS,
 } from '../lib/lemon/ensureNotebookProductStyles'
-import { useAppActions, useAppSettings, useAppWindows } from '../context/App'
+import { useAppActions, useAppSettings } from '../context/App'
 import { useWindow } from '../context/Window'
 import { parseNotebookRoute, notebookPathForRoute, type NotebookRoute } from '../lib/notebook-route'
 import { isNotebookWindowPath, notebookWindowPath } from '../lib/window-path'
 import { canWriteNotebook } from '../lib/notebook-sharing'
 import { bindNotebookChat, readNotebookSelection, rememberStickyNotebookSelection } from '../lib/notebook-chat-bind'
 import { openAskAiWindow } from '../lib/open-ask-ai-window'
+import { IconSpinner } from '@posthog/icons'
 
 const MarkdownNotebook = React.lazy(() =>
     import('./lib/components/MarkdownNotebook/MarkdownNotebook').then((mod) => ({
@@ -219,6 +220,7 @@ export function App() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
   const [cloudMessage, setCloudMessage] = useState<string | undefined>(undefined)
   const [chrome, setChrome] = useState<NotebookChromeSettings>(() => readNotebookChromeSettings())
+  const [isNotebookLoading, setIsNotebookLoading] = useState(false)
 
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [isAskAIBusy, setIsAskAIBusy] = useState(false)
@@ -304,7 +306,6 @@ export function App() {
 
   const appActions = useAppActions()
   const { appWindow } = useWindow()
-  const { windows } = useAppWindows()
   const { isMobile } = useAppSettings()
   const appWindowRef = useRef(appWindow)
   const appActionsRef = useRef(appActions)
@@ -318,13 +319,13 @@ export function App() {
     openAskAiWindow({
       notebookId: currentNotebook?.id,
       notebookTitle: currentNotebook?.title,
-      windows,
+      windows: appActions.windowsRef.current,
       isMobile,
       addWindow: appActions.addWindow,
       updateWindow: appActions.updateWindow,
       snapWindow: appActions.handleSnapToSide,
     })
-  }, [appActions, currentNotebook, isMobile, windows])
+  }, [appActions, currentNotebook, isMobile])
   const { user } = useUser()
   const presenceActor = useMemo(
     () => userToNotebookActor(user) || getNotebookActor(),
@@ -521,10 +522,14 @@ export function App() {
   // setWindowTitle updates the window object and would retrigger this forever.
   const editorNotebookId = route.page === 'editor' ? route.notebookId : null
   useEffect(() => {
-    if (!editorNotebookId) return
+    if (!editorNotebookId) {
+      setIsNotebookLoading(false)
+      return
+    }
 
     const apply = (nb: StoredNotebook) => {
       setCurrentNotebook(nb)
+      setIsNotebookLoading(false)
       setMarkdown(nb.content)
       setRemoteMarkdown(nb.content)
       setTitle(nb.title)
@@ -569,8 +574,11 @@ export function App() {
       })
     } else {
       setCurrentNotebook(null)
+      setIsNotebookLoading(true)
       void pullNotebookById(editorNotebookId).then((remote) => {
-        if (cancelled || !remote) return
+        if (cancelled) return
+        setIsNotebookLoading(false)
+        if (!remote) return
         rememberRemoteNotebook(remote)
         apply(remote)
       })
@@ -1332,7 +1340,11 @@ export function App() {
           )}
 
           {route.page === 'editor' && (
-            currentNotebook ? (
+            isNotebookLoading ? (
+              <div className="flex h-full w-full min-h-[300px] flex-1 items-center justify-center py-20">
+                <IconSpinner className="size-5 animate-spin text-primary" />
+              </div>
+            ) : currentNotebook ? (
               <NotebookEditorReader
                 markdown={outlineMarkdown}
                 containerRef={editorContainerRef}
@@ -1433,7 +1445,9 @@ export function App() {
                 )}
                   <React.Suspense
                     fallback={
-                      <div className="py-10 text-sm text-muted animate-pulse">Loading editor…</div>
+                      <div className="flex h-64 w-full items-center justify-center py-20">
+                        <IconSpinner className="size-5 animate-spin text-primary" />
+                      </div>
                     }
                   >
                     <MarkdownNotebook

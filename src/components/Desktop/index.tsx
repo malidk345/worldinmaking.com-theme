@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import Link from 'components/Link'
-import { useAppActions, useAppSettings, useAppUIState, useAppWindows } from '../../context/App'
+import { useAppActions, useAppSettings, useAppUIState } from '../../context/App'
 import { openAskAiWindow } from '../../lib/open-ask-ai-window'
 import { GlassIcon } from 'components/OSIcons'
 import { AppIcon, AppItem } from 'components/OSIcons/AppIcon'
@@ -14,6 +14,8 @@ import { extractNotebookId, isHomeWindowPath, notebookWindowPath } from '../../l
 import { useUser } from 'hooks/useUser'
 import { ASSISTANT_OPEN_PATH_EVENT } from '../../lib/assistant-actions'
 
+import { IconSpinner } from '@posthog/icons'
+
 // Event names mirrored from notebookStorage so Desktop stays off the notebook cold graph.
 const WIM_NOTEBOOKS_CHANGED_EVENT = 'wimNotebooksChanged'
 const WIM_NOTEBOOKS_HYDRATED_EVENT = 'wimNotebooksHydrated'
@@ -21,7 +23,14 @@ const WIM_NOTEBOOKS_HYDRATED_EVENT = 'wimNotebooksHydrated'
 const NotificationsPanel = dynamic(() => import('components/NotificationsPanel'), { ssr: false })
 const ClaudeWorkspaceChatPanel = dynamic(
     () => import('components/ClaudeWorkspaceChat').then((m) => ({ default: m.ClaudeWorkspaceChatPanel })),
-    { ssr: false }
+    {
+        ssr: false,
+        loading: () => (
+            <div className="fixed inset-y-0 right-0 z-50 flex w-[min(calc(100vw-1rem),26rem)] items-center justify-center">
+                <IconSpinner className="size-5 animate-spin text-primary" />
+            </div>
+        ),
+    }
 )
 const AssistantWatch = dynamic(() => import('components/AssistantWindow/Watch'), { ssr: false })
 const HedgeHogModeEmbed = dynamic(() => import('components/HedgehogMode'), { ssr: false })
@@ -36,9 +45,8 @@ const DESKTOP_TOP_OFFSET = APP_CONTAINER_TOP_PADDING + TASKBAR_HEIGHT
 function Desktop() {
     const productLinks = useProductLinks()
     const { user } = useUser()
-    const { setConfetti, addWindow, updateWindow, handleSnapToSide } = useAppActions()
+    const { setConfetti, addWindow, updateWindow, handleSnapToSide, windowsRef } = useAppActions()
     const { siteSettings, isMobile } = useAppSettings()
-    const { windows } = useAppWindows()
     const { confetti, isClaudeChatOpen, isNotificationsPanelOpen } = useAppUIState()
     const [pinnedApps, setPinnedApps] = useState<AppItem[]>([])
     // Both icon trees exist for the first paint so server HTML matches. After that,
@@ -59,7 +67,7 @@ function Desktop() {
     useEffect(() => {
         if (router.query.open === 'chat') {
             openAskAiWindow({
-                windows,
+                windows: windowsRef.current,
                 isMobile,
                 addWindow,
                 updateWindow,

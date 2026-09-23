@@ -31,6 +31,11 @@ export default function AssistantWatch() {
     const { user } = useUser()
     const signedIn = Boolean(user)
 
+    const windowPathsKey = windows
+        .slice(0, 12)
+        .map((w) => `${w.path || ''}:${w.title || w.meta?.title || ''}`)
+        .join('|')
+
     useEffect(() => {
         if (!signedIn) return
         setAssistantWorldWindows(
@@ -39,7 +44,8 @@ export default function AssistantWatch() {
                 title: String(w.title || w.meta?.title || w.path || ''),
             }))
         )
-    }, [windows, signedIn])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [windowPathsKey, signedIn])
 
     useEffect(() => {
         if (!signedIn) {

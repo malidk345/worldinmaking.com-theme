@@ -685,7 +685,6 @@ export async function runToolLoop(params: {
                         timeoutMs,
                         tools: toolsForAgentMode(agentMode),
                         signal: params.signal,
-                        timeoutMs,
                     }),
             })
             if (step.kind === 'done') return step.result

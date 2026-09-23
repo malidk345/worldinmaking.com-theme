@@ -33,7 +33,7 @@ import {
 } from '@posthog/icons'
 import MenuBar from 'components/RadixUI/MenuBar'
 
-import { useAppActions, useAppSettings, useAppWindows } from '../../../../context/App'
+import { useAppActions, useAppSettings } from '../../../../context/App'
 import { openNotebookWindow } from '../../../../lib/open-notebook-window'
 import { getNotebooks } from '../../../scenes/notebooks/notebookStorage'
 import { requestPhilosopherComment } from '../../../../lib/notebook-invite-client'
@@ -378,8 +378,7 @@ function MarkdownNotebookEditor({
     const [selectedComponentNodeIds, setSelectedComponentNodeIds] = useState<Set<string>>(() => new Set())
     const [componentPanelCache, setComponentPanelCache] = useState<Record<string, ComponentPanelCacheEntry>>({})
 
-    const { addWindow, updateWindow } = useAppActions()
-    const { windows } = useAppWindows()
+    const { addWindow, updateWindow, windowsRef } = useAppActions()
     const { isMobile } = useAppSettings()
 
     const handleMainClick = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
@@ -399,7 +398,7 @@ function MarkdownNotebookEditor({
                     openNotebookWindow({
                         notebookId: found.id,
                         notebookTitle: found.title,
-                        windows,
+                        windows: windowsRef.current,
                         isMobile,
                         addWindow,
                         updateWindow,
@@ -407,7 +406,7 @@ function MarkdownNotebookEditor({
                 }
             }
         }
-    }, [windows, isMobile, addWindow, updateWindow])
+    }, [windowsRef, isMobile, addWindow, updateWindow])
 
     const insertMenuDomId = useId()
     const notebookRef = useRef<HTMLDivElement | null>(null)

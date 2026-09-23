@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import dynamic from 'next/dynamic'
-import { IconNotebook } from '@posthog/icons'
+import { IconNotebook, IconSpinner } from '@posthog/icons'
 import { useOptionalApp } from '../../context/App'
 import { notebookWindowPath, isNotebookWindowPath } from '../../lib/window-path'
 import { createNotebook, getNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage'
@@ -10,8 +10,8 @@ import { createNotebook, getNotebook } from '../../notebook-app/scenes/notebooks
 const NativeNotebookApp = dynamic(() => import('../../notebook-app/App'), {
     ssr: false,
     loading: () => (
-        <div className="w-full h-full min-h-[400px] flex flex-col items-center justify-center bg-primary text-primary">
-            <div className="text-sm font-semibold animate-pulse">Loading React Notebook Engine...</div>
+        <div className="w-full h-full min-h-[200px] flex items-center justify-center">
+            <IconSpinner className="size-5 animate-spin text-primary" />
         </div>
     ),
 })
@@ -26,8 +26,8 @@ export interface NotebooksListProps {
  */
 export function NotebooksListSkeleton(_props: NotebooksListProps = {}): JSX.Element {
     return (
-        <div className="w-full h-full min-h-0 flex-1 relative bg-primary text-primary overflow-hidden flex flex-col">
-            <NativeNotebookApp />
+        <div className="w-full h-full min-h-[200px] flex items-center justify-center">
+            <IconSpinner className="size-5 animate-spin text-primary" />
         </div>
     )
 }

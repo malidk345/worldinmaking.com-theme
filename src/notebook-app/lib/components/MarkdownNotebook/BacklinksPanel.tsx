@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link2, ChevronDown, ChevronRight, FileText, ExternalLink } from 'lucide-react'
 import type { BacklinkItem } from './wikilinks'
-import { useAppActions, useAppSettings, useAppWindows } from '../../../../context/App'
+import { useAppActions, useAppSettings } from '../../../../context/App'
 import { openNotebookWindow } from '../../../../lib/open-notebook-window'
 
 export interface BacklinksPanelProps {
@@ -11,8 +11,7 @@ export interface BacklinksPanelProps {
 
 export function BacklinksPanel({ backlinks, currentNotebookTitle }: BacklinksPanelProps): JSX.Element | null {
     const [isOpen, setIsOpen] = useState(true)
-    const { addWindow, updateWindow } = useAppActions()
-    const { windows } = useAppWindows()
+    const { addWindow, updateWindow, windowsRef } = useAppActions()
     const { isMobile } = useAppSettings()
 
     if (!backlinks || backlinks.length === 0) {
@@ -23,7 +22,7 @@ export function BacklinksPanel({ backlinks, currentNotebookTitle }: BacklinksPan
         openNotebookWindow({
             notebookId,
             notebookTitle: title,
-            windows,
+            windows: windowsRef.current,
             isMobile,
             addWindow,
             updateWindow,

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import OSButton from 'components/OSButton'
 import { AppIcon } from 'components/OSIcons/AppIcon'
-import { useAppActions, useAppWindows, useAppSettings } from 'context/App'
+import { useAppActions, useAppSettings } from 'context/App'
 import { openAskAiWindow } from 'lib/open-ask-ai-window'
 import { fetchSupabaseCommunityPosts, fetchSupabaseCommunityReplies } from 'lib/supabaseCommunity'
 
@@ -27,9 +27,8 @@ function clip(text: string, n: number) {
 }
 
 export default function LiveTour() {
-    const { windows } = useAppWindows()
     const { isMobile } = useAppSettings()
-    const { addWindow, updateWindow, handleSnapToSide } = useAppActions()
+    const { addWindow, updateWindow, handleSnapToSide, windowsRef } = useAppActions()
     const [thread, setThread] = useState<PreviewThread | null>(null)
     const [status, setStatus] = useState<'loading' | 'ready' | 'empty'>('loading')
 
@@ -74,7 +73,7 @@ export default function LiveTour() {
             snapped: isMobile ? false : 'left',
         })
         openAskAiWindow({
-            windows,
+            windows: windowsRef.current,
             isMobile,
             addWindow,
             updateWindow,

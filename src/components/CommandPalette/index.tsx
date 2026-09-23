@@ -9,7 +9,7 @@ import {
     IconArrowRight,
     IconApps,
 } from '@posthog/icons'
-import { useAppActions, useAppSettings, useAppWindows } from '../../context/App'
+import { useAppActions, useAppSettings } from '../../context/App'
 import { searchSupabasePosts, SupabasePost } from '../../lib/supabaseBlog'
 
 export default function CommandPalette({
@@ -19,8 +19,7 @@ export default function CommandPalette({
     open: boolean
     onOpenChange: (open: boolean) => void
 }) {
-    const { windows } = useAppWindows()
-    const { addWindow, updateWindow, updateSiteSettings } = useAppActions()
+    const { addWindow, updateWindow, updateSiteSettings, windowsRef } = useAppActions()
     const { siteSettings } = useAppSettings()
 
     const [query, setQuery] = useState('')
@@ -102,7 +101,7 @@ export default function CommandPalette({
             label: 'minimize all windows',
             category: 'system',
             icon: <IconMinus className="size-4" />,
-            action: () => windows.forEach((w) => updateWindow(w, { minimized: true })),
+            action: () => windowsRef.current.forEach((w) => updateWindow(w, { minimized: true })),
         },
     ]
 

@@ -51,14 +51,38 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[DONE by Grok 4.7]`
-- **Task:** Shell notebook bind, already-open window focus, and cobalt chrome fallback are on main with the WIM AI commits.
-
-
+- **Status:** `[IDLE]`
+- **Task:** Build errors resolved (TS1117 duplicate property & Pages Router global CSS in _app.tsx); shell & notebook drag re-render performance optimized.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-23 — Antigravity (feat: standardize WIM AI and Notebook loading to taskbar music IconSpinner)
+- **Scope:** Clean, distraction-free loading state across all WIM AI and Notebook entry points.
+- **Changes:**
+  1. Replaced legacy/skeleton/text loading ("Loading editor…", "Loading React Notebook Engine...", "loading notebooks...", custom SVG Spinner) with the exact spinning loading icon from the taskbar AmbientPlayer music button: `<IconSpinner className="size-5 animate-spin text-primary" />` from `@posthog/icons`.
+  2. Applied consistently to:
+     - `WindowRouter.tsx`: `AskAiWindow` and `NotebookApp` dynamic imports.
+     - `notebook-app/App.tsx`: `MarkdownNotebook` lazy chunk Suspense fallback and remote fetch loading state (`isNotebookLoading`).
+     - `pages/[...slug].tsx`: `NotebookAppProxy` dynamic loading fallback.
+     - `components/Notebooks/NotebooksList.tsx`: `NativeNotebookApp` and `NotebooksListSkeleton`.
+     - `pages/workspace-chat.tsx`: `AskAiWindow` full-screen loading fallback.
+     - `components/Desktop/index.tsx`: `ClaudeWorkspaceChatPanel` drawer loading fallback.
+- **Files:** `WindowRouter.tsx`, `notebook-app/App.tsx`, `[...slug].tsx`, `NotebooksList.tsx`, `workspace-chat.tsx`, `Desktop/index.tsx`, `AI_MEMORY.md`.
+- **Verify:** `pnpm typecheck:shell` PASS (0 gated errors).
+
+### 2026-09-23 — Antigravity (fix: build errors TS1117 & global CSS; perf: eliminate drag re-renders across shell & notebooks)
+- **Scope:** Build stability and shell rendering performance optimization without changing features or product UX.
+- **Build fixes:**
+  1. Next.js Pages router disallows global CSS imports outside `_app.tsx`. Restored `notebook-taskbar-glass.css`, `notebook-mobile-block-chrome.css`, `notebook-mobile-format-dock.css` back to `src/pages/_app.tsx` and removed from `src/notebook-app/App.tsx`.
+  2. `src/lib/bots/tools/loop.ts`: Removed duplicate `timeoutMs` property in `anthropicToolCompletion` object literal (TS1117 syntax error).
+- **Performance optimizations (Window drag / Shell / Notebooks):**
+  1. Converted 10 components (`Desktop`, `NotebookApp`, `MarkdownNotebook`, `WimWritingBlocks`, `BacklinksPanel`, `AskAiWindow`, `CommandPalette`, `HomeWindow`, `LiveTour`, `TapePlayer`) from subscribing to volatile `useAppWindows()` to reading `windowsRef.current` lazily on interaction. Prevents the whole desktop icon tree, the 6000-line markdown notebook, inline blocks, and dialogs from re-rendering 60 times a second during window dragging.
+  2. Expanded `ShellFrameContext` with layout flags (`hasExpandedWindow`, `hasSnappedLeftWindow`, `hasSnappedRightWindow`) and updated `useWindowLayoutAttributes` to consume `useShellFrame()`, eliminating `AppContainer` re-renders during normal window drags.
+  3. Stabilized memoized structural keys for `ClaudeWorkspaceChat` (`activeNotebookInfo`), `AssistantWatch` (`setAssistantWorldWindows`), and `GuestHomeGate`, preventing continuous state updates during window moves.
+- **Files:** `loop.ts`, `_app.tsx`, `App.tsx` (notebook & context), `useWindowLayoutAttributes.ts`, `Desktop/index.tsx`, `MarkdownNotebook.tsx`, `WimWritingBlocks.tsx`, `BacklinksPanel.tsx`, `AskAiWindow.tsx`, `CommandPalette/index.tsx`, `HomeWindow.tsx`, `LiveTour.tsx`, `TapePlayer/index.tsx`, `Watch.tsx`, `GuestHomeGate.tsx`, `ClaudeWorkspaceChat/index.tsx`, `AI_MEMORY.md`.
+- **Verify:** `pnpm build` exited 0 (all routes successfully compiled); `pnpm typecheck:shell` PASS (0 gated errors). No automated tests or git push run per user directive.
 
 ### 2026-09-23 — Grok 4.7 (fix: shell wallpaper fallback, window focus, notebook bind)
 - **Scope:** Shell only. Cherry-picked onto current main. Did not edit `/api/chat`, `orchestrate.ts`, `tools/loop.ts`, `execute.ts`.

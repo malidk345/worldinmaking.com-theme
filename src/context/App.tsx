@@ -243,6 +243,9 @@ export type ShellFrameContextType = {
     windowCount: number
     isActiveWindowsPanelOpen: boolean
     closingAllWindowsAnimation: boolean
+    hasExpandedWindow: boolean
+    hasSnappedLeftWindow: boolean
+    hasSnappedRightWindow: boolean
 }
 
 interface AppProviderProps {
@@ -437,6 +440,9 @@ export const ShellFrameContext = createContext<ShellFrameContextType>({
     windowCount: 0,
     isActiveWindowsPanelOpen: false,
     closingAllWindowsAnimation: false,
+    hasExpandedWindow: false,
+    hasSnappedLeftWindow: false,
+    hasSnappedRightWindow: false,
 })
 
 export interface AppSetting {
@@ -1809,14 +1815,28 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     )
 
     const windowsValue = useMemo<AppWindowsContextType>(() => ({ windows }), [windows])
+    const hasExpandedWindow = windows.some((w) => w.expanded && !w.minimized)
+    const hasSnappedLeftWindow = !hasExpandedWindow && windows.some((w) => w.snapped === 'left' && !w.minimized)
+    const hasSnappedRightWindow = !hasExpandedWindow && windows.some((w) => w.snapped === 'right' && !w.minimized)
     const shellFrame = useMemo<ShellFrameContextType>(
         () => ({
             focusedKey: focusedWindow?.key,
             windowCount: windows.length,
             isActiveWindowsPanelOpen,
             closingAllWindowsAnimation,
+            hasExpandedWindow,
+            hasSnappedLeftWindow,
+            hasSnappedRightWindow,
         }),
-        [focusedWindow?.key, windows.length, isActiveWindowsPanelOpen, closingAllWindowsAnimation]
+        [
+            focusedWindow?.key,
+            windows.length,
+            isActiveWindowsPanelOpen,
+            closingAllWindowsAnimation,
+            hasExpandedWindow,
+            hasSnappedLeftWindow,
+            hasSnappedRightWindow,
+        ]
     )
 
     return (

@@ -11,7 +11,7 @@ import {
 } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 
-import { useAppActions, useAppSettings, useAppWindows } from '../../../../context/App'
+import { useAppActions, useAppSettings } from '../../../../context/App'
 import { openNotebookWindow } from '../../../../lib/open-notebook-window'
 import { uploadNotebookImage } from '../../../../lib/notebook-upload'
 import { wasNotebookNodeJustInserted } from './freshlyInserted'
@@ -115,8 +115,7 @@ export function ToggleBlock({ node, updateProps, mode }: NotebookComponentRender
 }
 
 export function SubpageBlock({ node }: NotebookComponentRenderProps): JSX.Element {
-    const { addWindow, updateWindow } = useAppActions()
-    const { windows } = useAppWindows()
+    const { addWindow, updateWindow, windowsRef } = useAppActions()
     const { isMobile } = useAppSettings()
     const title = parseStringProp(node.props.title) || 'Untitled page'
     const description = parseStringProp(node.props.description) || 'Linked sub-document'
@@ -129,7 +128,7 @@ export function SubpageBlock({ node }: NotebookComponentRenderProps): JSX.Elemen
             disabled={!notebookId}
             onClick={() => {
                 if (!notebookId) return
-                openNotebookWindow({ notebookId, notebookTitle: title, windows, isMobile, addWindow, updateWindow })
+                openNotebookWindow({ notebookId, notebookTitle: title, windows: windowsRef.current, isMobile, addWindow, updateWindow })
             }}
         >
             <span className="MarkdownNotebook__subpage-icon">

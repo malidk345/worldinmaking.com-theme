@@ -14,6 +14,11 @@ export default function GuestHomeGate() {
     const { addWindow, closeWindow } = useAppActions()
     const openedForGuestRef = useRef(false)
 
+    const homeWindowKeys = windows
+        .filter((w) => isHomeWindowPath(w.path))
+        .map((w) => w.key)
+        .join(',')
+
     useEffect(() => {
         if (isValidating) return
 
@@ -32,7 +37,8 @@ export default function GuestHomeGate() {
         openedForGuestRef.current = true
         if (homeWindows.length > 0) return
         addWindow({ path: '/home', title: 'Home' })
-    }, [user, isValidating, windows, addWindow, closeWindow])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, isValidating, homeWindowKeys, addWindow, closeWindow])
 
     return null
 }
