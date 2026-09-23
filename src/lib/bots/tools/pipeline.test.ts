@@ -10,6 +10,7 @@ import {
     LOOP_RECENT_TOOL_CHARS,
     LOOP_RECENT_TOOL_KEEP,
     PLAN_RESEARCH_CLUSTER_N,
+    finalizePlanReadinessReminder,
     PUBLIC_CONTINUE_NUDGE,
     runAgentNodePipeline,
     normalizeFetchUrlCacheKey,
@@ -958,5 +959,37 @@ describe('shareInflight fetch_url parallel dedupe', () => {
         })
         expect(ok).toBe('recovered')
         expect(runs).toBe(2)
+    })
+})
+
+describe('finalizePlanReadinessReminder soft-gate', () => {
+    it('blocks finalize when plan research ran without scratchpad (non-web_search)', () => {
+        const reminder = finalizePlanReadinessReminder({
+            todos: [{ id: 't1', title: 'Outline', status: 'pending' }],
+            scratchpad: [],
+            usedWebSearch: false,
+            usedPlanResearch: true,
+        })
+        expect(reminder).toMatch(/scratchpad/i)
+    })
+
+    it('allows finalize once research findings are on scratchpad', () => {
+        const reminder = finalizePlanReadinessReminder({
+            todos: [{ id: 't1', title: 'Outline', status: 'pending' }],
+            scratchpad: [{ note: 'Kant CPR A51', source: 'fetch_url' }],
+            usedWebSearch: false,
+            usedPlanResearch: true,
+        })
+        expect(reminder).toBeNull()
+    })
+
+    it('still requires todo spine', () => {
+        expect(
+            finalizePlanReadinessReminder({
+                todos: [],
+                scratchpad: [],
+                usedPlanResearch: true,
+            })
+        ).toMatch(/todo/i)
     })
 })

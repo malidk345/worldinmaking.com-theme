@@ -262,31 +262,63 @@ export type LocalChatRow = {
 }
 
 /**
+ * Serialize chat IDB writes per owner. Overlapping fire-and-forget persists
+ * (stream debounce + pagehide) otherwise race: clear()+put of a stale snapshot
+ * can finish after a newer one when openDB/adoptLegacy interleaves.
+ */
+let chatsPersistChain: Promise<void> = Promise.resolve()
+let chatsPersistOwner: string | null = null
+
+async function persistChatsLocalNow(chats: Array<{ id: string }>): Promise<void> {
+    const db = await openDB()
+    await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(STORE_CHATS, 'readwrite')
+        const store = tx.objectStore(STORE_CHATS)
+        store.clear()
+        const now = Date.now()
+        for (const chat of chats) {
+            if (!chat?.id) continue
+            store.put({
+                id: chat.id,
+                chat,
+                updatedAt: now,
+            } satisfies LocalChatRow)
+        }
+        tx.oncomplete = () => resolve()
+        tx.onerror = () => reject(tx.error)
+    })
+}
+
+/**
  * Replace the local chats object store with the given chat list (keyed by chat id).
+ * Latest queued snapshot wins; earlier in-flight writes still complete in order.
  */
 export async function persistChatsLocal(chats: Array<{ id: string }>): Promise<void> {
     if (!Array.isArray(chats)) return
+    const owner = currentOwnerKey()
+    if (chatsPersistOwner !== owner) {
+        chatsPersistOwner = owner
+        chatsPersistChain = Promise.resolve()
+    }
+    const snapshot = chats
+    const run = chatsPersistChain.then(async () => {
+        // Drop queued writes whose owner no longer matches (logout / account switch).
+        if (currentOwnerKey() !== owner) return
+        await persistChatsLocalNow(snapshot)
+    })
+    // Keep the chain alive even if one write fails so later snapshots still flush.
+    chatsPersistChain = run.catch(() => {})
     try {
-        const db = await openDB()
-        await new Promise<void>((resolve, reject) => {
-            const tx = db.transaction(STORE_CHATS, 'readwrite')
-            const store = tx.objectStore(STORE_CHATS)
-            store.clear()
-            const now = Date.now()
-            for (const chat of chats) {
-                if (!chat?.id) continue
-                store.put({
-                    id: chat.id,
-                    chat,
-                    updatedAt: now,
-                } satisfies LocalChatRow)
-            }
-            tx.oncomplete = () => resolve()
-            tx.onerror = () => reject(tx.error)
-        })
+        await run
     } catch (e) {
         console.warn('IndexedDB chat persist fallback:', e)
     }
+}
+
+/** Test helper — reset serialize chain between vitest cases. */
+export function _resetChatsPersistQueueForTests(): void {
+    chatsPersistChain = Promise.resolve()
+    chatsPersistOwner = null
 }
 
 /**
