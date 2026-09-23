@@ -10,8 +10,6 @@
  *     • Portal roots (Popover / LemonModal already set `notebook-app-scope`)
  */
 
-import { NOTEBOOK_APP_CSS } from '../../notebook-app/styles/bundleCss'
-
 const STYLE_ID = 'notebook-app-styles'
 const PALETTE_STYLE_ID = 'notebook-app-palette-bridge'
 export const LEMON_SCOPE_CLASS = 'notebook-app-scope'
@@ -265,6 +263,14 @@ html.dark .MarkdownNotebook__wim-block,
 `
 
 let injectCount = 0
+let notebookCssPromise: Promise<string> | null = null
+
+function loadNotebookAppCss(): Promise<string> {
+    if (!notebookCssPromise) {
+        notebookCssPromise = import('../../notebook-app/styles/bundleCss').then((mod) => mod.NOTEBOOK_APP_CSS)
+    }
+    return notebookCssPromise
+}
 
 export function ensureLemonStyles(): void {
     if (typeof document === 'undefined') return
@@ -272,11 +278,14 @@ export function ensureLemonStyles(): void {
     injectCount += 1
 
     if (!document.getElementById(STYLE_ID)) {
-        const style = document.createElement('style')
-        style.id = STYLE_ID
-        style.setAttribute('data-lemon-ui', 'true')
-        style.innerHTML = NOTEBOOK_APP_CSS
-        document.head.appendChild(style)
+        void loadNotebookAppCss().then((css) => {
+            if (document.getElementById(STYLE_ID)) return
+            const style = document.createElement('style')
+            style.id = STYLE_ID
+            style.setAttribute('data-lemon-ui', 'true')
+            style.innerHTML = css
+            document.head.appendChild(style)
+        })
     }
 
     const existingPalette = document.getElementById(PALETTE_STYLE_ID)

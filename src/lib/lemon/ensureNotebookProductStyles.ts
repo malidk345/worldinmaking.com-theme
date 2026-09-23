@@ -3,8 +3,6 @@
  * Scope class belongs only on the table wrapper and the editor surface.
  */
 
-import { NOTEBOOK_PRODUCT_CSS } from '../../notebook-app/styles/productBundleCss'
-
 const STYLE_ID = 'notebook-product-styles'
 export const NOTEBOOK_PRODUCT_SCOPE_CLASS = 'notebook-app-scope'
 
@@ -129,21 +127,31 @@ const NOTEBOOK_TAG_CSS = `
 `
 
 let injectCount = 0
+let productCssPromise: Promise<string> | null = null
+
+function loadNotebookProductCss(): Promise<string> {
+    if (!productCssPromise) {
+        productCssPromise = import('../../notebook-app/styles/productBundleCss').then((mod) => mod.NOTEBOOK_PRODUCT_CSS)
+    }
+    return productCssPromise
+}
 
 export function ensureNotebookProductStyles(): void {
     if (typeof document === 'undefined') return
     injectCount += 1
-    const css = `${NOTEBOOK_PRODUCT_CSS}\n${NOTEBOOK_TAG_CSS}`
-    const existing = document.getElementById(STYLE_ID)
-    if (existing instanceof HTMLStyleElement) {
-        if (existing.innerHTML !== css) existing.innerHTML = css
-        return
-    }
-    const style = document.createElement('style')
-    style.id = STYLE_ID
-    style.setAttribute('data-notebook-product', 'true')
-    style.innerHTML = css
-    document.head.appendChild(style)
+    void loadNotebookProductCss().then((productCss) => {
+        const css = `${productCss}\n${NOTEBOOK_TAG_CSS}`
+        const existing = document.getElementById(STYLE_ID)
+        if (existing instanceof HTMLStyleElement) {
+            if (existing.innerHTML !== css) existing.innerHTML = css
+            return
+        }
+        const style = document.createElement('style')
+        style.id = STYLE_ID
+        style.setAttribute('data-notebook-product', 'true')
+        style.innerHTML = css
+        document.head.appendChild(style)
+    })
 }
 
 export function releaseNotebookProductStyles(): void {
