@@ -50,6 +50,30 @@ test.describe('HARDEN desk / WIM AI / notebook path locks', () => {
     expect(chat).toContain('failClosedNotebookMount')
   })
 
+  test('ChatMessage memo covers errorKind/qualityGate + index updateAssistantMessage', async () => {
+    const msg = fs.readFileSync(
+      path.join(root, 'src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx'),
+      'utf-8'
+    )
+    expect(msg).toContain('React.memo(ChatMessageComponent')
+    expect(msg).toContain('prev.message.errorKind === next.message.errorKind')
+    expect(msg).toContain('prev.message.qualityGate === next.message.qualityGate')
+    expect(msg).toContain('prev.message.attachments === next.message.attachments')
+    expect(msg).toContain('prev.typewriterSpeed === next.typewriterSpeed')
+
+    const src = fs.readFileSync(path.join(root, 'src/components/ClaudeWorkspaceChat/index.tsx'), 'utf-8')
+    const start = src.indexOf('const updateAssistantMessage = (chatId: string, msgId: string, patch: Partial<Message>)')
+    expect(start).toBeGreaterThan(-1)
+    const block = src.slice(start, start + 2400)
+    expect(block).toContain('prev.findIndex((c) => c.id === chatId)')
+    expect(block).toContain('chat.messages.findIndex((m) => m.id === msgId)')
+    expect(block).toContain('nextMessages[msgIdx] = nextMsg')
+    expect(block).toContain('nextMsg.errorKind === prevMsg.errorKind')
+    expect(block).toContain('return prev')
+    // Must not reintroduce full chats.map for this helper.
+    expect(block).not.toContain('prev.map((c) =>')
+  })
+
   test('ChatInput memo + rAF token coalesce + todo_write activePlan remote push', async () => {
     const input = fs.readFileSync(
       path.join(root, 'src/components/ClaudeWorkspaceChat/components/ChatInput.tsx'),
