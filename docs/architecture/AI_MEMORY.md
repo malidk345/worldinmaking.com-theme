@@ -58,6 +58,17 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: host write unknown-id fail-closed + preview XSS)
+
+- **Scope:** HARDEN-ONLY after #839 — hunt sibling fail-open tools (export/flashcards/read_document class) + other proven bugs. Skip THINK / iOS / identity LS / memo / App write handlers / inflight / abort demux / checkpoint+IDB / #839.
+- **Proven bugs shipped:**
+  1. **Host write tools unknown `notebookId` fail-open:** `insert` / `rewrite` / `replace` / `update_title` / `annotate` / `footnote` returned `ok:true` + OS action under a supplied but missing id (export/flashcards sibling). Auto-Apply then nacks `no_target` while the model already consumed a false success mid-turn. Fix: shared `resolveNotebookWriteTarget` — explicit id/title must exist in `host.notebooks` (title→id resolve); unbound path unchanged.
+  2. **React preview iframe error XSS:** `buildReactPreviewSrcDoc` `show()` built `root.innerHTML` from error `text` with only `<`→`&lt;`. Fix: `createElement('pre')` + `textContent` (no HTML concat).
+- **Left alone:** THINK, iOS, identity LS, memo, App.tsx write handlers (#818–#823), inflight, abort demux, checkpoint/IDB (#837), read_document/flashcards (#839), Jules chat-quota guest gate (#838 — intentional guest/IP quota).
+- **Files:** `host.ts`, `host-write-id-failclosed.test.ts`, `reactPreview.ts`, `tests/notebook-ack-fail.spec.ts`, `tests/chart-artifacts.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm run typecheck:shell`; vitest host-write-id-failclosed; Playwright needles `host write unknown-id fail-closed` + chart XSS textContent
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked (product).
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: read_document bound body + flashcards id fail-closed)
 
 - **Scope:** HARDEN-ONLY after #837 — hunt NEW proven bugs outside THINK / iOS / identity LS / memo / write handlers / inflight / abort demux / checkpoint+IDB.
