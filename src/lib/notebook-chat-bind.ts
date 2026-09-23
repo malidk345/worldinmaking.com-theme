@@ -1,3 +1,5 @@
+import { DEVICE_CHAT_OWNER_KEY, getActiveOwnerKey, WIM_IDENTITY_EVENT } from './wim-identity'
+
 export type NotebookChatBind = {
     notebookId: string
     title?: string
@@ -5,6 +7,35 @@ export type NotebookChatBind = {
 
 const STORAGE_KEY = 'wim_chat_notebook_bind'
 export const NOTEBOOK_CHAT_BIND_EVENT = 'wimNotebookChatBind'
+
+/** Bind key is global (not owner-namespaced); drop it when chat/notebook owner switches. */
+let lastBindOwnerKey: string | null = null
+
+/** Clear leftover bind after logout / account switch. Same-owner identity events (token refresh) keep it. */
+export function syncNotebookChatBindForIdentity(): void {
+    if (typeof window === 'undefined') return
+    const next = getActiveOwnerKey(DEVICE_CHAT_OWNER_KEY)
+    if (lastBindOwnerKey !== null && lastBindOwnerKey !== next) {
+        clearNotebookChatBind()
+    }
+    lastBindOwnerKey = next
+}
+
+function installNotebookChatBindIdentityGuard(): void {
+    if (typeof window === 'undefined') return
+    if (typeof window.addEventListener !== 'function') return
+    const w = window as Window & { __wimNotebookBindIdGuard?: boolean }
+    if (w.__wimNotebookBindIdGuard) return
+    w.__wimNotebookBindIdGuard = true
+    lastBindOwnerKey = getActiveOwnerKey(DEVICE_CHAT_OWNER_KEY)
+    window.addEventListener(WIM_IDENTITY_EVENT, () => {
+        syncNotebookChatBindForIdentity()
+    })
+}
+
+if (typeof window !== 'undefined') {
+    installNotebookChatBindIdentityGuard()
+}
 
 function bindStores(): Storage[] {
     if (typeof window === 'undefined') return []
@@ -34,6 +65,7 @@ function parseBind(raw: string | null): NotebookChatBind | null {
 }
 
 export function readNotebookChatBind(): NotebookChatBind | null {
+    installNotebookChatBindIdentityGuard()
     for (const store of bindStores()) {
         try {
             const parsed = parseBind(store.getItem(STORAGE_KEY))
@@ -47,6 +79,7 @@ export function readNotebookChatBind(): NotebookChatBind | null {
 
 export function bindNotebookChat(bind: NotebookChatBind): void {
     if (typeof window === 'undefined' || !bind?.notebookId) return
+    installNotebookChatBindIdentityGuard()
     const payload = JSON.stringify({ notebookId: bind.notebookId, title: bind.title })
     for (const store of bindStores()) {
         try {
@@ -60,6 +93,7 @@ export function bindNotebookChat(bind: NotebookChatBind): void {
 
 export function clearNotebookChatBind(): void {
     if (typeof window === 'undefined') return
+    installNotebookChatBindIdentityGuard()
     for (const store of bindStores()) {
         try {
             store.removeItem(STORAGE_KEY)
