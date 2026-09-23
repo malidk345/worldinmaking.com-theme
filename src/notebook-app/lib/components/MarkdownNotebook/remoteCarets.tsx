@@ -256,7 +256,7 @@ export function RemoteCaretOverlay({
         // Re-measure on reflow: width changes rewrap text, async content (images, queries) shifts blocks.
         const observer = new ResizeObserver(measure)
         observer.observe(container)
-        window.addEventListener('resize', measure)
+        window.addEventListener('resize', measure, { passive: true })
         return () => {
             observer.disconnect()
             window.removeEventListener('resize', measure)

@@ -671,7 +671,7 @@ export async function runToolLoop(params: {
                 onActivity: params.onActivity,
                 checkpoint: params.checkpoint,
                 agentMode,
-                complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
+                complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens }) =>
                     anthropicToolCompletion({
                         apiKey: anthropicKey,
                         model: anthropicModel,

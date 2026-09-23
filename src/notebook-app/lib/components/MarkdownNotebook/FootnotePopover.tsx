@@ -108,10 +108,10 @@ export function FootnotePopover({
         const timer2 = setTimeout(pinToView, 250)
 
         const viewport = window.visualViewport
-        viewport?.addEventListener('resize', pinToView)
-        viewport?.addEventListener('scroll', pinToView)
-        window.addEventListener('resize', pinToView)
-        window.addEventListener('scroll', pinToView)
+        viewport?.addEventListener('resize', pinToView, { passive: true })
+        viewport?.addEventListener('scroll', pinToView, { passive: true })
+        window.addEventListener('resize', pinToView, { passive: true })
+        window.addEventListener('scroll', pinToView, { passive: true })
         return () => {
             clearTimeout(timer1)
             clearTimeout(timer2)

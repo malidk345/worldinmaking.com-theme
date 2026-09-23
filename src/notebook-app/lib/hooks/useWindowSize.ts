@@ -20,7 +20,7 @@ type UseWindowSize = {
 }
 
 function subscribeToResize(callback: () => void): () => void {
-    window.addEventListener('resize', callback)
+    window.addEventListener('resize', callback, { passive: true })
     return () => window.removeEventListener('resize', callback)
 }
 

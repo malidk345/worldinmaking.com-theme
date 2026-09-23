@@ -220,7 +220,7 @@ function EditableTableBlockInner({
             return () => resizeObserver.disconnect()
         }
 
-        ownerWindow.addEventListener('resize', updateTableControlLayout)
+        ownerWindow.addEventListener('resize', updateTableControlLayout, { passive: true })
         return () => ownerWindow.removeEventListener('resize', updateTableControlLayout)
     }, [mode, updateTableControlLayout])
 
