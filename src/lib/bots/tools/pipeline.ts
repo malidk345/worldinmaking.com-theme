@@ -920,18 +920,61 @@ const PARALLEL_READ_TOOLS = new Set([
 ])
 
 
-function webSearchCacheKey(call: ToolCall): string | null {
-    if (resolveToolName(call.name) !== 'web_search') return null
+const RESEARCH_CACHE_TOOLS = new Set([
+    'web_search',
+    'search_academic_corpus',
+    'verified_corpus_search',
+])
+
+function asCacheQuery(value: unknown): string {
+    return typeof value === 'string' ? value.trim().toLowerCase() : ''
+}
+
+function asCacheToken(value: unknown, max = 60): string {
+    if (typeof value === 'string') return value.trim().toLowerCase().slice(0, max)
+    if (typeof value === 'number' && Number.isFinite(value)) return String(Math.trunc(value))
+    if (typeof value === 'boolean') return value ? '1' : '0'
+    return ''
+}
+
+/**
+ * Per-turn cache + inflight key for identical parallel research reads.
+ * web_search (#820) plus academic/corpus (same Promise.all TOCTOU class).
+ * Exported for unit tests.
+ */
+export function researchToolCacheKey(call: ToolCall): string | null {
+    const name = resolveToolName(call.name)
+    if (!RESEARCH_CACHE_TOOLS.has(name)) return null
     try {
-        const parsed = JSON.parse(call.argumentsJson || '{}') as { query?: unknown }
-        const q = typeof parsed.query === 'string' ? parsed.query.trim().toLowerCase() : ''
-        return q.length >= 2 ? `web_search:${q}` : null
+        const parsed = JSON.parse(call.argumentsJson || '{}') as Record<string, unknown>
+        if (name === 'web_search') {
+            const q = asCacheQuery(parsed.query)
+            return q.length >= 2 ? `web_search:${q}` : null
+        }
+        if (name === 'search_academic_corpus') {
+            const q = asCacheQuery(parsed.query ?? parsed.q ?? parsed.search)
+            if (q.length < 2) return null
+            const field = asCacheToken(parsed.field ?? parsed.subject ?? parsed.discipline)
+            const sort = asCacheToken(parsed.sort_by ?? parsed.sortBy)
+            const yf = asCacheToken(parsed.year_from ?? parsed.yearFrom)
+            const yt = asCacheToken(parsed.year_to ?? parsed.yearTo)
+            const lim = asCacheToken(parsed.limit)
+            const oa = asCacheToken(parsed.open_access_only ?? parsed.openAccessOnly)
+            return `search_academic_corpus:${q}|f=${field}|s=${sort}|yf=${yf}|yt=${yt}|lim=${lim}|oa=${oa}`
+        }
+        // verified_corpus_search
+        const q = asCacheQuery(parsed.query ?? parsed.search ?? parsed.q)
+        if (q.length < 2) return null
+        const philosopher = asCacheToken(parsed.philosopher ?? parsed.author)
+        const work = asCacheToken(parsed.work ?? parsed.book, 100)
+        const max = asCacheToken(parsed.max_results ?? parsed.maxResults)
+        return `verified_corpus_search:${q}|p=${philosopher}|w=${work}|n=${max}`
     } catch {
         return null
     }
 }
 
-function remapCachedWebSearch(hit: ToolExecution, call: ToolCall): ToolExecution {
+function remapCachedResearchTool(hit: ToolExecution, call: ToolCall): ToolExecution {
     return {
         ...hit,
         callId: call.id,
@@ -944,7 +987,7 @@ function remapCachedWebSearch(hit: ToolExecution, call: ToolCall): ToolExecution
 
 /**
  * Share one in-flight promise per key so Promise.all of identical work
- * does not stampede (web_search parallel fan-out TOCTOU).
+ * does not stampede (research tool parallel fan-out TOCTOU).
  * Exported for unit tests.
  */
 export function shareInflight<T>(
@@ -966,10 +1009,10 @@ async function executeToolCallCached(
     state: AgentState,
     params: AgentPipelineParams
 ): Promise<ToolExecution> {
-    const key = webSearchCacheKey(call)
+    const key = researchToolCacheKey(call)
     if (key) {
         const hit = state.searchCache.get(key)
-        if (hit) return remapCachedWebSearch(hit, call)
+        if (hit) return remapCachedResearchTool(hit, call)
         // Parallel identical queries in one ACT: share the in-flight fetch before
         // either side can write searchCache (TOCTOU with Promise.all).
         const shared = await shareInflight(state.searchInflight, key, () =>
@@ -977,7 +1020,7 @@ async function executeToolCallCached(
         )
         if (shared.ok) state.searchCache.set(key, shared)
         // Remap when we joined another call's promise (callId/summary must match this call).
-        return shared.callId === call.id ? shared : remapCachedWebSearch(shared, call)
+        return shared.callId === call.id ? shared : remapCachedResearchTool(shared, call)
     }
     return executeToolCall(call, params.env, params.host, state.agentMode, params.signal)
 }

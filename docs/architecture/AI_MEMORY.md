@@ -51,12 +51,27 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IDLE]`
-- **Task:** —
+- **Status:** `[IN PROGRESS]`
+- **Owner:** Grok Bot / Cursor
+- **Task:** P0 HARDEN-ONLY after #824 — academic/corpus parallel inflight (#820 parity). Mid-cluster THINK + iOS theme-color surveyed, not shipped.
+- **Branch:** `harden/academic-corpus-inflight-825`
+- **Started:** 2026-09-23 (Europe/Istanbul)
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-23 — Grok Bot / Cursor (harden: academic/corpus parallel inflight)
+
+- **Scope:** P0 HARDEN-ONLY after #824 — expand parked/deep leftovers; ship only proven same-class bugs.
+- **Survey A (mid-cluster THINK):** Deferred sketch in research-speed pack (#797) is explicit product call: skip post-tool THINK mid-cluster = quality risk. `shouldRunThinkPhase(hasNewToolResults)` always runs reflect by design (plan QUALITY pack). No redundant zero-content THINK bug — empty rounds are provider TTFT, not a host skip. **DO NOT SHIP** without product approve.
+- **Survey B (wallpaperChrome / iOS):** `startChromeLifetime` already relocks on `pageshow` + `visibilitychange→visible`. `lastChromeKey` + MutationObserver guard intact. Soft-keyboard / `freeze`/`resume` / `visualViewport` would invent without device Safari proof. **SKIP.**
+- **Survey C:** attachment/BYOK/errorKind, tool ack timeouts (5s OS / 4s Diff), agentMode/activePlan remote mid-turn, Vite/API chat routes, Continue×pending (#824) look solid. Residual academic parallel inflight (web_search-only) is same TOCTOU class as #820 — academic/corpus already in `PARALLEL_READ_TOOLS` but `webSearchCacheKey` ignored them.
+- **Bugs fixed:**
+  1. **Academic/corpus parallel inflight:** `researchToolCacheKey` covers `web_search` + `search_academic_corpus` (query+filters) + `verified_corpus_search` (query+philosopher/work). Same `searchInflight`/`searchCache` path — identical fan-out shares one fetch.
+- **Files:** `pipeline.ts`, `pipeline.test.ts`, `tests/harden-desk-paths.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; vitest researchToolCacheKey; `pnpm exec playwright test tests/harden-desk-paths.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color P2 (needs device Safari); mid-cluster THINK parked (product); fetch_url identical-URL inflight optional later.
 
 
 ### 2026-09-23 — Grok Bot / Cursor (harden: Continue×human gate + export_notebook fail-closed)

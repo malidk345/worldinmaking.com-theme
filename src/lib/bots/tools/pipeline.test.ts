@@ -12,6 +12,7 @@ import {
     PLAN_RESEARCH_CLUSTER_N,
     PUBLIC_CONTINUE_NUDGE,
     runAgentNodePipeline,
+    researchToolCacheKey,
     shareInflight,
     thinkInstructionFor,
     THINK_MAX_TOKENS,
@@ -779,5 +780,83 @@ describe('shareInflight web_search parallel dedupe', () => {
         expect(first).toBe('run-1')
         expect(second).toBe('run-2')
         expect(runs).toBe(2)
+    })
+})
+
+describe('researchToolCacheKey academic/corpus parity', () => {
+    it('keys web_search by normalized query', () => {
+        expect(
+            researchToolCacheKey({
+                id: 'a',
+                name: 'web_search',
+                argumentsJson: JSON.stringify({ query: '  Nietzsche Will  ' }),
+            })
+        ).toBe('web_search:nietzsche will')
+    })
+
+    it('keys search_academic_corpus with filters (parallel TOCTOU class)', () => {
+        const a = researchToolCacheKey({
+            id: '1',
+            name: 'search_academic_corpus',
+            argumentsJson: JSON.stringify({
+                query: 'Deleuze rhizome',
+                field: 'Philosophy',
+                sort_by: 'citations',
+                year_from: 1990,
+                limit: 5,
+                open_access_only: true,
+            }),
+        })
+        const b = researchToolCacheKey({
+            id: '2',
+            name: 'search_academic_corpus',
+            argumentsJson: JSON.stringify({
+                query: 'deleuze rhizome',
+                field: 'philosophy',
+                sort_by: 'citations',
+                year_from: 1990,
+                limit: 5,
+                open_access_only: true,
+            }),
+        })
+        const c = researchToolCacheKey({
+            id: '3',
+            name: 'search_academic_corpus',
+            argumentsJson: JSON.stringify({
+                query: 'deleuze rhizome',
+                field: 'philosophy',
+                sort_by: 'recent',
+                year_from: 1990,
+                limit: 5,
+                open_access_only: true,
+            }),
+        })
+        expect(a).toBe(b)
+        expect(a).toContain('search_academic_corpus:deleuze rhizome')
+        expect(a).not.toBe(c)
+    })
+
+    it('keys verified_corpus_search by query + philosopher/work', () => {
+        const a = researchToolCacheKey({
+            id: '1',
+            name: 'verified_corpus_search',
+            argumentsJson: JSON.stringify({ query: 'eternal return', philosopher: 'Nietzsche', work: 'Zarathustra' }),
+        })
+        const b = researchToolCacheKey({
+            id: '2',
+            name: 'corpus_search',
+            argumentsJson: JSON.stringify({ q: 'Eternal Return', author: 'nietzsche', book: 'zarathustra' }),
+        })
+        expect(a).toBe(b)
+        expect(a).toContain('verified_corpus_search:eternal return')
+    })
+
+    it('returns null for non-research tools and short queries', () => {
+        expect(
+            researchToolCacheKey({ id: '1', name: 'fetch_url', argumentsJson: JSON.stringify({ url: 'https://x' }) })
+        ).toBeNull()
+        expect(
+            researchToolCacheKey({ id: '2', name: 'search_academic_corpus', argumentsJson: JSON.stringify({ query: 'a' }) })
+        ).toBeNull()
     })
 })
