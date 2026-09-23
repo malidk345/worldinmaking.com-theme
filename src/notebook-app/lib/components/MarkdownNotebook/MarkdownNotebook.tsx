@@ -2410,11 +2410,11 @@ function MarkdownNotebookEditor({
         window.document.addEventListener('focusin', handleDocumentSelectionChange)
         window.document.addEventListener('mousedown', handleDocumentPointerStart, true)
         window.document.addEventListener('pointerdown', handleDocumentPointerStart, true)
-        window.document.addEventListener('touchstart', handleDocumentPointerStart, true)
-        window.addEventListener('resize', handleDocumentSelectionChange)
-        window.addEventListener('scroll', handleDocumentSelectionChange, true)
-        window.visualViewport?.addEventListener('resize', handleDocumentSelectionChange)
-        window.visualViewport?.addEventListener('scroll', handleDocumentSelectionChange)
+        window.document.addEventListener('touchstart', handleDocumentPointerStart, { capture: true, passive: true })
+        window.addEventListener('resize', handleDocumentSelectionChange, { passive: true })
+        window.addEventListener('scroll', handleDocumentSelectionChange, { capture: true, passive: true })
+        window.visualViewport?.addEventListener('resize', handleDocumentSelectionChange, { passive: true })
+        window.visualViewport?.addEventListener('scroll', handleDocumentSelectionChange, { passive: true })
 
         return () => {
             window.document.removeEventListener('selectionchange', handleDocumentSelectionChange)
@@ -3492,10 +3492,10 @@ function MarkdownNotebookEditor({
             return
         }
 
-        window.addEventListener('resize', updateInsertMenuPosition)
-        window.addEventListener('scroll', updateInsertMenuPosition, true)
-        window.visualViewport?.addEventListener('resize', updateInsertMenuPosition)
-        window.visualViewport?.addEventListener('scroll', updateInsertMenuPosition)
+        window.addEventListener('resize', updateInsertMenuPosition, { passive: true })
+        window.addEventListener('scroll', updateInsertMenuPosition, { capture: true, passive: true })
+        window.visualViewport?.addEventListener('resize', updateInsertMenuPosition, { passive: true })
+        window.visualViewport?.addEventListener('scroll', updateInsertMenuPosition, { passive: true })
 
         return () => {
             window.removeEventListener('resize', updateInsertMenuPosition)
@@ -3536,10 +3536,10 @@ function MarkdownNotebookEditor({
             return
         }
 
-        window.addEventListener('resize', updateInvitePickerPosition)
-        window.addEventListener('scroll', updateInvitePickerPosition, true)
-        window.visualViewport?.addEventListener('resize', updateInvitePickerPosition)
-        window.visualViewport?.addEventListener('scroll', updateInvitePickerPosition)
+        window.addEventListener('resize', updateInvitePickerPosition, { passive: true })
+        window.addEventListener('scroll', updateInvitePickerPosition, { capture: true, passive: true })
+        window.visualViewport?.addEventListener('resize', updateInvitePickerPosition, { passive: true })
+        window.visualViewport?.addEventListener('scroll', updateInvitePickerPosition, { passive: true })
 
         return () => {
             window.removeEventListener('resize', updateInvitePickerPosition)
