@@ -58,6 +58,18 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: create_notebook bind + ask_user re-entry)
+
+- **Scope:** P0 HARDEN-ONLY after #826 — underexplored create_notebook OS+bind race + ask_user answer path beyond Continue hide. No THINK, no iOS chrome, no re-polish of #820/#825/#826/abort/Continue/export.
+- **Survey:** BYOK body/vault, guest rename/star/delete (already gated), Diff 4s ack, attachment analyze_image abort — solid. Residuals: mid-cluster THINK (product), iOS chrome (device).
+- **Bugs fixed:**
+  1. **create_notebook OS Apply bind race:** Apply created + opened notebook and ack'd, but never `bindNotebookChat` / stamped `chat.notebookId` (notebook App only binds on Ask AI). Next turn tools stayed on previous/null bind. Now bind + stamp + pushChatToRemote on Apply.
+  2. **ask_user answer without checkpoint re-entry:** No-checkpoint (or human-before-checkpoint) answer called `handleSendMessage(trimmed)` which clears `humanRespondInFlightRef` then hits pendingAsk redirect → recursive `handleHumanRespond`. Now `skipPendingAskRedirect: true`.
+- **Files:** `ClaudeWorkspaceChat/index.tsx`, `tests/notebook-ack-fail.spec.ts`, `tests/human-turn-ux.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/notebook-ack-fail.spec.ts tests/human-turn-ux.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color P2 (needs device Safari); mid-cluster THINK parked (product).
+
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: fetch_url identical-URL inflight)
 
 - **Scope:** P0 HARDEN-ONLY — #825 residual optional leftover; parity with searchInflight (#820/#825). No mid-cluster THINK, no iOS chrome.

@@ -1228,6 +1228,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     attachments: FileAttachment[],
     options?: {
       skipUserAppend?: boolean
+      /** When true, do not redirect into handleHumanRespond for a pending ask_user. */
+      skipPendingAskRedirect?: boolean
       historyOverride?: Message[]
       agentMode?: AgentMode
       resume?: AgentCheckpoint
@@ -1239,7 +1241,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (!promptText.trim() && attachments.length === 0 && !options?.resume) return;
     humanRespondInFlightRef.current = false
 
-    if (!options?.resume && !options?.skipUserAppend) {
+    // skipPendingAskRedirect: ask_user answer without checkpoint must not re-enter
+    // handleHumanRespond (inFlight was cleared above; chats still shows pending).
+    if (!options?.resume && !options?.skipUserAppend && !options?.skipPendingAskRedirect) {
       const pendingAsk = [...((chats.find((c) => c.id === (activeChatId || '')) || activeChat)?.messages || [])]
         .reverse()
         .find((item) => item.humanTurn?.kind === 'ask_user' && item.humanTurn.status === 'pending')
@@ -2650,6 +2654,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       if (action.type === 'create_notebook') {
         const nb = createNotebook(action.payload.title || 'AI Generated Notes', action.payload.content || '');
         if (addWindow) addWindow({ path: notebookWindowPath(nb.id) });
+        // Bind immediately — notebook App only binds on Ask AI click, so Apply used to leave
+        // the chat on the previous/null bind while the new notebook window opened (race).
+        bindNotebookChat({ notebookId: nb.id, title: nb.title || action.payload.title })
+        setChats((prev) => {
+          const next = prev.map((c) =>
+            c.id === chatId
+              ? { ...c, notebookId: nb.id, updatedAt: new Date().toISOString() }
+              : c
+          )
+          const stamped = next.find((c) => c.id === chatId)
+          if (stamped) void pushChatToRemote(stamped)
+          return next
+        })
         // Manually fire the ack since createNotebook doesn't via the event listener paths in App.tsx
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nb.id } }));
       } else if (action.type === 'insert_notebook_block') {
@@ -2882,7 +2899,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       return
     }
     if (action === 'answer') {
-      void handleSendMessage(trimmed, [], { agentMode: chat.agentMode || 'ask' })
+      // No checkpoint yet (human SSE before checkpoint) or legacy turn — still send the
+      // answer as a normal user message, but skip pendingAsk redirect (would re-enter).
+      void handleSendMessage(trimmed, [], {
+        agentMode: chat.agentMode || 'ask',
+        skipPendingAskRedirect: true,
+      })
       return
     }
     void handleSendMessage(trimmed ? `Revise the plan: ${trimmed}` : 'Revise the plan.', [], { agentMode: 'plan' })

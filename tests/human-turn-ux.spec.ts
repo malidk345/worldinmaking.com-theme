@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test'
+import fs from 'fs'
+import path from 'path'
 import { preferHumanAnswerOverStop, resolveHumanTurn } from '../src/lib/human-turn-ux'
 import type { HumanTurn } from '../src/components/ClaudeWorkspaceChat/types'
 import { mergeMessages } from '../src/lib/chat-merge'
@@ -68,3 +70,24 @@ test.describe('human-turn UX guards', () => {
         expect(mergedPreferLocal[0].humanTurn?.status).toBe('answered')
     })
 })
+
+test.describe('ask_user answer without checkpoint', () => {
+    test('handleHumanRespond answer path skips pendingAsk redirect', () => {
+        const src = fs.readFileSync(
+            path.join(process.cwd(), 'src/components/ClaudeWorkspaceChat/index.tsx'),
+            'utf-8'
+        )
+        expect(src).toContain('skipPendingAskRedirect?: boolean')
+        expect(src).toContain('!options?.skipPendingAskRedirect')
+        const start = src.indexOf("if (action === 'answer')")
+        expect(start).toBeGreaterThan(-1)
+        // Prefer the no-checkpoint answer arm (after checkpoint resume block).
+        const arm = src.slice(start, start + 450)
+        expect(arm).toContain('skipPendingAskRedirect: true')
+        // Must not call handleSendMessage(answer) without the skip flag (re-entry race).
+        expect(arm).not.toMatch(
+            /handleSendMessage\(trimmed, \[\], \{\s*agentMode: chat\.agentMode \|\| 'ask'\s*\}\)/
+        )
+    })
+})
+
