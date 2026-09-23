@@ -1,6 +1,6 @@
 import React from 'react'
 import dynamic from 'next/dynamic'
-import { useAppActions, useAppSettings, useAppUIState, useShellFrame } from '../../context/App'
+import { useAppActions, useAppSettings, useAppUIState, useAppWindows, useShellFrame } from '../../context/App'
 import Desktop from 'components/Desktop'
 import GuestHomeGate from 'components/Home/GuestHomeGate'
 import TaskBarMenu from 'components/TaskBarMenu'
