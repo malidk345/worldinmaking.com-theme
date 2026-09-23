@@ -386,6 +386,8 @@ export interface AgentState {
     usedPlanResearch: boolean
     /** Per-pipeline dedupe for identical web_search queries (same turn only). */
     searchCache: Map<string, ToolExecution>
+    /** In-flight web_search promises — parallel identical queries in one ACT share one fetch. */
+    searchInflight: Map<string, Promise<ToolExecution>>
     execNudges: number
     writeNudges: number
     stepCount: number
@@ -929,6 +931,36 @@ function webSearchCacheKey(call: ToolCall): string | null {
     }
 }
 
+function remapCachedWebSearch(hit: ToolExecution, call: ToolCall): ToolExecution {
+    return {
+        ...hit,
+        callId: call.id,
+        name: resolveToolName(call.name),
+        summary: hit.summary
+            ? `${hit.summary} (cached)`
+            : toolResultSummary(resolveToolName(call.name), hit.ok, hit.result),
+    }
+}
+
+/**
+ * Share one in-flight promise per key so Promise.all of identical work
+ * does not stampede (web_search parallel fan-out TOCTOU).
+ * Exported for unit tests.
+ */
+export function shareInflight<T>(
+    map: Map<string, Promise<T>>,
+    key: string,
+    factory: () => Promise<T>
+): Promise<T> {
+    const existing = map.get(key)
+    if (existing) return existing
+    const pending = factory().finally(() => {
+        if (map.get(key) === pending) map.delete(key)
+    })
+    map.set(key, pending)
+    return pending
+}
+
 async function executeToolCallCached(
     call: ToolCall,
     state: AgentState,
@@ -937,22 +969,17 @@ async function executeToolCallCached(
     const key = webSearchCacheKey(call)
     if (key) {
         const hit = state.searchCache.get(key)
-        if (hit) {
-            return {
-                ...hit,
-                callId: call.id,
-                name: resolveToolName(call.name),
-                summary: hit.summary
-                    ? `${hit.summary} (cached)`
-                    : toolResultSummary(resolveToolName(call.name), hit.ok, hit.result),
-            }
-        }
+        if (hit) return remapCachedWebSearch(hit, call)
+        // Parallel identical queries in one ACT: share the in-flight fetch before
+        // either side can write searchCache (TOCTOU with Promise.all).
+        const shared = await shareInflight(state.searchInflight, key, () =>
+            executeToolCall(call, params.env, params.host, state.agentMode, params.signal)
+        )
+        if (shared.ok) state.searchCache.set(key, shared)
+        // Remap when we joined another call's promise (callId/summary must match this call).
+        return shared.callId === call.id ? shared : remapCachedWebSearch(shared, call)
     }
-    const executed = await executeToolCall(call, params.env, params.host, state.agentMode, params.signal)
-    if (key && executed.ok) {
-        state.searchCache.set(key, executed)
-    }
-    return executed
+    return executeToolCall(call, params.env, params.host, state.agentMode, params.signal)
 }
 
 function emitToolRunning(call: ToolCall, params: AgentPipelineParams): string {
@@ -1390,6 +1417,7 @@ export async function runAgentNodePipeline(params: AgentPipelineParams): Promise
         researchClusterAwaitingScratchpad: false,
         usedPlanResearch: false,
         searchCache: new Map(),
+        searchInflight: new Map(),
         execNudges: 0,
         writeNudges: 0,
         stepCount: 0,

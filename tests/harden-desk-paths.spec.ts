@@ -56,6 +56,14 @@ test.describe('HARDEN desk / WIM AI / notebook path locks', () => {
     expect(wall).toContain('keyboard-mint')
   })
 
+  test('parallel web_search shares in-flight promise (cache TOCTOU)', async () => {
+    const src = fs.readFileSync(path.join(root, 'src/lib/bots/tools/pipeline.ts'), 'utf-8')
+    expect(src).toContain('searchInflight: Map<string, Promise<ToolExecution>>')
+    expect(src).toContain('export function shareInflight')
+    expect(src).toContain('shareInflight(state.searchInflight, key,')
+    expect(src).toContain('Parallel identical queries in one ACT: share the in-flight fetch')
+  })
+
   test('notebook OS dispatch stays fail-closed on missing listener', async () => {
     const dispatch = fs.readFileSync(path.join(root, 'src/lib/notebook-os-dispatch.ts'), 'utf-8')
     expect(dispatch).toContain('fail-closed')

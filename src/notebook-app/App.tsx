@@ -1111,28 +1111,40 @@ export function App() {
       const footnoteDef = `[^${marker}]: ${text}`
 
       let next = current
-      if (spanText) {
-        // Fail-closed: never silently append when the requested span is missing.
-        if (!next.includes(spanText)) {
+      // Diff Apply / replace parity: unique match only — never pin a footnote on the first of many hits.
+      const selection =
+        !spanText && typeof window !== 'undefined' ? window.getSelection()?.toString().trim() || '' : ''
+      const targetPhrase = spanText || selection
+      if (!targetPhrase) {
+        appActions?.addToast({ type: 'error', message: 'No selection found for footnote' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_not_found' } }))
+        return
+      }
+      const match = findUniqueMatch(next, targetPhrase)
+      if (match.kind === 'none') {
+        if (spanText) {
           appActions?.addToast({ type: 'error', message: `Could not locate phrase: "${spanText}"` })
           window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'span_not_found' } }))
-          return
-        }
-        const spanIndex = next.indexOf(spanText)
-        const afterSpan = next.slice(spanIndex + spanText.length, spanIndex + spanText.length + footnoteAnchor.length)
-        if (afterSpan !== footnoteAnchor) {
-          next = next.slice(0, spanIndex + spanText.length) + footnoteAnchor + next.slice(spanIndex + spanText.length)
-        }
-      } else {
-        const selection = typeof window !== 'undefined' ? window.getSelection()?.toString().trim() : ''
-        if (!selection || !next.includes(selection)) {
-          // Fail-closed: no spanText and no usable selection — do not append to end.
+        } else {
           appActions?.addToast({ type: 'error', message: 'No selection found for footnote' })
           window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_not_found' } }))
-          return
         }
-        const selIdx = next.indexOf(selection)
-        next = next.slice(0, selIdx + selection.length) + footnoteAnchor + next.slice(selIdx + selection.length)
+        return
+      }
+      if (match.kind === 'ambiguous') {
+        appActions?.addToast({ type: 'error', message: 'Target phrase matches more than once' })
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_ambiguous' } }))
+        return
+      }
+      const afterSpan = next.slice(
+        match.index + targetPhrase.length,
+        match.index + targetPhrase.length + footnoteAnchor.length
+      )
+      if (afterSpan !== footnoteAnchor) {
+        next =
+          next.slice(0, match.index + targetPhrase.length) +
+          footnoteAnchor +
+          next.slice(match.index + targetPhrase.length)
       }
 
       const existingDefRegex = new RegExp(`^\\s*\\[\\^${marker}\\]:.*$`, 'm')

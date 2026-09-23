@@ -58,6 +58,17 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: parallel web_search inflight + footnote unique-match)
+
+- **Scope:** P0 HARDEN-ONLY after #819 — research cache correctness + notebook footnote fail-closed; no memo polish, no mid-cluster THINK, no iOS theme-color invent.
+- **Survey (file evidence):** wallpaperChrome already has pageshow+visibilitychange relock; orchestrate tool-loop + gateway abort-before-finish; guest chat gate; open-thread preferLocal; stop→partial persist; insert bound target + OS Apply in-flight (#818). Quality-gate outage stays fail-open/`skipped`.
+- **Bugs fixed:**
+  1. **Parallel identical web_search TOCTOU:** `searchCache` only wrote after await, so `Promise.all` fan-out of the same query (research pack) double-fetched. Added `searchInflight` + `shareInflight` so concurrent identical keys share one execution; settled ok results still fill `searchCache` for later rounds.
+  2. **Footnote ambiguous span:** `handleAddFootnote` used first `indexOf` while replace/patch use `findUniqueMatch` fail-closed — could pin `[^n]` on the wrong occurrence. Now unique-match + `selection_ambiguous` nack (parity).
+- **Files:** `pipeline.ts`, `pipeline.test.ts`, `notebook-app/App.tsx`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; vitest pipeline shareInflight; `pnpm exec playwright test tests/notebook-ack-fail.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color P2 (needs device Safari); mid-cluster THINK parked; stream React.memo diminishing returns.
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: gateway-fallback abort-before-finish)
 
 - **Scope:** P0 HARDEN-ONLY — #818 residual; same class as host-search before #810. No redesign; skip iOS theme-color / mid-cluster THINK.
