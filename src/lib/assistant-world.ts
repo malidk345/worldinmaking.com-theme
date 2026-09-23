@@ -1,6 +1,6 @@
 import { ScratchpadStore } from './scratchpad-store'
 import { collectUserNotebooks, type NotebookBrief } from './assistant-notices'
-import { DEVICE_CHAT_OWNER_KEY, getActiveOwnerKey, namespacedStorageKey } from './wim-identity'
+import { readChatsFromLocalStorage } from './chat-local'
 
 export type WorldWindow = { path: string; title: string }
 export type WorldChat = { title: string }
@@ -44,13 +44,13 @@ export type UserWorld = {
 function collectChats(): WorldChat[] {
     if (typeof window === 'undefined') return []
     try {
-        const key = namespacedStorageKey('claude_workspace_chats_v7', getActiveOwnerKey(DEVICE_CHAT_OWNER_KEY))
-        const raw = window.localStorage.getItem(key) || window.localStorage.getItem('claude_workspace_chats_v7')
-        const parsed = raw ? JSON.parse(raw) : []
+        // Owner-namespaced + guest-only legacy (same policy as chat-local).
+        // Do not fall back to global `claude_workspace_chats_v7` for signed-in users.
+        const parsed = readChatsFromLocalStorage<Array<{ title?: unknown }>>([])
         if (!Array.isArray(parsed)) return []
         return parsed
             .slice(0, 8)
-            .map((item: { title?: unknown }) => ({
+            .map((item) => ({
                 title: typeof item?.title === 'string' && item.title.trim() ? item.title.trim() : 'Untitled chat',
             }))
     } catch {

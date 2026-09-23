@@ -629,19 +629,25 @@ export function writeNotebookHistory(id: string, history: NotebookVersion[]): vo
 function readLocalNotebooks(): StoredNotebook[] {
     if (inMemoryNotebooksCache) return inMemoryNotebooksCache
     if (typeof window === 'undefined') return [...DEFAULT_NOTEBOOKS]
-    const data = localStorage.getItem(storageKey()) || localStorage.getItem(STORAGE_KEY_BASE)
+    // Never copy a previous guest/account cache into a signed-in user (parity with chat-local).
+    let data = localStorage.getItem(storageKey())
+    if (!data && !getAuthUserId()) {
+        data = localStorage.getItem(STORAGE_KEY_BASE)
+    }
     if (!data) {
-        const legacy = localStorage.getItem('wim_notebooks_v2')
-        if (legacy) {
-            try {
-                const parsed = JSON.parse(legacy) as StoredNotebook[]
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    const kept = withCanonicalTemplates(parsed)
-                    writeAll(kept)
-                    return kept
+        if (!getAuthUserId()) {
+            const legacy = localStorage.getItem('wim_notebooks_v2')
+            if (legacy) {
+                try {
+                    const parsed = JSON.parse(legacy) as StoredNotebook[]
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        const kept = withCanonicalTemplates(parsed)
+                        writeAll(kept)
+                        return kept
+                    }
+                } catch {
+                    /* fall through */
                 }
-            } catch {
-                /* fall through */
             }
         }
         const seeded = seedDefaults()

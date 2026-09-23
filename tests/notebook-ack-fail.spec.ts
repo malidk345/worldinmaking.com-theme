@@ -218,6 +218,31 @@ test.describe('Fail-closed nacks are present', () => {
     expect(chatSrc).toContain('syncNotebookChatBindForIdentity()');
   });
 
+  test('AI digest collectors stay on active owner notebooks/chats only', async () => {
+    const noticesSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/assistant-notices.ts'),
+      'utf-8'
+    );
+    const worldSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/assistant-world.ts'),
+      'utf-8'
+    );
+    const nbSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/notebook-app/scenes/notebooks/notebookStorage.ts'),
+      'utf-8'
+    );
+    // Must not scan every wim_notebooks_v3:* on the device into AI context.
+    expect(noticesSrc).toContain("namespacedStorageKey('wim_notebooks_v3'");
+    expect(noticesSrc).toContain('getAuthUserId()');
+    expect(noticesSrc).not.toContain("key.startsWith('wim_notebooks_v3')");
+    // Chat titles for world digest use chat-local policy (no signed-in global fallback).
+    expect(worldSrc).toContain('readChatsFromLocalStorage');
+    expect(worldSrc).not.toContain("localStorage.getItem(key) || window.localStorage.getItem('claude_workspace_chats_v7')");
+    // Notebook LS read: guest-only legacy; never into signed-in.
+    expect(nbSrc).toContain('!getAuthUserId()');
+    expect(nbSrc).toContain('localStorage.getItem(STORAGE_KEY_BASE)');
+  });
+
   test('identity namespaces projects/settings/scratchpad and clears session leftovers', async () => {
     const workspaceSrc = fs.readFileSync(
       path.join(process.cwd(), 'src/lib/workspace-local.ts'),

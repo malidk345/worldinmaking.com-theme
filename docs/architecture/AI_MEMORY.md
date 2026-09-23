@@ -58,6 +58,19 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: AI digest + notebook LS owner scope)
+
+- **Scope:** COMPLETE AUDIT of localStorage/sessionStorage (WIM AI + notebook + workspace) after #831. HARDEN-ONLY. Skip THINK / iOS.
+- **Audit:** Enumerated every `wim_` / `claude_workspace_*` / bind / draft / quota key. Most account data already owner-namespaced or identity-cleared (#830/#831). Intentional globals: device owner keys, theme/siteSettings, notebook chrome UI, desktop pins/world session, presence id.
+- **Proven leaks shipped:**
+  1. **`collectUserNotebooks` scanned every `wim_notebooks_v3:*`** on the device — prior accounts' notebook bodies entered AI digests / assistant notices. Now active-owner namespaced key only; guest-only legacy.
+  2. **`assistant-world` `collectChats`** fell back to global `claude_workspace_chats_v7` for signed-in users (chat titles in world digest). Now `readChatsFromLocalStorage` (guest-only legacy).
+  3. **`readLocalNotebooks`** fell back to global `wim_notebooks_v3` / v2 without auth guard — could seed a signed-in cache from leftovers. Guest-only legacy parity with chat-local.
+- **Residuals (not shipped):** `wim_os_archived_items_v2` notes (OS layout, not AI-fed); `wim_dismissed_notebook_notes` (id set); `wim_notebook_history_*` (keyed by notebook id); chrome/theme/pins intentional device.
+- **Files:** `assistant-notices.ts`(+test), `assistant-world.ts`, `notebookStorage.ts`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm run typecheck:shell`; vitest assistant-notices|workspace-local|notebook-chat-bind|scratchpad-store; Playwright needle `AI digest collectors stay on active owner`
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked (product).
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: identity namespace projects/settings/scratchpad)
 
 - **Scope:** P3 residual after #830 — hunt NEW global (non-owner-namespaced) keys that leak across logout like `wim_chat_notebook_bind`. Skip THINK / iOS invent / re-polish of reset+bind identity clears just shipped.
