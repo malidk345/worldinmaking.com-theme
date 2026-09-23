@@ -160,4 +160,22 @@ test.describe('Fail-closed nacks are present', () => {
     }
   });
 
+
+  test('create_notebook OS Apply binds chat + stamps notebookId', async () => {
+    const src = fs.readFileSync(
+      path.join(process.cwd(), 'src/components/ClaudeWorkspaceChat/index.tsx'),
+      'utf-8'
+    );
+    const start = src.indexOf("if (action.type === 'create_notebook')");
+    expect(start).toBeGreaterThan(-1);
+    const end = src.indexOf("} else if (action.type === 'insert_notebook_block')", start);
+    expect(end).toBeGreaterThan(start);
+    const block = src.slice(start, end);
+    // Must bind immediately — notebook App only binds on Ask AI click.
+    expect(block).toContain('bindNotebookChat({ notebookId: nb.id');
+    expect(block).toContain('notebookId: nb.id');
+    expect(block).toContain('void pushChatToRemote(stamped)');
+    expect(block).toContain("wimNotebookAck");
+  });
+
 });
