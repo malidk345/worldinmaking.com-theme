@@ -232,7 +232,7 @@ export function useWindowRegistry({
 
         return `${location.pathname}?${qs.stringify(allParams, { encode: false })}`
         // Positions change every drag frame. The share string only needs structure.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // (react-hooks plugin not in lint:shell; deps intentionally omit window positions.)
     }, [desktopLayoutKey, taskbarHeight, location, isSSR])
 
     useEffect(() => {
