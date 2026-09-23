@@ -58,6 +58,19 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: ThinkingBlock memo + EMPTY thinking + stable Stop)
+
+- **Scope:** P1 HARDEN-ONLY micro-pass after #816 — stream thinking chrome cost; no redesign, no P2 iOS theme-color, no mid-cluster THINK, no quality-gate product flip (WIM_AI docs keep outage fail-open/`skipped`).
+- **Survey ranking:** (1) ChatMessage allocated a fresh empty `thinkingProcess` object every paint when unset → ThinkingBlock `React.memo` always missed during early stream/answering; (2) ThinkingBlock default shallow memo compared `onStop`/`onToolActivate` identity → timeline re-rendered every rAF while thinking settled; (3) `handleStopStreaming` not useCallback → Stop arrow churned (ChatInput ignores it; ThinkingBlock did not). Header memo still tiny. Quality-gate fail-open documented intentional. Wallpaper relock needs device Safari. Named edit/retry/feedback still ignored by ChatMessage memo.
+- **Change:**
+  1. **EMPTY_THINKING_PROCESS** hoist in ChatMessage.
+  2. **ThinkingBlock** custom memo (thinking/toolTrace/isLive/livePhase/model/timestamp; ignore handler identity).
+  3. **handleStopStreaming** `useCallback` via `activeChatIdRef`/`chatsRef`; keydown deps include it (Cmd/Ctrl+. Stop).
+- **Files:** `ChatMessage.tsx`, `ThinkingBlock.tsx`, `ClaudeWorkspaceChat/index.tsx`, `tests/harden-desk-paths.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/harden-desk-paths.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color bounce (P2, needs device Safari); mid-cluster THINK latency parked; Header still unmemoized (tiny); edit/retry/feedback bare (memo ignores); quality-gate outage stays fail-open per WIM_AI.md. Next wave: diminishing returns unless profiling shows another hot child or a correctness bug.
+
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: Sidebar memo + MessageList handlers + stable handleNewChat)
 
 - **Scope:** P1 HARDEN-ONLY micro-pass after #815 — stream list/sidebar churn; no redesign, no P2 iOS theme-color, no mid-cluster THINK.

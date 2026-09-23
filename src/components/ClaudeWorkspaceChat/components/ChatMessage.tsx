@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType, HumanTurn } from '../types';
+import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType, HumanTurn, ThinkingProcess } from '../types';
 import { getRenderer } from '../../../lib/artifacts'
 import { stripLeakedToolMarkup } from '../../../lib/bots/tools/leak'
 import { ThinkingBlock } from './ThinkingBlock';
+
+/** Stable empty thinking — inline `{}` every ChatMessage paint defeats ThinkingBlock memo mid-stream. */
+const EMPTY_THINKING_PROCESS: ThinkingProcess = {
+  summary: '',
+  durationSeconds: 0,
+  tokenCount: 0,
+  steps: [],
+  source: 'none',
+};
 
 import { Copy, Check, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react';
 import { SourceFavicon } from './SourceFavicon';
@@ -679,15 +688,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                 modelOptions[0]
               }
               timestamp={message.timestamp}
-              thinking={
-                message.thinkingProcess || {
-                  summary: '',
-                  durationSeconds: 0,
-                  tokenCount: 0,
-                  steps: [],
-                  source: 'none',
-                }
-              }
+              thinking={message.thinkingProcess || EMPTY_THINKING_PROCESS}
               toolTrace={message.toolTrace}
               isLive={!!message.isStreaming}
               livePhase={message.isStreaming ? livePhase : null}

@@ -413,4 +413,15 @@ const ThinkingBlockComponent: React.FC<ThinkingBlockProps> = ({
   )
 }
 
-export const ThinkingBlock = React.memo(ThinkingBlockComponent)
+export const ThinkingBlock = React.memo(ThinkingBlockComponent, (prev, next) => {
+  // Parent stream paints allocate new onStop / onToolActivate arrows; comparing
+  // them would re-render the timeline on every token while thinking is settled.
+  return (
+    prev.thinking === next.thinking &&
+    prev.toolTrace === next.toolTrace &&
+    prev.isLive === next.isLive &&
+    prev.livePhase === next.livePhase &&
+    prev.model === next.model &&
+    prev.timestamp === next.timestamp
+  )
+})

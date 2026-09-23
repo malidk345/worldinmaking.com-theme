@@ -2563,14 +2563,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     })
   };
 
-  const handleStopStreaming = () => {
+  // Stable Stop: ThinkingBlock memo + ChatInput memo + Cmd/Ctrl+. keydown must not
+  // see a new arrow every rAF token paint (same pattern as handleNewChat).
+  const handleStopStreaming = useCallback(() => {
     abortActiveStream()
     setIsStreaming(false)
     setStreamStatus(null)
     // Release pin; keep min spacer so Stop does not yank into older history.
     clearMessagePinPreservingView()
-    const chatId = activeChat?.id
-    const last = activeChat?.messages.at(-1)
+    const chatId = activeChatIdRef.current
+    const chat = chatsRef.current.find((c) => c.id === chatId)
+    const last = chat?.messages.at(-1)
     if (chatId && last?.role === 'assistant' && last.isStreaming) {
       updateAssistantMessage(chatId, last.id, {
         isStreaming: false,
@@ -2580,7 +2583,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
     // Stop used to skip remote persist (only stream finally set the ref) — mark for save.
     if (chatId) persistChatIdRef.current = chatId
-  }
+  }, [abortActiveStream, clearMessagePinPreservingView])
 
   const executeOSAction = (msgId: string, action: OSActionCardType, chatId = activeChatId) => {
     const key = `${chatId}:${msgId}:${action.type}:${JSON.stringify(action.payload || {}).slice(0, 200)}`;
@@ -3105,7 +3108,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [isSourcesOpen, isArtifactsOpen, searchModalOpen, isStreaming, handleNewChat])
+  }, [isSourcesOpen, isArtifactsOpen, searchModalOpen, isStreaming, handleNewChat, handleStopStreaming])
 
   // Stabilize ChatInput props across ~rAF token flushes (ChatInput is React.memo'd).
   const pendingHumanTurnMessage = useMemo(() => {
