@@ -58,6 +58,13 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Jules (perf: fix N+1 query in chat cleanup)
+
+- **Scope:** Optimization of `listDeletedChatIds` in `src/lib/chat-store.ts` by replacing sequential `for...of` loop with batch processing.
+- **Change:** Replaced single-item tombstone recording and single-item delete queries in a loop with `Promise.all` for tombstone recording and a single `.in('id', leftoverIds)` Supabase delete call.
+- **Files:** `src/lib/chat-store.ts`, `src/lib/chat-store.test.ts`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** `npx vitest run --environment node src/lib/chat-store.test.ts` (PASS), `pnpm typecheck:shell` (PASS), `pnpm lint:shell` (PASS).
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: reset clears notebook↔chat bind)
 
 - **Scope:** P3 residual from post-#828 CLEAN survey — `handleResetData` left `wim_chat_notebook_bind` after wiping chats. No THINK / iOS / other invent.

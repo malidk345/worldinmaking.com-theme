@@ -205,9 +205,13 @@ export async function listDeletedChatIds(ownerKey: string, userId?: string): Pro
     const { data, error } = await query.limit(500)
     if (error) throw error
     const leftover = (data as { id: string; owner_key: string; auth_user_id: string | null }[] | null) || []
-    for (const row of leftover) {
-        await recordSyncTombstone('chat', row.id, row.owner_key, row.auth_user_id)
-        await supabaseAdmin.from('wim_chats').delete().eq('id', row.id)
+    if (leftover.length > 0) {
+        await Promise.all(
+            leftover.map((row) => recordSyncTombstone('chat', row.id, row.owner_key, row.auth_user_id))
+        )
+        const leftoverIds = leftover.map((row) => row.id)
+        const { error: deleteError } = await supabaseAdmin.from('wim_chats').delete().in('id', leftoverIds)
+        if (deleteError) throw deleteError
     }
     return Array.from(new Set([...fromLedger, ...leftover.map((row) => row.id)]))
 }
