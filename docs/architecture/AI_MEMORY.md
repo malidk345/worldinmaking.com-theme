@@ -70,6 +70,16 @@
 - **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/harden-desk-paths.spec.ts`
 - **CI needle:** refreshed stale `searchWebSources(..., { readPages: true })` expect in harden-desk-paths (post-excerpt PR drift).
 - **Residual:** Soft-keyboard / iOS theme-color bounce (P2) untouched; mid-cluster THINK latency untouched. Stream still maps chats on each paint — message/list memoization is the remaining hot path if profiling shows cost.
+### 2026-09-23 — Antigravity (fix: remove focus window outline and highlight on mobile)
+- **Scope:** Mobile OS Shell UX. Remove extra focus outline, focus ring, and highlight border/shadow from `AppWindow` on mobile devices without affecting desktop windowing or functional window management.
+- **Changes:**
+  1. `global.css`: Restated `[data-app='AppWindow']:focus-visible` outline (`2px solid var(--accent, #f54e00)`) under `@media (min-width: 768px)` so it only targets desktop. Added explicit `outline: none !important; box-shadow: none !important;` on `#app-container div[data-app='AppWindow']` under `@media (max-width: 767px)` for both `:focus` and `:focus-visible`.
+  2. `src/components/AppWindow/index.tsx`:
+     - Restricted programmatic `windowRef.current?.focus({ preventScroll: true })` to desktop (`!isMobile`), avoiding synthetic mobile `:focus-visible` / keyboard blur glitches on touch.
+     - Scoped `focus-visible:ring-2 focus-visible:ring-primary/50` to desktop (`md:focus-visible:...`).
+     - Scoped active focus border and heavy shadow (`border-primary/90 shadow-[...]`) to desktop only (`!isMobile && focusedWindow?.key === item.key`), keeping mobile window framing clean and uniform (`border-primary/40 shadow-sm`).
+- **Files:** `src/styles/global.css`, `src/components/AppWindow/index.tsx`, `docs/architecture/AI_MEMORY.md`.
+- **Verify:** `pnpm typecheck:shell` PASS (0 gated errors). No automated tests or git push run per user directive.
 
 ### 2026-09-23 — Grok Bot / Cursor (harden: guest chat remote sync gate / notebook parity)
 

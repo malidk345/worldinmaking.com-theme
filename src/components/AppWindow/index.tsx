@@ -249,10 +249,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     }, [windowRef.current])
 
     useEffect(() => {
-        if (focusedWindow?.key === item.key) {
+        if (!isMobile && focusedWindow?.key === item.key) {
             windowRef.current?.focus({ preventScroll: true })
         }
-    }, [focusedWindow?.key, item.key])
+    }, [focusedWindow?.key, item.key, isMobile])
 
     const { toggleExpanded, handleDoubleClick, handleClose, handleMouseDown } = useWindowActions({
         item,
@@ -406,8 +406,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme={isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? 'primary' : 'tertiary'}
-                    className={`focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border transition-shadow duration-200 pb-[env(safe-area-inset-bottom)] ${
-                        focusedWindow?.key === item.key
+                    className={`focus:outline-none md:focus-visible:ring-2 md:focus-visible:ring-primary/50 group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border transition-shadow duration-200 pb-[env(safe-area-inset-bottom)] ${
+                        !isMobile && focusedWindow?.key === item.key
                             ? 'border-primary/90 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.5)]'
                             : `border-primary/40 shadow-sm${
                                   isScratchpadWindowPath(item.path) || isTrashWindowPath(item.path) || isAssistantWindowPath(item.path) ? '' : ' opacity-[0.985]'
