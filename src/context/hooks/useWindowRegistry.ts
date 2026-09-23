@@ -140,6 +140,8 @@ export function useWindowRegistry({
                             typeof stored !== 'object' ||
                             typeof stored.size?.width !== 'number' ||
                             typeof stored.size?.height !== 'number' ||
+                            stored.size.width <= 0 ||
+                            stored.size.height <= 0 ||
                             typeof stored.position?.x !== 'number' ||
                             typeof stored.position?.y !== 'number'
                         ) {
@@ -167,7 +169,7 @@ export function useWindowRegistry({
         if (!layoutRestoredRef.current || isMobile || isVisitingRoom()) return
 
         const layout = windows.reduce<Record<string, unknown>>((result, win) => {
-            if (win.path.startsWith('/')) {
+            if (win.path.startsWith('/') && win.size.width > 0 && win.size.height > 0) {
                 result[win.path] = {
                     size: win.size,
                     position: win.position,
@@ -618,15 +620,12 @@ export function useWindowRegistry({
             windowed: isWindowed,
         }
 
-        if (!newWindow.expanded) {
-            // Adjust width if window extends beyond right edge
-            if (newWindow.position.x + newWindow.size.width > (isSSR ? 0 : window.innerWidth) - 20) {
-                newWindow.size.width = isSSR ? 0 : window.innerWidth - newWindow.position.x - 20
+        if (!newWindow.expanded && !isSSR && typeof window !== 'undefined') {
+            if (newWindow.position.x + newWindow.size.width > window.innerWidth - 20) {
+                newWindow.size.width = window.innerWidth - newWindow.position.x - 20
             }
-
-            // Adjust height if window extends beyond bottom edge
-            if (newWindow.position.y + newWindow.size.height > (isSSR ? 0 : window.innerHeight) - taskbarHeight - 20) {
-                newWindow.size.height = isSSR ? 0 : window.innerHeight - newWindow.position.y - taskbarHeight - 20
+            if (newWindow.position.y + newWindow.size.height > window.innerHeight - taskbarHeight - 20) {
+                newWindow.size.height = window.innerHeight - newWindow.position.y - taskbarHeight - 20
             }
         }
 
