@@ -96,7 +96,7 @@ interface ChatInputProps {
   onNextSection?: () => void;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({
+const ChatInputComponent: React.FC<ChatInputProps> = ({
   onSendMessage,
   onStopStreaming,
   isStreaming,
@@ -902,3 +902,52 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     </div>
   );
 };
+
+/** Skip re-render when stream flushes only change sibling bubbles (ChatMessage already memoized). */
+function samePendingTurn(a?: HumanTurn, b?: HumanTurn): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  return (
+    a.kind === b.kind &&
+    a.status === b.status &&
+    a.title === b.title &&
+    a.question === b.question &&
+    a.summary === b.summary &&
+    a.answer === b.answer &&
+    a.revisionNote === b.revisionNote &&
+    a.plan === b.plan &&
+    a.choices === b.choices
+  )
+}
+
+function sameAttachments(a?: FileAttachment[], b?: FileAttachment[]): boolean {
+  if (a === b) return true
+  if (!a || !b) return !a && !b
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i]?.id !== b[i]?.id || a[i]?.name !== b[i]?.name) return false
+  }
+  return true
+}
+
+function chatInputPropsEqual(prev: ChatInputProps, next: ChatInputProps): boolean {
+  // Callbacks are parent closures; treat as stable for stream-time memo (handlers do not change mid-flush).
+  return (
+    prev.isStreaming === next.isStreaming &&
+    prev.draftNonce === next.draftNonce &&
+    prev.draftPrompt === next.draftPrompt &&
+    prev.selectedModelId === next.selectedModelId &&
+    prev.selectedStylePreset === next.selectedStylePreset &&
+    prev.agentMode === next.agentMode &&
+    prev.lockShakeNonce === next.lockShakeNonce &&
+    prev.nextSectionTitle === next.nextSectionTitle &&
+    prev.nextSectionLabel === next.nextSectionLabel &&
+    prev.boundNotebookTitle === next.boundNotebookTitle &&
+    prev.menuPlacement === next.menuPlacement &&
+    prev.models === next.models &&
+    samePendingTurn(prev.pendingHumanTurn, next.pendingHumanTurn) &&
+    sameAttachments(prev.incomingAttachments, next.incomingAttachments)
+  )
+}
+
+export const ChatInput = React.memo(ChatInputComponent, chatInputPropsEqual);

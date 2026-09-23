@@ -7,7 +7,7 @@ const root = process.cwd()
 test.describe('HARDEN desk / WIM AI / notebook path locks', () => {
   test('host web search passes client AbortSignal (Stop reaches Tavily/Brave)', async () => {
     const src = fs.readFileSync(path.join(root, 'src/lib/bots/orchestrate.ts'), 'utf-8')
-    expect(src).toContain('searchWebSources(searchQuery, runtimeEnv, input.abortSignal)')
+    expect(src).toContain('searchWebSources(searchQuery, runtimeEnv, input.abortSignal, { readPages: true })')
     expect(src).toContain("err.name === 'AbortError'")
     expect(src).toContain(
       'Abort before finish so held public tokens are not flushed after Stop mid host-search.'
@@ -49,4 +49,31 @@ test.describe('HARDEN desk / WIM AI / notebook path locks', () => {
     const chat = fs.readFileSync(path.join(root, 'src/components/ClaudeWorkspaceChat/index.tsx'), 'utf-8')
     expect(chat).toContain('failClosedNotebookMount')
   })
+
+  test('ChatInput memo + rAF token coalesce + todo_write activePlan remote push', async () => {
+    const input = fs.readFileSync(
+      path.join(root, 'src/components/ClaudeWorkspaceChat/components/ChatInput.tsx'),
+      'utf-8'
+    )
+    expect(input).toContain('React.memo(ChatInputComponent, chatInputPropsEqual)')
+    expect(input).toContain('prev.isStreaming === next.isStreaming')
+    expect(input).toContain('prev.draftNonce === next.draftNonce')
+
+    const src = fs.readFileSync(path.join(root, 'src/components/ClaudeWorkspaceChat/index.tsx'), 'utf-8')
+    expect(src).toContain('scheduleStreamingTokenPaint')
+    expect(src).toContain('requestAnimationFrame(paintStreamingTokens)')
+    expect(src).toContain('accumulatedContent.length < 40')
+    expect(src).toContain('cancelTokenFlushRaf')
+    expect(src).toContain('pendingHumanTurnMessage')
+    // Stream-time ChatInput no longer allocates reverse().find every render.
+    expect(src).toContain('pendingHumanTurn={pendingHumanTurn}')
+
+    const todoStart = src.indexOf("parsed.tool.name === 'todo_write' && parsed.tool.status === 'done'")
+    expect(todoStart).toBeGreaterThan(-1)
+    const todoBlock = src.slice(todoStart, todoStart + 900)
+    expect(todoBlock).toContain('activePlan: row.tasks')
+    expect(todoBlock).toContain('void pushChatToRemote(chat)')
+    expect(todoBlock).toContain('updatedAt: new Date().toISOString()')
+  })
+
 })

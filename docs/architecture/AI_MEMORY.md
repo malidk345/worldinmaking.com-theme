@@ -52,12 +52,24 @@
 
 ## 4. Current Tasks & Locking
 - **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** P0 HARDEN-ONLY — Gate guest chat remote sync (#806 notebook parity): canSyncChatsToRemote; gate pull/push/subscribe/poll; keep adopt/claim.
+- **Task:** P1 HARDEN-ONLY — Memoize ChatInput + rAF token coalesce + pushChatToRemote on todo_write→activePlan (stream/UI persist perf).
 
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-23 — Grok Bot / Cursor (harden: ChatInput memo + rAF token flush + activePlan remote)
+
+- **Scope:** P1 HARDEN-ONLY — stream/UI persist perf; no redesign, no P2 iOS theme-color, no mid-cluster THINK.
+- **Change:**
+  1. **ChatInput:** `React.memo` + custom compare (isStreaming, draftNonce, pending turn, next-step chips, attachments). Parent stabilizes pendingHumanTurn / nextSectionTitle via useMemo (no per-flush `reverse().find`) and useCallback for human/next/dismiss handlers.
+  2. **Token flush:** replace `>24ms` throttle with rAF coalesce (`scheduleStreamingTokenPaint`); keep first-bytes eager (`length < 40`); cancel pending rAF on stream end/abort.
+  3. **activePlan:** on `todo_write` done, set `activePlan` + `updatedAt` and `pushChatToRemote` (same dirty coalesce as mode/bind) so mid-turn plan syncs dual-device.
+- **Files:** `ChatInput.tsx`, `ClaudeWorkspaceChat/index.tsx`, `tests/harden-desk-paths.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/harden-desk-paths.spec.ts`
+- **CI needle:** refreshed stale `searchWebSources(..., { readPages: true })` expect in harden-desk-paths (post-excerpt PR drift).
+- **Residual:** Soft-keyboard / iOS theme-color bounce (P2) untouched; mid-cluster THINK latency untouched. Stream still maps chats on each paint — message/list memoization is the remaining hot path if profiling shows cost.
 
 ### 2026-09-23 — Grok Bot / Cursor (harden: guest chat remote sync gate / notebook parity)
 

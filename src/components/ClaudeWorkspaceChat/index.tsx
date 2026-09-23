@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Chat,
   Message,
@@ -1464,6 +1464,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       hadMeaningfulStreamProgress = true;
       lastMeaningfulAt = Date.now();
     };
+    let tokenFlushRaf: number | null = null;
+    const cancelTokenFlushRaf = () => {
+      if (tokenFlushRaf == null) return;
+      cancelAnimationFrame(tokenFlushRaf);
+      tokenFlushRaf = null;
+    };
     try {
 
       // Resolve active turn attachments or preserve active session document memory
@@ -1706,7 +1712,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       let buffer = '';
       let streamedCitations: Message['citations'] = [];
 
-      let lastTokenFlushTime = 0;
+      const paintStreamingTokens = () => {
+        tokenFlushRaf = null;
+        updateAssistantMessage(targetChatId, assistantMessageId, {
+          content: visibleStreamingReply(sanitizePublicAssistantText(accumulatedContent)),
+          thinkingProcess: { ...currentThinkingProcess },
+        });
+      };
+      /** Coalesce mid-stream token paints to one rAF; keep first bytes eager. */
+      const scheduleStreamingTokenPaint = () => {
+        if (accumulatedContent.length < 40) {
+          cancelTokenFlushRaf();
+          paintStreamingTokens();
+          return;
+        }
+        if (tokenFlushRaf != null) return;
+        tokenFlushRaf = requestAnimationFrame(paintStreamingTokens);
+      };
       const streamSignal = activeController.signal;
 
       while (true) {
@@ -1918,9 +1940,17 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               try {
                 const row = JSON.parse(parsed.tool.result || '{}') as { tasks?: Chat['activePlan'] }
                 if (Array.isArray(row.tasks) && row.tasks.length) {
-                  setChats((prev) =>
-                    prev.map((chat) => (chat.id === targetChatId ? { ...chat, activePlan: row.tasks } : chat))
-                  )
+                  setChats((prev) => {
+                    const next = prev.map((chat) =>
+                      chat.id === targetChatId
+                        ? { ...chat, activePlan: row.tasks, updatedAt: new Date().toISOString() }
+                        : chat
+                    )
+                    const chat = next.find((item) => item.id === targetChatId)
+                    // Dual-device: activePlan must reach remote mid-turn (parity with mode/bind).
+                    if (chat) void pushChatToRemote(chat)
+                    return next
+                  })
                 }
               } catch {
                 /* ignore */
@@ -2203,14 +2233,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (parsed.type === 'token') {
             accumulatedContent += parsed.text;
             setStreamStatus((prev) => (prev === 'quality' ? prev : 'answering'))
-            const now = Date.now();
-            if (now - lastTokenFlushTime > 24 || accumulatedContent.length < 40) {
-              lastTokenFlushTime = now;
-              updateAssistantMessage(targetChatId, assistantMessageId, {
-                content: visibleStreamingReply(sanitizePublicAssistantText(accumulatedContent)),
-                thinkingProcess: { ...currentThinkingProcess },
-              });
-            }
+            scheduleStreamingTokenPaint();
           }
 
           if (parsed.type === 'token_usage' && parsed.snapshot) {
@@ -2328,6 +2351,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         }
       }
 
+      cancelTokenFlushRaf();
       // If we had a backend error, do not overwrite the assistant message again with empty content!
       if (!backendError) {
         currentThinkingProcess.durationSeconds = Math.max(
@@ -2359,6 +2383,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
       isStreamComplete = true; // successfully reached the end!
     } catch (err: any) {
+      cancelTokenFlushRaf();
       if (isAbortError(err)) {
         const stoppedText = visibleStreamingReply(sanitizePublicAssistantText(accumulatedContent))
         const resumeAbort = resumeAbortRef.current
@@ -3057,6 +3082,72 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isSourcesOpen, isArtifactsOpen, searchModalOpen, isStreaming, handleNewChat])
 
+  // Stabilize ChatInput props across ~rAF token flushes (ChatInput is React.memo'd).
+  const pendingHumanTurnMessage = useMemo(() => {
+    const messages = activeChat?.messages
+    if (!messages?.length) return undefined
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const item = messages[i]
+      if (item.humanTurn?.status === 'pending') return item
+    }
+    return undefined
+  }, [activeChat?.messages])
+
+  const pendingHumanTurn = pendingHumanTurnMessage?.humanTurn
+
+  const nextPlanStep = useMemo(() => {
+    const plan = activeChat?.activePlan
+    if (!plan?.length) return undefined
+    return plan.find((item) => item.status === 'in_progress') || plan.find((item) => item.status === 'pending')
+  }, [activeChat?.activePlan])
+
+  const nextSectionTitle = useMemo(() => {
+    if (isStreaming) return undefined
+    const mode = activeChat?.agentMode || 'ask'
+    if (mode !== 'execute' && mode !== 'plan') return undefined
+    const last = activeChat?.messages.at(-1)
+    if (last?.role !== 'assistant' || !last.isTypingDone) return undefined
+    if (pendingHumanTurn) return undefined
+    return nextPlanStep?.title
+  }, [
+    isStreaming,
+    activeChat?.agentMode,
+    activeChat?.messages,
+    pendingHumanTurn,
+    nextPlanStep?.title,
+  ])
+
+  const nextSectionLabel = (activeChat?.agentMode || 'ask') === 'plan' ? 'Next step' : 'Next section'
+
+  const handleComposerHumanRespond = useCallback(
+    (action: 'run' | 'revise' | 'answer', payload?: string) => {
+      const pending = pendingHumanTurnMessage
+      if (pending) handleHumanRespond(pending.id, action, payload)
+    },
+    // handleHumanRespond closes over activeChat; rebind when pending turn identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pendingHumanTurnMessage]
+  )
+
+  const handleNextSection = useCallback(() => {
+    const step = nextPlanStep
+    if (!step) return
+    const mode = (activeChat?.agentMode || 'ask') === 'plan' ? 'plan' : 'execute'
+    const prompt =
+      mode === 'plan'
+        ? `Continue with the next plan step: "${step.title}". Do only that step. Do not ask me for next steps. When it is done, stop so I can continue.`
+        : `Continue with the next plan step: "${step.title}". Write that section into the notebook. Do not skip ahead.`
+    void handleSendMessage(prompt, [], { agentMode: mode })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nextPlanStep, activeChat?.agentMode])
+
+  const handleDismissNotebookContext = useCallback(() => {
+    if (activeNotebookInfo?.id) {
+      setDismissedNotebookId(activeNotebookInfo.id)
+    }
+    setNotebookBind(null)
+  }, [activeNotebookInfo?.id])
+
   return (
     <LemonScope fill>
     <div className="relative flex h-full min-h-0 w-full min-w-0 text-primary font-sans overflow-hidden antialiased">
@@ -3213,16 +3304,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               isStreaming={isStreaming}
               selectedStylePreset={selectedStylePreset}
               onChangeStylePreset={setSelectedStylePreset}
-              pendingHumanTurn={
-                [...(activeChat?.messages || [])].reverse().find((item) => item.humanTurn?.status === 'pending')
-                  ?.humanTurn
-              }
-              onHumanRespond={(action, payload) => {
-                const pending = [...(activeChat?.messages || [])]
-                  .reverse()
-                  .find((item) => item.humanTurn?.status === 'pending')
-                if (pending) handleHumanRespond(pending.id, action, payload)
-              }}
+              pendingHumanTurn={pendingHumanTurn}
+              onHumanRespond={handleComposerHumanRespond}
               models={models}
               selectedModelId={selectedModelId}
               onSelectModel={handleSelectModel}
@@ -3233,36 +3316,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               agentMode={activeChat?.agentMode || 'ask'}
               onAgentModeChange={handleAgentModeChange}
               lockShakeNonce={lockShakeNonce}
-              nextSectionTitle={
-                !isStreaming &&
-                ((activeChat?.agentMode || 'ask') === 'execute' || (activeChat?.agentMode || 'ask') === 'plan') &&
-                activeChat?.messages.at(-1)?.role === 'assistant' &&
-                activeChat.messages.at(-1)?.isTypingDone &&
-                !(activeChat?.messages || []).some((item) => item.humanTurn?.status === 'pending')
-                  ? (activeChat.activePlan || []).find((item) => item.status === 'in_progress')?.title ||
-                    (activeChat.activePlan || []).find((item) => item.status === 'pending')?.title
-                  : undefined
-              }
-              nextSectionLabel={(activeChat?.agentMode || 'ask') === 'plan' ? 'Next step' : 'Next section'}
-              onNextSection={() => {
-                const step =
-                  (activeChat?.activePlan || []).find((item) => item.status === 'in_progress') ||
-                  (activeChat?.activePlan || []).find((item) => item.status === 'pending')
-                if (!step) return
-                const mode = (activeChat?.agentMode || 'ask') === 'plan' ? 'plan' : 'execute'
-                const prompt =
-                  mode === 'plan'
-                    ? `Continue with the next plan step: "${step.title}". Do only that step. Do not ask me for next steps. When it is done, stop so I can continue.`
-                    : `Continue with the next plan step: "${step.title}". Write that section into the notebook. Do not skip ahead.`
-                void handleSendMessage(prompt, [], { agentMode: mode })
-              }}
-
-              onDismissNotebookContext={() => {
-                if (activeNotebookInfo?.id) {
-                  setDismissedNotebookId(activeNotebookInfo.id);
-                }
-                setNotebookBind(null);
-              }}
+              nextSectionTitle={nextSectionTitle}
+              nextSectionLabel={nextSectionLabel}
+              onNextSection={handleNextSection}
+              onDismissNotebookContext={handleDismissNotebookContext}
               menuPlacement="top-start"
             />
           </div>
