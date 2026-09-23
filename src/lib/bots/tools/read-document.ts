@@ -158,12 +158,25 @@ export async function executeReadDocument(
 
     // 1. Resolve from Host Snapshot / Active Notebook / Artifacts if document name is given
     if (!rawUrl && docName && host) {
+        // Bound notebook title match: use selection or notebooks[].content — never the id string.
         if (host.notebookTitle && host.notebookTitle.toLowerCase().includes(docName.toLowerCase())) {
-            const content = (host.selection || host.notebookId || 'Notebook Document').slice(0, MAX_DOC_CHARS)
-            return {
-                ok: true,
-                text: `[Document: ${host.notebookTitle}]\n${content}`,
+            const bound = host.notebookId
+                ? host.notebooks?.find((nb) => nb.id === host.notebookId)
+                : undefined
+            const content = (host.selection?.trim() || bound?.content || '').trim()
+            if (content) {
+                const filtered = applyKeywordFilter(
+                    content,
+                    filterQuery,
+                    `notebook "${host.notebookTitle}"`
+                )
+                if (!filtered.ok) return filtered
+                return {
+                    ok: true,
+                    text: `[Document: ${host.notebookTitle}]\n${filtered.content.slice(0, MAX_DOC_CHARS)}`,
+                }
             }
+            // No real body yet — fall through to notebooks[] / attachments / fail-closed.
         }
         if (host.notebooks?.length) {
             const matchedNb = host.notebooks.find(
@@ -200,12 +213,12 @@ export async function executeReadDocument(
             }
         }
         if (host.attachments?.length) {
-            const matchedAtt =
-                host.attachments.find(
-                    (att) =>
-                        att.name.toLowerCase().includes(docName.toLowerCase()) ||
-                        docName.toLowerCase().includes(att.name.toLowerCase())
-                ) || (host.attachments.length === 1 ? host.attachments[0] : undefined)
+            // Explicit name: fail-closed on mismatch (do not silently return the only attachment).
+            const matchedAtt = host.attachments.find(
+                (att) =>
+                    att.name.toLowerCase().includes(docName.toLowerCase()) ||
+                    docName.toLowerCase().includes(att.name.toLowerCase())
+            )
             if (matchedAtt) {
                 return readLocalDocument(
                     matchedAtt.content || '',

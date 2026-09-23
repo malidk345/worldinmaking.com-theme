@@ -245,6 +245,29 @@ describe('Roadmap AI Tools Execution', () => {
             expect(res.action?.payload.notebookId).toBe('nb-123')
         })
 
+        it('fails closed when notebookId is supplied but missing from host', async () => {
+            const host: HostSnapshot = {
+                notebooks: [{ id: 'nb-real', title: 'Real Notes', content: '# hi' }],
+            }
+            const res = await executeToolCall(
+                {
+                    id: 'call-8b',
+                    name: 'generate_flashcards',
+                    argumentsJson: JSON.stringify({
+                        topic: 'Ghost Notebook',
+                        cards: [{ front: 'Q?', back: 'A.' }],
+                        save_to_notebook: true,
+                        notebookId: 'nb-missing',
+                    }),
+                },
+                undefined,
+                host
+            )
+            expect(res.ok).toBe(false)
+            expect(res.result).toContain('not found')
+            expect(res.action).toBeUndefined()
+        })
+
         it('returns error when flashcards array is empty', async () => {
             const res = await executeToolCall({
                 id: 'call-9',

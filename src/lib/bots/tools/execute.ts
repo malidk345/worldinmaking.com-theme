@@ -1089,26 +1089,54 @@ function executeGenerateFlashcards(
 
     let action: HostOsAction | undefined
     if (saveToNotebook) {
-        const targetId = notebookId || host?.notebookId || host?.notebooks?.[0]?.id
-        if (targetId) {
+        const notebooks = host?.notebooks || []
+        const requested = (notebookId || '').trim()
+        // Explicit id/title: fail-closed when missing (export_notebook parity — never claim
+        // saved_to_notebook under a wrong id that OS Apply will nack).
+        if (requested) {
+            const match = notebooks.find(
+                (n) => n.id === requested || n.title.toLowerCase() === requested.toLowerCase()
+            )
+            if (!match) {
+                return {
+                    ok: false,
+                    result: JSON.stringify({
+                        ok: false,
+                        error: `Notebook "${requested}" not found. Call list_notebooks to see available notebooks.`,
+                    }),
+                }
+            }
             action = {
                 type: 'insert_notebook_block',
                 title: `Appended flashcard deck "${title}" to notebook`,
                 description: `Appended ${cards.length} flashcards to notebook`,
                 payload: {
-                    notebookId: targetId,
+                    notebookId: match.id,
                     content: `\n\n${markdownDeck}\n`,
                 },
             }
         } else {
-            action = {
-                type: 'create_notebook',
-                title: `Create flashcard notebook: ${title}`,
-                description: `Created flashcard deck notebook with ${cards.length} cards`,
-                payload: {
-                    title,
-                    content: markdownDeck,
-                },
+            const targetId = host?.notebookId || notebooks[0]?.id
+            if (targetId) {
+                action = {
+                    type: 'insert_notebook_block',
+                    title: `Appended flashcard deck "${title}" to notebook`,
+                    description: `Appended ${cards.length} flashcards to notebook`,
+                    payload: {
+                        notebookId: targetId,
+                        content: `\n\n${markdownDeck}\n`,
+                    },
+                }
+            } else {
+                action = {
+                    type: 'create_notebook',
+                    title: `Create flashcard notebook: ${title}`,
+                    description: `Created flashcard deck notebook with ${cards.length} cards`,
+                    payload: {
+                        title,
+                        content: markdownDeck,
+                    },
+                }
             }
         }
     } else {

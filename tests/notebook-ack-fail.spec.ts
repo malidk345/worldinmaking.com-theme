@@ -314,6 +314,22 @@ test.describe('Fail-closed nacks are present', () => {
     expect(historySrc).toContain('lastHistoryOwnerKey');
   });
 
+  test('read_document bound body + flashcards unknown-id fail-closed', async () => {
+    const readSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/bots/tools/read-document.ts'),
+      'utf-8'
+    );
+    const execSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/bots/tools/execute.ts'),
+      'utf-8'
+    );
+    expect(readSrc).toContain('never the id string');
+    expect(readSrc).toContain("host.selection?.trim() || bound?.content");
+    expect(readSrc).toContain('do not silently return the only attachment');
+    expect(execSrc).toContain('export_notebook parity');
+    expect(execSrc).toContain('Notebook "${requested}" not found');
+  });
+
   test('plan soft-gate checkpoints usedPlanResearch + IDB chat persist queue', async () => {
     const checkpointSrc = fs.readFileSync(
       path.join(process.cwd(), 'src/lib/bots/agent/checkpoint.ts'),

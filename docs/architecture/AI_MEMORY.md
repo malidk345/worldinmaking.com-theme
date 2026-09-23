@@ -58,6 +58,18 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: read_document bound body + flashcards id fail-closed)
+
+- **Scope:** HARDEN-ONLY after #837 — hunt NEW proven bugs outside THINK / iOS / identity LS / memo / write handlers / inflight / abort demux / checkpoint+IDB.
+- **Proven bugs shipped:**
+  1. **`read_document` bound-title path returned `notebookId` as body:** when `notebookTitle` matched the requested name, content was `(selection || notebookId || 'Notebook Document')` — with no selection the model got the raw id string as the document. Fix: resolve `selection` or `notebooks[].content` for the bound id; fall through when empty. Also drop single-attachment name-mismatch fallback (explicit name fail-closed).
+  2. **`generate_flashcards` unknown `notebookId` fail-open:** supplied but missing id still `ok:true` + `saved_to_notebook:true` + insert action under the wrong id (export_notebook sibling of #824). Fix: fail-closed `not found` when requested id/title absent from `host.notebooks`.
+- **Left alone:** THINK, iOS, identity LS, memo, write handlers, inflight, abort demux, checkpoint/IDB (#837), Jules XSS #834.
+- **Files:** `read-document.ts`(+test), `execute.ts`, `execute-roadmap-tools.test.ts`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm run typecheck:shell`; vitest read-document|execute-roadmap-tools; Playwright needle `read_document bound body + flashcards unknown-id fail-closed`
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked (product).
+
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: plan research checkpoint + IDB chat persist queue)
 
 - **Scope:** HARDEN-ONLY after #836 — hunt NEW proven bugs outside identity LS / THINK / iOS / memo / write handlers / inflight / abort demux. Targets: plan soft-gate, IndexedDB race.

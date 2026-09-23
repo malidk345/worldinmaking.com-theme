@@ -39,3 +39,59 @@ describe('executeReadDocument page slices', () => {
         if (!result.ok) expect(result.error).toContain('OCR')
     })
 })
+
+describe('executeReadDocument bound notebook + attachment fail-closed', () => {
+    it('returns bound notebook body, never the notebookId string', async () => {
+        const result = await executeReadDocument(
+            { name: 'Kant' },
+            {
+                notebookId: 'nb-kant',
+                notebookTitle: 'Kant Notes',
+                notebooks: [
+                    {
+                        id: 'nb-kant',
+                        title: 'Kant Notes',
+                        content: '# Transcendental Aesthetic\n\nSpace and time as forms of intuition.',
+                    },
+                ],
+            }
+        )
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+            expect(result.text).toContain('Space and time as forms of intuition')
+            expect(result.text).not.toMatch(/(^|\n)nb-kant(\n|$)/)
+            expect(result.text).not.toBe('[Document: Kant Notes]\nnb-kant')
+        }
+    })
+
+    it('uses selection when bound notebooks[] row has no content yet', async () => {
+        const result = await executeReadDocument(
+            { name: 'Kant' },
+            {
+                notebookId: 'nb-kant',
+                notebookTitle: 'Kant Notes',
+                selection: 'Highlighted critique passage about schemata.',
+                notebooks: [{ id: 'nb-kant', title: 'Kant Notes', content: '' }],
+            }
+        )
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+            expect(result.text).toContain('schemata')
+            expect(result.text).not.toContain('nb-kant')
+        }
+    })
+
+    it('fails closed when an explicit attachment name does not match', async () => {
+        const result = await executeReadDocument(
+            { name: 'missing-paper.pdf' },
+            {
+                attachments: [{ name: 'only-paper.pdf', content: 'Secret sole attachment body.' }],
+            }
+        )
+        expect(result.ok).toBe(false)
+        if (!result.ok) {
+            expect(result.error).toContain('not found')
+            expect(result.error).not.toContain('Secret sole attachment')
+        }
+    })
+})
