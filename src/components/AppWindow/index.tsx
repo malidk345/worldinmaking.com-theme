@@ -5,7 +5,7 @@ import {
     useDragControls,
 
 } from 'framer-motion'
-import { MenuItem, useApp } from '../../context/App'
+import { MenuItem, useAppActions, useAppSettings, useAppWindows } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
 import type { MenuItemType } from 'components/RadixUI/MenuBar'
 import { IMenu } from 'components/PostLayout/types'
@@ -89,7 +89,7 @@ const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean 
 }
 
 const WindowContainer = ({ children, closing }: { children: React.ReactNode; closing: boolean }) => {
-    const { closeWindow } = useApp()
+    const { closeWindow } = useAppActions()
     const { appWindow } = useWindow()
     if (appWindow?.minimized) {
         return null
@@ -112,22 +112,15 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const {
         minimizeWindow,
         bringToFront,
-        focusedWindow,
-        taskbarHeight,
-        windows,
         updateWindowRef,
         updateWindow,
         handleSnapToSide,
         constraintsRef,
         expandWindow,
-        siteSettings,
-        compact,
-        menu: appMenu,
-        isActiveWindowsPanelOpen,
         addWindow,
-        isMobile,
-        closingAllWindowsAnimation,
-    } = useApp()
+    } = useAppActions()
+    const { windows, focusedWindow, isActiveWindowsPanelOpen, closingAllWindowsAnimation } = useAppWindows()
+    const { siteSettings, compact, menu: appMenu, isMobile, taskbarHeight } = useAppSettings()
 
     const navigate = useCallback(
         (path: string) => {

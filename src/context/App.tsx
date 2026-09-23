@@ -204,7 +204,7 @@ export type AppActionsContextType = Pick<AppContextType, AppActionKeys> & {
 // Rarely-changing global state (display settings, environment flags, nav menu).
 // Split out so consumers reading only these don't re-render when volatile window
 // state (windows, focusedWindow, panels, etc.) changes. See `useAppSettings`.
-type AppSettingsKeys = 'siteSettings' | 'compact' | 'isMobile' | 'posthogInstance' | 'menu'
+type AppSettingsKeys = 'siteSettings' | 'compact' | 'isMobile' | 'posthogInstance' | 'menu' | 'taskbarHeight'
 
 export type AppSettingsContextType = Pick<AppContextType, AppSettingsKeys>
 
@@ -226,7 +226,7 @@ export type AppUIStateContextType = Pick<AppContextType, AppUIStateKeys>
 // The volatile window list, isolated into its own context so consumers that only need
 // `windows` (e.g. the taskbar, the window list) re-render only when windows actually
 // change — not on every unrelated AppProvider render. See `useAppWindows`.
-type AppWindowsKeys = 'windows'
+type AppWindowsKeys = 'windows' | 'focusedWindow' | 'isActiveWindowsPanelOpen' | 'closingAllWindowsAnimation'
 
 export type AppWindowsContextType = Pick<AppContextType, AppWindowsKeys>
 
@@ -1730,8 +1730,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             isMobile,
             posthogInstance,
             menu,
+            taskbarHeight,
         }),
-        [siteSettings, compact, isMobile, posthogInstance, menu]
+        [siteSettings, compact, isMobile, posthogInstance, menu, taskbarHeight]
     )
 
     const uiState = useMemo<AppUIStateContextType>(
@@ -1757,7 +1758,10 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         ]
     )
 
-    const windowsValue = useMemo<AppWindowsContextType>(() => ({ windows }), [windows])
+    const windowsValue = useMemo<AppWindowsContextType>(
+        () => ({ windows, focusedWindow, isActiveWindowsPanelOpen, closingAllWindowsAnimation }),
+        [windows, focusedWindow, isActiveWindowsPanelOpen, closingAllWindowsAnimation]
+    )
 
     return (
         <ActionsContext.Provider value={actions}>
