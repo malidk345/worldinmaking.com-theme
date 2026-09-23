@@ -9,6 +9,7 @@ import {
 import { normalizeSandboxReactSource, WIM_UI_SOURCE } from '../src/components/ClaudeWorkspaceChat/sandbox/wimUiSource'
 import { parse } from '@babel/parser'
 import {
+    buildReactPreviewSrcDoc,
     closeTruncatedJsx,
     hoistJsxEmbeddedStatements,
     iframeUiSource,
@@ -607,5 +608,25 @@ test.describe('validated chart artifacts', () => {
 
         expect(spec.table.columns).toEqual(['Adım', 'Dönüşüm (%)', 'Kayıp (%)'])
         expect(spec.table.rows).toHaveLength(5)
+    })
+
+    test('buildReactPreviewSrcDoc safely renders error messages without XSS', async () => {
+        const originalWindow = (globalThis as any).window
+        try {
+            (globalThis as any).window = {
+                Babel: {
+                    availablePresets: {},
+                    transform: () => ({ code: "console.log('mock')" }),
+                },
+            }
+            const srcDoc = await buildReactPreviewSrcDoc("function App() { return <div>Test</div> }")
+        expect(srcDoc).toContain("root.textContent = '';")
+        expect(srcDoc).toContain("var pre = document.createElement('pre');")
+        expect(srcDoc).toContain("pre.textContent = text;")
+        expect(srcDoc).toContain("root.appendChild(pre);")
+        expect(srcDoc).not.toContain("root.innerHTML = '<pre")
+        } finally {
+            (globalThis as any).window = originalWindow
+        }
     })
 })
