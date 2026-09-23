@@ -132,4 +132,34 @@ test.describe('HARDEN desk / WIM AI / notebook path locks', () => {
     expect(mapBlock).not.toContain('onOpenByok={() => setSidebarOpen(true)}')
   })
 
+
+  test('ThinkingBlock memo + EMPTY thinking + stable handleStopStreaming', async () => {
+    const msg = fs.readFileSync(
+      path.join(root, 'src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx'),
+      'utf-8'
+    )
+    expect(msg).toContain('EMPTY_THINKING_PROCESS')
+    expect(msg).toContain('thinking={message.thinkingProcess || EMPTY_THINKING_PROCESS}')
+    // Must not reintroduce per-paint empty thinking literal (defeats ThinkingBlock memo).
+    expect(msg).not.toMatch(/thinking=\{\s*message\.thinkingProcess \|\| \{/)
+
+    const thinking = fs.readFileSync(
+      path.join(root, 'src/components/ClaudeWorkspaceChat/components/ThinkingBlock.tsx'),
+      'utf-8'
+    )
+    expect(thinking).toContain('React.memo(ThinkingBlockComponent, (prev, next) =>')
+    expect(thinking).toContain('Parent stream paints allocate new onStop')
+    expect(thinking).toContain('prev.thinking === next.thinking')
+    expect(thinking).toContain('prev.livePhase === next.livePhase')
+
+    const src = fs.readFileSync(path.join(root, 'src/components/ClaudeWorkspaceChat/index.tsx'), 'utf-8')
+    expect(src).toContain('const handleStopStreaming = useCallback(() => {')
+    expect(src).toContain('chatsRef.current.find((c) => c.id === chatId)')
+    expect(src).toContain('activeChatIdRef.current')
+    expect(src).toContain(
+      '[isSourcesOpen, isArtifactsOpen, searchModalOpen, isStreaming, handleNewChat, handleStopStreaming]'
+    )
+  })
+
+
 })
