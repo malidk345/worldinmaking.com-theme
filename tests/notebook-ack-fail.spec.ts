@@ -285,4 +285,33 @@ test.describe('Fail-closed nacks are present', () => {
     expect(quotaSrc).toContain('clearCachedTokenQuota');
   });
 
+
+  test('identity scopes archive/dismiss notes and clears notebook history leftovers', async () => {
+    const archiveSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/archive-storage.ts'),
+      'utf-8'
+    );
+    const notifSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/wim-notifications.ts'),
+      'utf-8'
+    );
+    const historySrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/notebook-history-identity.ts'),
+      'utf-8'
+    );
+    const archiveCtx = fs.readFileSync(
+      path.join(process.cwd(), 'src/context/ArchiveContext.tsx'),
+      'utf-8'
+    );
+    expect(archiveSrc).toContain('namespacedStorageKey(ARCHIVE_STORAGE_BASE');
+    expect(archiveSrc).toContain('getAuthUserId()');
+    expect(archiveCtx).toContain('WIM_IDENTITY_EVENT');
+    expect(archiveCtx).toContain('loadArchivedItemsFromStorage');
+    expect(notifSrc).toContain('getDismissedNotebookNotesStorageKey');
+    expect(notifSrc).toContain('namespacedStorageKey(DISMISSED_NOTEBOOK_NOTIFICATIONS_BASE');
+    expect(historySrc).toContain('syncNotebookHistoryForIdentity');
+    expect(historySrc).toContain('clearAllNotebookHistoryLeftovers');
+    expect(historySrc).toContain('lastHistoryOwnerKey');
+  });
+
 });

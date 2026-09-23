@@ -1,13 +1,19 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useToast } from './Toast'
+import { WIM_IDENTITY_EVENT } from '../lib/wim-identity'
+import {
+    loadArchivedItemsFromStorage,
+    saveArchivedItemsToStorage,
+    type ArchivedItemMeta,
+} from '../lib/archive-storage'
 
-export interface ArchivedItemMeta {
-    url: string
-    label: string
-    archivedAt: string
-    note?: string
-    category?: string
-}
+export type { ArchivedItemMeta }
+export {
+    ARCHIVE_STORAGE_BASE,
+    getArchiveStorageKey,
+    loadArchivedItemsFromStorage,
+    saveArchivedItemsToStorage,
+} from '../lib/archive-storage'
 
 interface ArchiveContextType {
     archivedItems: ArchivedItemMeta[]
@@ -19,8 +25,6 @@ interface ArchiveContextType {
     isHydrated: boolean
 }
 
-const STORAGE_KEY = 'wim_os_archived_items_v2'
-
 const ArchiveContext = createContext<ArchiveContextType | undefined>(undefined)
 
 export const ArchiveProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -28,25 +32,27 @@ export const ArchiveProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [isHydrated, setIsHydrated] = useState(false)
     const { addToast } = useToast()
 
-    useEffect(() => {
+    const hydrateFromStorage = useCallback(() => {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY)
-            if (saved) {
-                setArchivedItems(JSON.parse(saved))
-            }
+            setArchivedItems(loadArchivedItemsFromStorage())
         } catch (e) {
             console.error('[ArchiveContext] Failed to load archived items', e)
+            setArchivedItems([])
         } finally {
             setIsHydrated(true)
         }
     }, [])
 
+    useEffect(() => {
+        hydrateFromStorage()
+        if (typeof window === 'undefined') return
+        const onIdentity = () => hydrateFromStorage()
+        window.addEventListener(WIM_IDENTITY_EVENT, onIdentity)
+        return () => window.removeEventListener(WIM_IDENTITY_EVENT, onIdentity)
+    }, [hydrateFromStorage])
+
     const saveToStorage = (items: ArchivedItemMeta[]) => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-        } catch (e) {
-            console.error('[ArchiveContext] Failed to save archived items', e)
-        }
+        saveArchivedItemsToStorage(items)
     }
 
     const archiveApp = (url: string, label?: string, note?: string) => {

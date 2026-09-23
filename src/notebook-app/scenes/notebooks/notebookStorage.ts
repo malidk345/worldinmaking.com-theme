@@ -27,6 +27,8 @@ import {
     getDeviceOwnerKey,
     namespacedStorageKey,
 } from '../../../lib/wim-identity'
+import { HISTORY_KEY_PREFIX } from '../../../lib/notebook-history-identity'
+export { HISTORY_KEY_PREFIX, syncNotebookHistoryForIdentity } from '../../../lib/notebook-history-identity'
 import { adoptDeviceCacheToAccount, adoptStringIdLists } from '../../../lib/adopt-device-cache'
 import { getNotebookActor, personDisplayName, type NotebookPerson } from '../../../lib/notebook-actor'
 import { persistNotebookLocal, createDocumentSnapshot } from '../../../lib/indexeddb-storage'
@@ -96,7 +98,6 @@ const STORAGE_KEY_BASE = 'wim_notebooks_v3'
 function storageKey(): string {
     return namespacedStorageKey(STORAGE_KEY_BASE, getActiveOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY))
 }
-const HISTORY_KEY_PREFIX = 'wim_notebook_history_'
 const LEGACY_STORAGE_KEYS = ['ph_standalone_notebooks', 'wim_notebooks_v1', 'wim_notebooks_v2', STORAGE_KEY_BASE]
 const MAX_HISTORY = 12
 const MAX_FULL_HISTORY_BODIES = 3
