@@ -53,3 +53,6 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+## 2023-10-27 - [Optimize useBreakpoint high-frequency resize rendering]
+**Learning:** `window.addEventListener('resize')` can cause a severe re-rendering bottleneck in React if a new object state is unconditionally returned on every tick, even when the calculated breakpoint keys haven't structurally changed. React will re-render any component using the hook because the object reference changes.
+**Action:** Always combine a `passive: true` listener with functional state updates (`setState(prev => ...)`). Shallow-compare the computed values inside the updater function and return the exact `prev` object reference if nothing changed. This allows React's `Object.is()` equality check to bail out of rendering entirely during intense resize events.
