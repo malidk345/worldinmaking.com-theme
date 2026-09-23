@@ -58,6 +58,15 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: bound setTitle buffer parity)
+
+- **Scope:** P0 HARDEN-ONLY after #821 — notebook OS wrong-target write via title rename; no memo polish, no redesign.
+- **Survey (file evidence):** insert/replace/annotate/footnote/patch already bound-buffer parity (#818/#821). searchInflight + gateway abort-before-finish done. OS Apply in-flight return-true does not flip card executed (ack path only). Chat guest gate / stop→persist solid. Residual P2: soft-keyboard/iOS theme-color (needs device); mid-cluster THINK parked.
+- **Bug fixed:** Bound `handleSetTitle` always `setCurrentNotebook(updated)` + `setTitle` even when `notebookId` targeted a different notebook than the open editor — left `markdownRef` on notebook A's buffer while `notebookRef` became B, so idle `persistOpenNotebookDraft` could write A's content into B. Missing/empty title also silent-returned (5s card hang). Now: empty/`no_target` nack; open requested id; adopt live editor only with `target.content` swap when editor does not already own target; unbound non-editor = persist-only.
+- **Files:** `notebook-app/App.tsx`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/notebook-ack-fail.spec.ts`
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked.
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: bound replace/annotate/footnote buffer parity)
 
 - **Scope:** P0 HARDEN-ONLY after #820 — notebook OS wrong-target write; no memo polish, no redesign.
