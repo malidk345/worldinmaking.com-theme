@@ -9,7 +9,13 @@ import {
     readPersonalAssistantId,
     type PersonalAssistantId,
 } from './personal-assistant'
-import { DEVICE_CHAT_OWNER_KEY, getActiveOwnerKey, namespacedStorageKey } from './wim-identity'
+import {
+    DEVICE_CHAT_OWNER_KEY,
+    DEVICE_NOTEBOOK_OWNER_KEY,
+    getActiveOwnerKey,
+    getAuthUserId,
+    namespacedStorageKey,
+} from './wim-identity'
 import { assistantMaxUnread, isAssistantTopicMuted } from './assistant-cadence'
 import { compactNoticeText, composeNotebookNotice } from './assistant-library'
 
@@ -129,17 +135,21 @@ export function collectUserNotebooks(): NotebookBrief[] {
     }
 
     try {
-        for (let i = 0; i < window.localStorage.length; i++) {
-            const key = window.localStorage.key(i)
-            if (!key) continue
-            if (
-                key === 'ph_standalone_notebooks' ||
-                key.startsWith('wim_notebooks_v3') ||
-                key.startsWith('wim_notebooks_v2') ||
-                key.startsWith('wim_notebooks_v1')
-            ) {
-                consider(window.localStorage.getItem(key))
-            }
+        // Active owner only — never scan every `wim_notebooks_v3:*` on the device
+        // (that leaked prior accounts into AI digests / assistant notices).
+        const ownerKey = getActiveOwnerKey(DEVICE_NOTEBOOK_OWNER_KEY)
+        const keys = [namespacedStorageKey('wim_notebooks_v3', ownerKey)]
+        // Guest-only legacy migrate; never copy global leftovers into a signed-in account.
+        if (!getAuthUserId()) {
+            keys.push(
+                'wim_notebooks_v3',
+                'wim_notebooks_v2',
+                'wim_notebooks_v1',
+                'ph_standalone_notebooks',
+            )
+        }
+        for (const key of keys) {
+            consider(window.localStorage.getItem(key))
         }
     } catch {
         /* ignore */
