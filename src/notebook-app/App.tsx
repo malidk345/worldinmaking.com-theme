@@ -949,7 +949,11 @@ export function App() {
     const handleSetTitle = (event: Event) => {
       const customEvent = event as CustomEvent<{ title: string; notebookId?: string }>
       const newTitle = String(customEvent.detail?.title || '').trim()
-      if (!newTitle) return
+      if (!newTitle) {
+        // Fail-closed nack (parity with insert/replace) — do not hang on the 5s card timeout.
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'empty_text' } }))
+        return
+      }
       let target: StoredNotebook | null = notebookRef.current
       const requestedId = customEvent.detail?.notebookId
       if (requestedId) {
@@ -959,14 +963,39 @@ export function App() {
           return
         }
         target = bound
+        // Bound rename must open/use the requested id — never adopt another notebook's
+        // live editor into currentNotebook without swapping markdown (idle persist poison).
+        if (routeRef.current.page !== 'editor' || notebookRef.current?.id !== target.id) {
+          openNotebookWindow(target.id, newTitle)
+        }
       }
-      if (!target) return
-      setTitle(newTitle)
+      if (!target) {
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+        return
+      }
+
       const updated = { ...target, title: newTitle }
-      setCurrentNotebook(updated)
+      const editorOwnsTarget =
+        routeRef.current.page === 'editor' && notebookRef.current?.id === target.id
+
+      if (editorOwnsTarget) {
+        // Live buffer already belongs to this notebook — title-only update is safe.
+        setTitle(newTitle)
+        setCurrentNotebook(updated)
+      } else if (requestedId) {
+        // Adopting a different notebook: load ITS content before setCurrentNotebook so
+        // persistOpenNotebookDraft cannot write the previous markdownRef into the renamed id
+        // (#821 class / bound buffer parity).
+        setCurrentNotebook(updated)
+        setTitle(newTitle)
+        setMarkdown(target.content || '')
+        setMarkdownVersion((v) => v + 1)
+      }
+      // Unbound rename while not on this editor: persist only (no live-buffer adopt).
+
       saveNotebook(updated, { snapshot: true, snapshotLabel: `Rename: ${newTitle}` })
       window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
-      if (appWindow) {
+      if (appWindow && (editorOwnsTarget || requestedId)) {
         appActions.setWindowTitle(appWindow, newTitle)
       }
     }

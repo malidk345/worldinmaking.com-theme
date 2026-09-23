@@ -78,6 +78,23 @@ test.describe('Fail-closed nacks are present', () => {
     );
   });
 
+  test('bound setTitle never adopts another editor buffer (idle persist poison)', async () => {
+    const src = fs.readFileSync(path.join(process.cwd(), 'src/notebook-app/App.tsx'), 'utf-8');
+    const start = src.indexOf('const handleSetTitle');
+    const end = src.indexOf('const handleReplaceSelection');
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const fn = src.slice(start, end);
+    expect(fn).toContain("error: 'empty_text'");
+    expect(fn).toContain("error: 'no_target'");
+    expect(fn).toContain('openNotebookWindow');
+    expect(fn).toContain('editorOwnsTarget');
+    // Live markdown must be swapped from target.content when adopting a different notebook.
+    expect(fn).toContain("setMarkdown(target.content || '')");
+    // Must not unconditionally setCurrentNotebook + setTitle without the ownership branch.
+    expect(fn).toContain('if (editorOwnsTarget)');
+  });
+
   test('bound replace/annotate/footnote never use another editor markdownRef', async () => {
     const src = fs.readFileSync(path.join(process.cwd(), 'src/notebook-app/App.tsx'), 'utf-8');
     for (const name of ['handleReplaceSelection', 'handleAddAnnotation', 'handleAddFootnote', 'handlePatchText'] as const) {
