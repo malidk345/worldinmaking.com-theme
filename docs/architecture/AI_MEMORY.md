@@ -58,6 +58,18 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: plan research checkpoint + IDB chat persist queue)
+
+- **Scope:** HARDEN-ONLY after #836 — hunt NEW proven bugs outside identity LS / THINK / iOS / memo / write handlers / inflight / abort demux. Targets: plan soft-gate, IndexedDB race.
+- **Proven bugs shipped:**
+  1. **Plan soft-gate hole on resume:** `usedPlanResearch` (fetch_url / academic / corpus / …) was never checkpointed; only `usedWebSearch` survived ask_user / finalize interrupt. Resume reset `usedPlanResearch: false` → `finalizePlanReadinessReminder` skipped scratchpad gate after non-web research. Fix: snapshot + parse `usedPlanResearch`; restore with `Boolean(restored?.usedPlanResearch) || Boolean(restored?.usedWebSearch)`.
+  2. **IndexedDB chat clear+put race:** fire-and-forget `persistChatsLocal` (stream debounce + pagehide) could interleave `openDB`/adopt so a stale snapshot's `clear()`+`put` finished after a newer one. Fix: per-owner serialize queue; drop queued writes whose owner no longer matches.
+- **Left alone:** identity LS (#830–#836), THINK, iOS, memo, write handlers, inflight, abort demux, Jules XSS #834 (separate), guest realtime (startLiveRemote on identity looks solid).
+- **Files:** `checkpoint.ts`(+test), `pipeline.ts`(+test), `indexeddb-storage.ts`, `indexeddb-chats-persist.test.ts`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm run typecheck:shell`; vitest checkpoint|finalizePlan|indexeddb-chats-persist|pipeline soft-gate; Playwright needle `plan soft-gate checkpoints usedPlanResearch`
+- **Residual:** Soft-keyboard / iOS theme-color P2; mid-cluster THINK parked (product — needs "THINK'e gir").
+
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: archive/dismiss/history identity residuals)
 
 - **Scope:** #832 audit residuals (same identity-leak class, not AI-fed). HARDEN-ONLY. Skip THINK / iOS.

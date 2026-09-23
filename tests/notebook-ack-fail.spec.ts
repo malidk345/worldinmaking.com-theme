@@ -314,4 +314,25 @@ test.describe('Fail-closed nacks are present', () => {
     expect(historySrc).toContain('lastHistoryOwnerKey');
   });
 
+  test('plan soft-gate checkpoints usedPlanResearch + IDB chat persist queue', async () => {
+    const checkpointSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/bots/agent/checkpoint.ts'),
+      'utf-8'
+    );
+    const pipelineSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/bots/tools/pipeline.ts'),
+      'utf-8'
+    );
+    const idbSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/indexeddb-storage.ts'),
+      'utf-8'
+    );
+    expect(checkpointSrc).toContain('usedPlanResearch?: boolean');
+    expect(checkpointSrc).toContain('usedPlanResearch: true as const');
+    expect(pipelineSrc).toContain('usedPlanResearch: state.usedPlanResearch');
+    expect(pipelineSrc).toContain('Boolean(restored?.usedPlanResearch)');
+    expect(idbSrc).toContain('chatsPersistChain');
+    expect(idbSrc).toContain('currentOwnerKey() !== owner');
+  });
+
 });

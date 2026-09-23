@@ -1420,6 +1420,7 @@ async function runToolsNode(state: AgentState, params: AgentPipelineParams): Pro
             stepCount: state.stepCount,
             usedTools: state.usedTools,
             usedWebSearch: state.usedWebSearch,
+            usedPlanResearch: state.usedPlanResearch,
             interrupt: state.interrupt,
         })
         params.onHuman?.(state.interrupt)
@@ -1495,7 +1496,7 @@ export async function runAgentNodePipeline(params: AgentPipelineParams): Promise
         stopAfterTools: false,
         researchClusterCount: 0,
         researchClusterAwaitingScratchpad: false,
-        usedPlanResearch: false,
+        usedPlanResearch: Boolean(restored?.usedPlanResearch) || Boolean(restored?.usedWebSearch),
         searchCache: new Map(),
         searchInflight: new Map(),
         execNudges: 0,

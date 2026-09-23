@@ -32,6 +32,8 @@ export type AgentCheckpoint = {
     stepCount: number
     usedTools: boolean
     usedWebSearch: boolean
+    /** Plan soft-gate: any plan research tool succeeded (not only web_search). */
+    usedPlanResearch?: boolean
     interrupt: HumanTurn
 }
 
@@ -64,6 +66,7 @@ export function snapshotCheckpoint(input: {
     stepCount: number
     usedTools: boolean
     usedWebSearch: boolean
+    usedPlanResearch?: boolean
     interrupt: HumanTurn
 }): AgentCheckpoint {
     return {
@@ -78,6 +81,7 @@ export function snapshotCheckpoint(input: {
         stepCount: input.stepCount,
         usedTools: input.usedTools,
         usedWebSearch: input.usedWebSearch,
+        ...(input.usedPlanResearch ? { usedPlanResearch: true as const } : {}),
         interrupt: input.interrupt,
     }
 }
@@ -142,6 +146,7 @@ export function parseAgentCheckpoint(raw: unknown): AgentCheckpoint | undefined 
         stepCount: Math.max(0, Math.min(12, Number(row.stepCount) || 0)),
         usedTools: Boolean(row.usedTools),
         usedWebSearch: Boolean(row.usedWebSearch),
+        ...(row.usedPlanResearch === true ? { usedPlanResearch: true as const } : {}),
         interrupt: {
             kind: human.kind,
             title: clip(human.title || 'Waiting', 80),
