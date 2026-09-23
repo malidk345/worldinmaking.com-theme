@@ -51,10 +51,8 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[IN PROGRESS]`
-- **Task:** Harden post-#823 — Continue×pending-human gate + export_notebook fail-closed missing id (Grok Bot / Cursor)
-- **Owner:** Grok Bot / Cursor
-- **Started:** 2026-09-23
+- **Status:** `[IDLE]`
+- **Task:** —
 
 ---
 
