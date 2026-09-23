@@ -214,6 +214,10 @@ const nextConfig = {
     },
 
     async headers() {
+        // Dev serves webpack hot-update files from /_next/static. Caching those
+        // as immutable makes desktop Chrome replay a bad update and full-reload
+        // forever. Production builds still cache hashed assets for a year.
+        if (process.env.NODE_ENV !== 'production') return []
         return [
             {
                 source: '/_next/static/:path*',

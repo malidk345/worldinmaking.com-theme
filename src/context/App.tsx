@@ -1016,20 +1016,18 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     const constraintsRef = useRef<HTMLDivElement>(null)
     const taskbarRef = useRef<HTMLDivElement>(null)
     const [isMobile, setIsMobile] = useState(false)
-    const [siteSettings, setSiteSettings] = useState<SiteSettings>(() =>
-        typeof window !== 'undefined'
-            ? getInitialSiteSettings()
-            : {
-                  colorMode: 'light',
-                  theme: 'light',
-                  skinMode: 'modern',
-                  iconSet: DEFAULT_ICON_SET,
-                  wallpaper: DEFAULT_WALLPAPER,
-                  clickBehavior: 'double',
-                  performanceBoost: false,
-                  reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
-              }
-    )
+    // First paint must match the server. Saved wallpaper/theme is applied in the
+    // layout effect below, before the browser paints.
+    const [siteSettings, setSiteSettings] = useState<SiteSettings>({
+        colorMode: 'light',
+        theme: 'light',
+        skinMode: 'modern',
+        iconSet: DEFAULT_ICON_SET,
+        wallpaper: DEFAULT_WALLPAPER,
+        clickBehavior: 'double',
+        performanceBoost: false,
+        reduceTransparency: DEFAULT_REDUCE_TRANSPARENCY,
+    })
     const [taskbarHeight, setTaskbarHeight] = useState(59)
     const [lastClickedElementRect, setLastClickedElementRect] = useState<{ x: number; y: number } | null>(null)
     const [desktopCopied, setDesktopCopied] = useState(false)

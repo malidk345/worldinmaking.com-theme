@@ -81,23 +81,9 @@ export function useWindowRegistry({
         if (rawPath === '/' || rawPath === '/desktop') {
             return []
         }
-        if (isSSR) {
-            return [createNewWindow(element as WindowElement, [], location, true, taskbarHeight)]
-        }
-        let queryString = ''
-        try {
-            if (location?.search) {
-                queryString = typeof location.search === 'string' ? (typeof location?.search === 'string' ? location.search.substring(1) : '') : ''
-            } else if (location?.href) {
-                const urlObj = new URL(location.href, typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com')
-                queryString = urlObj?.search.substring(1)
-            }
-        } catch {
-            queryString = ''
-        }
-        const parsed = qs.parse(queryString)
-        if (parsed?.windows) return []
-        return getInitialWindows(element)
+        // Same tree on the server and the first client render. Contact/login
+        // extras are applied in the layout effect after hydration.
+        return [createNewWindow(element as WindowElement, [], location, true, taskbarHeight)]
     })
     const windowsRef = useRef(windows)
     useEffect(() => {
@@ -113,6 +99,11 @@ export function useWindowRegistry({
 
     // Hydrate mobile window geometry before first paint (mirrors former App.tsx isomorphic branch)
     useIsomorphicLayoutEffect(() => {
+        const path = location?.pathname || '/'
+        const search = typeof location?.search === 'string' ? location.search : ''
+        if (search.includes('contact=') || path === '/login' || path === '/signup') {
+            setWindows(getInitialWindows(element))
+        }
         const isMobileValue =
             window.innerWidth < 768 ||
             /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -545,7 +536,7 @@ export function useWindowRegistry({
         const keyToUse = getKey(el?.key)
         const targetLocation = el?.props?.location || location
         const targetPath = canonicalWindowPath(
-            targetLocation?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
+            targetLocation?.pathname || (!isSSR && typeof window !== 'undefined' ? window.location.pathname : '/')
         )
         const targetState = targetLocation?.state || {}
 
@@ -560,10 +551,11 @@ export function useWindowRegistry({
 
         // Windowed (centered/cascaded) is default for regular pages so windows stack over each other.
         const isMobileClient =
+            !isSSR &&
             typeof window !== 'undefined' &&
             (window.innerWidth < 768 ||
                 /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
-        const canWindow = (isSSR || window.innerWidth >= 768) && !isMobileClient
+        const canWindow = isSSR || (typeof window !== 'undefined' && window.innerWidth >= 768 && !isMobileClient)
         const isWindowed =
             options.windowed ??
             targetState?.windowed ??
@@ -574,8 +566,12 @@ export function useWindowRegistry({
                 !settings?.modal)
         const shouldExpand = isMobileClient
         const bounds = constraintsRef.current?.getBoundingClientRect()
-        const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-        const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
+        const fullW = bounds ? bounds.width : !isSSR && typeof window !== 'undefined' ? window.innerWidth - 16 : 1200
+        const fullH = bounds
+            ? bounds.height
+            : !isSSR && typeof window !== 'undefined'
+              ? window.innerHeight - taskbarHeight - 16
+              : 800
 
         const finalSize = shouldExpand ? { width: fullW, height: fullH } : size
         const finalPos = shouldExpand ? { x: 0, y: 0 } : position
