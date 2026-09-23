@@ -2587,10 +2587,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const executeOSAction = (msgId: string, action: OSActionCardType, chatId = activeChatId) => {
     const key = `${chatId}:${msgId}:${action.type}:${JSON.stringify(action.payload || {}).slice(0, 200)}`;
-    if (action.executed || executedActionsRef.current.has(key)) {
-      if (!action.executed) {
-        updateAssistantMessage(chatId, msgId, { osAction: { ...action, executed: true } });
-      }
+    if (action.executed) {
+      return true;
+    }
+    // In-flight: key is set until ack / fail-closed timeout. A second Apply must not
+    // claim executed:true while the notebook patch is still pending (or about to nack).
+    if (executedActionsRef.current.has(key)) {
       return true;
     }
     executedActionsRef.current.add(key);

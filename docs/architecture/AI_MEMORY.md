@@ -58,6 +58,18 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-23 — Grok Bot / Cursor (harden: bound insert target + OS Apply in-flight)
+
+- **Scope:** P0 HARDEN-ONLY correctness after #817 — no memo polish, no redesign, no quality-gate flip.
+- **Survey (file evidence):** notebook OS ack/nack, chat IDB hydrate/open-thread/bind, claim/adopt post-#812, orchestrate abort/demux/search, partial stop, quality-gate docs. Already solid: host search abortSignal, open-thread guards, guest sync gate, stop→persist, replace/annotate fail-closed nacks, activePlan remote. Quality-gate outage stays fail-open/`skipped` per WIM_AI.md.
+- **Bugs fixed:**
+  1. **Bound insert/rewrite wrong notebook:** `handleInsertText` treated `page !== 'editor'` as license to replace a resolved `notebookId` with the most-recent notebook, then ack'd that id — chat card timed out / mismatched while content landed elsewhere. Bound path now opens the requested id only; missing id / empty text nack fail-closed.
+  2. **OS Apply in-flight false success:** second click while `executedActionsRef` held the key forced `executed: true` before ack/nack.
+- **Files:** `notebook-app/App.tsx`, `ClaudeWorkspaceChat/index.tsx`, `tests/notebook-ack-fail.spec.ts`, `AI_MEMORY.md`
+- **Verify:** `pnpm typecheck:shell`; `pnpm test:smoke`; `pnpm exec playwright test tests/notebook-ack-fail.spec.ts`
+- **Residual:** Gateway-fallback demux.finish still runs before abort check (tool-loop path already aborts-before-finish); soft-keyboard / iOS theme-color P2; mid-cluster THINK parked.
+
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: ThinkingBlock memo + EMPTY thinking + stable Stop)
 
 - **Scope:** P1 HARDEN-ONLY micro-pass after #816 — stream thinking chrome cost; no redesign, no P2 iOS theme-color, no mid-cluster THINK, no quality-gate product flip (WIM_AI docs keep outage fail-open/`skipped`).

@@ -35,4 +35,43 @@ test.describe('Fail-closed nacks are present', () => {
     const src = fs.readFileSync(path.join(process.cwd(), 'src/components/ClaudeWorkspaceChat/index.tsx'), 'utf-8');
     expect(src).toContain("customEvent.detail?.ok === false");
   });
+
+  test('bound insert/rewrite never overwrites target with most-recent on non-editor', async () => {
+    const src = fs.readFileSync(path.join(process.cwd(), 'src/notebook-app/App.tsx'), 'utf-8');
+    const start = src.indexOf('const handleInsertText');
+    const end = src.indexOf('const handlePatchText');
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const fn = src.slice(start, end);
+    // Requested notebookId must resolve via getNotebook and open that id — not replace with recent.
+    expect(fn).toContain('const requestedId = customEvent.detail?.notebookId');
+    expect(fn).toContain("error: 'no_target'");
+    expect(fn).toContain("error: 'empty_text'");
+    expect(fn).toContain('openNotebookWindow(target.id, target.title)');
+    // Bound path must not assign recent at all (unbound else-if may still use recent).
+    const boundBlockStart = fn.indexOf('if (requestedId)');
+    const unboundStart = fn.indexOf('} else if (routeRef.current.page !== \'editor\'');
+    expect(boundBlockStart).toBeGreaterThan(-1);
+    expect(unboundStart).toBeGreaterThan(boundBlockStart);
+    const boundBlock = fn.slice(boundBlockStart, unboundStart);
+    expect(boundBlock).not.toContain('target = recent');
+    expect(boundBlock).toContain('getNotebook(requestedId)');
+  });
+
+  test('OS action in-flight re-entry does not claim executed:true', async () => {
+    const src = fs.readFileSync(
+      path.join(process.cwd(), 'src/components/ClaudeWorkspaceChat/index.tsx'),
+      'utf-8'
+    );
+    const start = src.indexOf('const executeOSAction =');
+    expect(start).toBeGreaterThan(-1);
+    const slice = src.slice(start, start + 1200);
+    expect(slice).toContain('if (action.executed)');
+    expect(slice).toContain('executedActionsRef.current.has(key)');
+    // Must not promote in-flight (key present, executed falsy) to executed:true.
+    expect(slice).not.toMatch(
+      /if \(action\.executed \|\| executedActionsRef\.current\.has\(key\)\) \{[\s\S]*?executed: true/
+    );
+  });
+
 });
