@@ -2,7 +2,7 @@ import React from 'react';
 import { UserSettings } from '../types';
 import { X, Settings as SettingsIcon, RefreshCw, Sparkles } from 'lucide-react';
 import { useUser } from '../../../hooks/useUser';
-import { useApp } from '../../../context/App';
+import { useAppActions } from '../../../context/App';
 import { isUserPro } from '../../../lib/wim-billing';
 
 interface SettingsModalProps {
@@ -21,7 +21,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onResetData,
 }) => {
   const { user } = useUser();
-  const app = useApp();
+  const { addWindow } = useAppActions();
   const isPro = isUserPro(user as any);
 
   if (!isOpen) return null;
@@ -65,7 +65,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               type="button"
               onClick={() => {
                 onClose();
-                app?.addWindow?.({ path: isPro ? '/account' : '/pricing' });
+                addWindow({ path: isPro ? '/account' : '/pricing' });
               }}
               className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-primary/20 bg-primary hover:bg-accent text-primary transition-all cursor-pointer shrink-0 flex items-center gap-1"
             >

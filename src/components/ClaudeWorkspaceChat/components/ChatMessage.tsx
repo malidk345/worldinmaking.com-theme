@@ -13,7 +13,7 @@ import { getNotebook } from '../../../notebook-app/scenes/notebooks/notebookStor
 import { resolveDiffApplySpanText, diffApplyButtonLabel, type DiffApplyUiStatus } from '../../../lib/chat/diff-apply';
 import { dispatchNotebookOsEvent, isNotebookOsListenerAlive } from '../../../lib/notebook-os-dispatch';
 import { notebookWindowPath } from '../../../lib/window-path';
-import { useApp } from '../../../context/App';
+import { useAppActions } from '../../../context/App';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
@@ -180,7 +180,7 @@ async function copyToClipboardSafe(text: string): Promise<boolean> {
 function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [applyStatus, setApplyStatus] = useState<DiffApplyUiStatus>('idle');
-  const app = useApp();
+  const { addWindow } = useAppActions();
 
   const lines = code.split('\n');
   const addedLines = lines.filter((l) => l.startsWith('+') && !l.startsWith('+++'));
@@ -255,7 +255,7 @@ function ChatMessageDiffBlock({ code, isLive }: { code: string; isLive?: boolean
         open: () => {
           // If no bound notebook is open yet, open it first so PatchText listeners can mount
           if (!isNotebookOsListenerAlive() && app?.addWindow) {
-            app.addWindow({ path: notebookPath });
+            addWindow({ path: notebookPath });
           }
         },
       }

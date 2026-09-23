@@ -38,7 +38,7 @@ const ProjectModal = dynamic(() => import('./components/ProjectModal').then((m) 
 const SettingsModal = dynamic(() => import('./components/SettingsModal').then((m) => m.SettingsModal), { ssr: false });
 const ShareModal = dynamic(() => import('./components/ShareModal').then((m) => m.ShareModal), { ssr: false });
 import * as Portal from '@radix-ui/react-portal';
-import { useApp, useAppWindows } from '../../context/App';
+import { useAppActions, useAppSettings, useAppUIState, useAppWindows, type SiteSettings } from '../../context/App';
 import { useUser } from '../../hooks/useUser';
 import { isUserPro } from '../../lib/wim-billing';
 import { findMatchingWindow } from '../../lib/os/window-finder';
@@ -225,11 +225,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     return stored && typeof stored === 'object' ? { ...defaults, ...stored } : defaults;
   });
 
-  // App Context for openNewChat params
-  const app = useApp();
+  const { addWindow, closeWindow, updateWindow, bringToFront, setChatParams, updateSiteSettings } = useAppActions();
+  const { chatParams } = useAppUIState();
+  const { siteSettings } = useAppSettings();
   const { user } = useUser();
   const posthog = usePostHog();
-  const { chatParams, setChatParams } = app;
   const processedInitialQuestionRef = useRef<string | null>(null);
   // Subscribe to windows via dedicated context so we re-render when windows change
   const { windows: appWindows } = useAppWindows();
@@ -285,8 +285,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         notebookId: targetNbId,
         path: notebookPath,
         open: () => {
-          if (app?.addWindow) {
-            app.addWindow({
+          if (addWindow) {
+            addWindow({
               title: 'Notebooks',
               icon: 'DocumentTextIcon',
               component: 'NotebookApp',
@@ -432,8 +432,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setActiveArtifact(art)
 
     // Launch artifact exclusively as a native OS Desktop AppWindow
-    if (app?.addWindow) {
-      app.addWindow({
+    if (addWindow) {
+      addWindow({
         key: artifactWindowKey(art),
         title: `${art.title || 'Component'}`,
         path: artifactWindowPath(art),
@@ -2567,7 +2567,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     try {
       if (action.type === 'create_notebook') {
         const nb = createNotebook(action.payload.title || 'AI Generated Notes', action.payload.content || '');
-        if (app?.addWindow) app.addWindow({ path: notebookWindowPath(nb.id) });
+        if (addWindow) addWindow({ path: notebookWindowPath(nb.id) });
         // Manually fire the ack since createNotebook doesn't via the event listener paths in App.tsx
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nb.id } }));
       } else if (action.type === 'insert_notebook_block') {
@@ -2588,7 +2588,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             notebookId: nbId,
             path: notebookPath,
             open: () => {
-              if (app?.addWindow) app.addWindow({ path: notebookPath });
+              if (addWindow) addWindow({ path: notebookPath });
             },
           }
         ).then((ok) => {
@@ -2608,7 +2608,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             notebookId: nbId,
             path: notebookPath,
             open: () => {
-              if (app?.addWindow) app.addWindow({ path: notebookPath });
+              if (addWindow) addWindow({ path: notebookPath });
             },
           }
         ).then((ok) => {
@@ -2627,7 +2627,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             notebookId: nbId,
             path: notebookPath,
             open: () => {
-              if (app?.addWindow) app.addWindow({ path: notebookPath });
+              if (addWindow) addWindow({ path: notebookPath });
             },
           }
         ).then((ok) => {
@@ -2645,38 +2645,38 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             detail,
           })
         );
-        if (app?.addWindow) app.addWindow({ path: '/community/new' });
+        if (addWindow) addWindow({ path: '/community/new' });
       } else if (action.type === 'manage_windows') {
         const act = action.payload.action || 'tile';
         if ((act === 'tile' || act === 'split') && action.payload.left_path && action.payload.right_path) {
-          if (app?.addWindow) {
-            app.addWindow({ path: action.payload.left_path, snapped: 'left' });
-            app.addWindow({ path: action.payload.right_path, snapped: 'right' });
+          if (addWindow) {
+            addWindow({ path: action.payload.left_path, snapped: 'left' });
+            addWindow({ path: action.payload.right_path, snapped: 'right' });
           }
-        } else if (act === 'snap_left' && action.payload.path && app?.addWindow) {
-          app.addWindow({ path: action.payload.path, snapped: 'left' });
-        } else if (act === 'snap_right' && action.payload.path && app?.addWindow) {
-          app.addWindow({ path: action.payload.path, snapped: 'right' });
-        } else if (act === 'close' && action.payload.path && app?.closeWindow) {
+        } else if (act === 'snap_left' && action.payload.path && addWindow) {
+          addWindow({ path: action.payload.path, snapped: 'left' });
+        } else if (act === 'snap_right' && action.payload.path && addWindow) {
+          addWindow({ path: action.payload.path, snapped: 'right' });
+        } else if (act === 'close' && action.payload.path) {
           const target = findMatchingWindow(appWindows, action.payload.path, windowPathMatches);
-          if (target) app.closeWindow(target);
-        } else if (act === 'minimize' && action.payload.path && app?.updateWindow) {
+          if (target) closeWindow(target);
+        } else if (act === 'minimize' && action.payload.path) {
           const target = findMatchingWindow(appWindows, action.payload.path, windowPathMatches);
-          if (target) app.updateWindow(target, { minimized: true });
+          if (target) updateWindow(target, { minimized: true });
         } else if (act === 'focus' && action.payload.path) {
           const target = findMatchingWindow(appWindows, action.payload.path, windowPathMatches);
-          if (target && app?.bringToFront) {
-            if (target.minimized && app?.updateWindow) {
-              app.updateWindow(target, { minimized: false });
+          if (target) {
+            if (target.minimized) {
+              updateWindow(target, { minimized: false });
             }
-            app.bringToFront(target);
-          } else if (app?.addWindow) {
-            app.addWindow({ path: action.payload.path });
+            bringToFront(target);
+          } else if (addWindow) {
+            addWindow({ path: action.payload.path });
           }
-        } else if (act === 'close_all' && app?.closeWindow) {
-          appWindows.forEach((w) => app.closeWindow(w));
-        } else if (action.payload.path && app?.addWindow) {
-          app.addWindow({ path: action.payload.path });
+        } else if (act === 'close_all') {
+          appWindows.forEach((w) => closeWindow(w));
+        } else if (action.payload.path && addWindow) {
+          addWindow({ path: action.payload.path });
         }
       } else if (action.type === 'set_system_appearance') {
         if (action.payload.theme && typeof window !== 'undefined') {
@@ -2687,11 +2687,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             new CustomEvent('wimThemeChanged', { detail: { theme: action.payload.theme } })
           );
         }
-        if (action.payload.wallpaper && (app as any)?.updateSiteSettings) {
-          (app as any).updateSiteSettings({ wallpaper: action.payload.wallpaper });
+        if (action.payload.wallpaper) {
+          updateSiteSettings({
+            ...siteSettings,
+            wallpaper: action.payload.wallpaper as SiteSettings['wallpaper'],
+          });
         }
-        if (typeof action.payload.reduce_transparency === 'boolean' && (app as any)?.updateSiteSettings) {
-          (app as any).updateSiteSettings({ reduceTransparency: action.payload.reduce_transparency });
+        if (typeof action.payload.reduce_transparency === 'boolean') {
+          updateSiteSettings({ ...siteSettings, reduceTransparency: action.payload.reduce_transparency });
         }
       } else if (action.type === 'annotate_notebook') {
         const nbId = action.payload.notebookId || notebookBind?.notebookId;
@@ -2707,7 +2710,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             notebookId: nbId,
             path: notebookPath,
             open: () => {
-              if (app?.addWindow) app.addWindow({ path: notebookPath });
+              if (addWindow) addWindow({ path: notebookPath });
             },
           }
         ).then((ok) => {
@@ -2728,14 +2731,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             notebookId: nbId,
             path: notebookPath,
             open: () => {
-              if (app?.addWindow) app.addWindow({ path: notebookPath });
+              if (addWindow) addWindow({ path: notebookPath });
             },
           }
         ).then((ok) => {
           if (!ok) failClosedNotebookMount();
         });
       } else if (action.type === 'open_window') {
-        if (app?.addWindow && action.payload.path) app.addWindow({ path: action.payload.path });
+        if (addWindow && action.payload.path) addWindow({ path: action.payload.path });
       }
 
       if (!isNotebookAction) {
@@ -3081,7 +3084,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Top Header Bar */}
         <Header
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          onOpenScratchpad={() => app.addWindow({ path: '/scratchpad', title: 'Scratchpad' })}
+          onOpenScratchpad={() => addWindow({ path: '/scratchpad', title: 'Scratchpad' })}
         />
 
         {/* Chat Stream & Conversation Body */}
@@ -3305,8 +3308,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 }
 
 export function ClaudeWorkspaceChatPanel() {
-  const app = useApp();
-  const { isClaudeChatOpen, setIsClaudeChatOpen, taskbarRef } = app;
+  const { setIsClaudeChatOpen, taskbarRef } = useAppActions();
+  const { isClaudeChatOpen } = useAppUIState();
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   const closePanel = () => {
