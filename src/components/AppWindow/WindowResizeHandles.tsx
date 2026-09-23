@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { motion, type PanInfo } from 'framer-motion'
 
 type ResizeChange = { x: boolean } | { y: boolean } | { x: boolean; y: boolean }
@@ -7,7 +8,7 @@ interface WindowResizeHandlesProps {
     onResizeEnd: () => void
 }
 
-export default function WindowResizeHandles({ onResize, onResizeEnd }: WindowResizeHandlesProps) {
+export default memo(function WindowResizeHandles({ onResize, onResizeEnd }: WindowResizeHandlesProps) {
     const handle = (
         direction: 'x' | 'y' | true,
         change: ResizeChange,
@@ -35,4 +36,4 @@ export default function WindowResizeHandles({ onResize, onResizeEnd }: WindowRes
             {handle(true, { x: true, y: true }, 'left-0 bottom-0 size-3 cursor-nesw-resize', true)}
         </>
     )
-}
+})

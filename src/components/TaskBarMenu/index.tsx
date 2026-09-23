@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useMemo } from 'react'
 import {
     IconSearch,
     IconUser,
@@ -76,137 +76,154 @@ function TaskBarMenu() {
         [taskbarRef]
     )
 
-    const handleSignInClick = () => {
+    const handleSignInClick = useCallback(() => {
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur()
         }
         openSignIn()
-    }
+    }, [openSignIn])
 
     const avatarURL = getAvatarURL(user?.profile)
 
-    const siteMenu: MenuType[] = [
-        {
-            trigger: (
-                <span className="flex items-center gap-1" aria-label="worldinmaking menu">
-                    <WimLogo className="size-6" />
-                    <IconChevronDown className="size-4 opacity-70 translate-y-px" />
-                </span>
-            ),
-            hideChevron: true,
-            items: [
-                {
-                    type: 'item' as const,
-                    label: t('chrome.about'),
-                    link: '/about',
-                    icon: <IconInfo className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                },
-                { type: 'separator' as const },
-                {
-                    type: 'item' as const,
-                    label: t('chrome.display'),
-                    link: '/display-options',
-                    icon: <IconBrightness className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                    shortcut: [','],
-                },
-                {
-                    type: 'item' as const,
-                    label: t('chrome.keyboard'),
-                    link: '/kbd',
-                    icon: <IconKeyboard className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                    shortcut: ['.'],
-                },
-            ],
-        },
-    ]
+    const siteMenu: MenuType[] = useMemo(
+        () => [
+            {
+                trigger: (
+                    <span className="flex items-center gap-1" aria-label="worldinmaking menu">
+                        <WimLogo className="size-6" />
+                        <IconChevronDown className="size-4 opacity-70 translate-y-px" />
+                    </span>
+                ),
+                hideChevron: true,
+                items: [
+                    {
+                        type: 'item' as const,
+                        label: t('chrome.about'),
+                        link: '/about',
+                        icon: <IconInfo className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                    },
+                    { type: 'separator' as const },
+                    {
+                        type: 'item' as const,
+                        label: t('chrome.display'),
+                        link: '/display-options',
+                        icon: <IconBrightness className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                        shortcut: [','],
+                    },
+                    {
+                        type: 'item' as const,
+                        label: t('chrome.keyboard'),
+                        link: '/kbd',
+                        icon: <IconKeyboard className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                        shortcut: ['.'],
+                    },
+                ],
+            },
+        ],
+        [t]
+    )
 
-    const accountMenu: MenuType[] = [
-        {
-            trigger: (
-                <>
-                    {isLoggedIn ? (
-                        <div className="relative flex items-center gap-1.5">
-                            {avatarURL ? (
-                                <CloudinaryImage
-                                    src={avatarURL}
-                                    imgClassName={`size-6 rounded-full overflow-hidden bg-${
-                                        user?.profile?.color ?? 'white dark:bg-dark'
-                                    }`}
-                                    width={48}
-                                    alt=""
-                                />
-                            ) : (
-                                <IconUser className="size-6" />
-                            )}
-                            {notifications?.length > 0 && (
-                                <span className="absolute top-4 -right-1 size-2.5 bg-red border border-bg-primary rounded-full" />
-                            )}
-                        </div>
-                    ) : (
-                        <IconUser className="size-6" />
-                    )}
-                </>
-            ),
-            items: user
-                ? [
-                      {
-                          type: 'item' as const,
-                          label: t('chrome.profile'),
-                          link: user?.username ? `/profile/${encodeURIComponent(user.username)}` : '/profile',
-                          icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                      },
-                      {
-                          type: 'item' as const,
-                          label: `${t('chrome.notifications')}${notifications?.length > 0 ? ` (${notifications.length})` : ''}`,
-                          onClick: () => setIsNotificationsPanelOpen(true),
-                          icon: <IconNotification className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                      },
-                      {
-                          type: 'item' as const,
-                          label: t('chrome.bookmarks'),
-                          link: '/bookmarks',
-                          icon: <IconBookmark className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                      },
-                      {
-                          type: 'item' as const,
-                          label: t('chrome.wimAi'),
-                          link: '/workspace-chat',
-                          icon: <IconChat className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                      },
-                      ...(isModerator
-                          ? [
-                                {
-                                    type: 'item' as const,
-                                    label: t('chrome.admin'),
-                                    link: '/admin',
-                                    icon: <IconBadge className="opacity-75 text-yellow size-4" />,
-                                },
-                            ]
-                          : []),
-                      { type: 'separator' as const },
-                      {
-                          type: 'item' as const,
-                          label: t('chrome.account'),
-                          link: '/account',
-                          icon: <IconGear className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                      },
-                      {
-                          type: 'item' as const,
-                          label: t('auth.signOut'),
-                          onClick: () => logout(),
-                          icon: <IconLock className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                      },
-                  ]
-                : [
-                      {
-                          type: 'item' as const,
-                          label: t('auth.signIn'),
-                          onClick: handleSignInClick,
-                          icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                      },
-                  ],
-        },
-    ]
+    const notificationsCount = notifications?.length ?? 0
+    const accountMenu: MenuType[] = useMemo(
+        () => [
+            {
+                trigger: (
+                    <>
+                        {isLoggedIn ? (
+                            <div className="relative flex items-center gap-1.5">
+                                {avatarURL ? (
+                                    <CloudinaryImage
+                                        src={avatarURL}
+                                        imgClassName={`size-6 rounded-full overflow-hidden bg-${
+                                            user?.profile?.color ?? 'white dark:bg-dark'
+                                        }`}
+                                        width={48}
+                                        alt=""
+                                    />
+                                ) : (
+                                    <IconUser className="size-6" />
+                                )}
+                                {notificationsCount > 0 && (
+                                    <span className="absolute top-4 -right-1 size-2.5 bg-red border border-bg-primary rounded-full" />
+                                )}
+                            </div>
+                        ) : (
+                            <IconUser className="size-6" />
+                        )}
+                    </>
+                ),
+                items: user
+                    ? [
+                          {
+                              type: 'item' as const,
+                              label: t('chrome.profile'),
+                              link: user?.username ? `/profile/${encodeURIComponent(user.username)}` : '/profile',
+                              icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                          },
+                          {
+                              type: 'item' as const,
+                              label: `${t('chrome.notifications')}${notificationsCount > 0 ? ` (${notificationsCount})` : ''}`,
+                              onClick: () => setIsNotificationsPanelOpen(true),
+                              icon: <IconNotification className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                          },
+                          {
+                              type: 'item' as const,
+                              label: t('chrome.bookmarks'),
+                              link: '/bookmarks',
+                              icon: <IconBookmark className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                          },
+                          {
+                              type: 'item' as const,
+                              label: t('chrome.wimAi'),
+                              link: '/workspace-chat',
+                              icon: <IconChat className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                          },
+                          ...(isModerator
+                              ? [
+                                    {
+                                        type: 'item' as const,
+                                        label: t('chrome.admin'),
+                                        link: '/admin',
+                                        icon: <IconBadge className="opacity-75 text-yellow size-4" />,
+                                    },
+                                ]
+                              : []),
+                          { type: 'separator' as const },
+                          {
+                              type: 'item' as const,
+                              label: t('chrome.account'),
+                              link: '/account',
+                              icon: <IconGear className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                          },
+                          {
+                              type: 'item' as const,
+                              label: t('auth.signOut'),
+                              onClick: () => logout(),
+                              icon: <IconLock className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                          },
+                      ]
+                    : [
+                          {
+                              type: 'item' as const,
+                              label: t('auth.signIn'),
+                              onClick: handleSignInClick,
+                              icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                          },
+                      ],
+            },
+        ],
+        [
+            isLoggedIn,
+            avatarURL,
+            user,
+            notificationsCount,
+            isModerator,
+            t,
+            logout,
+            handleSignInClick,
+            setIsNotificationsPanelOpen,
+        ]
+    )
 
     return (
         <>

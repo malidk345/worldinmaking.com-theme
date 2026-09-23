@@ -19,9 +19,13 @@ export function useWindowSwitcher({
     size: { width: number; height: number }
     taskbarHeight: number
 }) {
-    const visibleWindows = useMemo(() => windows.filter((w) => !w.minimized), [windows])
+    const visibleWindows = useMemo(() => {
+        if (!isActiveWindowsPanelOpen || isMobile || compact || item.minimized) return []
+        return windows.filter((w) => !w.minimized)
+    }, [windows, isActiveWindowsPanelOpen, isMobile, compact, item.minimized])
+
     const switcherIndex = useMemo(
-        () => visibleWindows.findIndex((w) => w.key === item.key),
+        () => (visibleWindows.length === 0 ? -1 : visibleWindows.findIndex((w) => w.key === item.key)),
         [visibleWindows, item.key]
     )
 

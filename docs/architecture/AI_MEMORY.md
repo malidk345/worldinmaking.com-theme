@@ -51,13 +51,35 @@
 ---
 
 ## 4. Current Tasks & Locking
-- **Status:** `[DONE by Grok Bot / Cursor]`
-- **Task:** P1 HARDEN-ONLY — Memoize ChatInput + rAF token coalesce + pushChatToRemote on todo_write→activePlan (stream/UI persist perf).
-
+- **Status:** `[IDLE]`
+- **Task:** Performance optimization of AppWindow chrome, resize handles, and desktop re-renders.
 
 ---
 
 ## 5. AI Change History & Log
+
+### 2026-09-23 — Antigravity (perf: optimize AppWindow chrome, resize handles, and desktop re-renders)
+- **Scope:** Zero-regression rendering performance and tree-traversal optimization without feature or UI design alterations.
+- **Changes:**
+  1. `src/components/AppWindow/index.tsx`:
+     - Removed unused `useToast()` subscription from all `AppWindow` instances, preventing every open window on the desktop from re-rendering on every toast add/remove event.
+     - Memoized site menu traversal (`safeAppMenu`, `parent`, `internalMenu`, and `getActiveInternalMenu`), eliminating recursive menu tree searches across the whole site hierarchy on every frame during window dragging or resizing.
+     - Stabilized `handleMinimize` and `handleDragHandlePointerDown` callbacks, avoiding inline arrow function allocations on every render.
+  2. `src/components/AppWindow/WindowChrome.tsx`, `WindowResizeHandles.tsx`, `WindowContent.tsx`:
+     - Wrapped `WindowChrome`, `WindowResizeHandles`, and `WindowContent` with `React.memo`.
+     - Extracted static regular expressions (`FORUM_SHELL_REGEX`, `BLOG_SHELL_REGEX`) outside `WindowContent` render scope.
+     - Passed `handleDragResize` callback directly to `WindowResizeHandles`.
+  3. `src/hooks/useWindowSwitcher.ts`:
+     - Short-circuited `visibleWindows` (`[]`) and `switcherIndex` (`-1`) computations when `isActiveWindowsPanelOpen` is false (normal state >99% of the time), avoiding window filtering and index lookups across all open windows on unrelated renders.
+  4. `src/components/Desktop/index.tsx`:
+     - Replaced `useLayoutEffect` with `useIsomorphicLayoutEffect`, completely resolving the Next.js SSR hydration console warning.
+     - Memoized wallpaper glow calculation and desktop icon app lists (`visiblePinned`, `leftApps`, `rightApps`), preventing continuous array allocations and icon cloning on desktop renders.
+  5. `src/components/TaskBarMenu/index.tsx`:
+     - Wrapped `siteMenu` and `accountMenu` inside `useMemo` and memoized `handleSignInClick`, preventing child Radix UI primitives inside `<MenuBar />` from re-rendering on shell state updates.
+  6. `src/context/Toast.tsx`:
+     - Stabilized `addToast` and `removeToast` using `useCallback` and memoized `Context.Provider` value with `useMemo`.
+- **Files:** `src/components/AppWindow/index.tsx`, `src/components/AppWindow/WindowChrome.tsx`, `src/components/AppWindow/WindowResizeHandles.tsx`, `src/components/AppWindow/WindowContent.tsx`, `src/hooks/useWindowSwitcher.ts`, `src/components/Desktop/index.tsx`, `src/components/TaskBarMenu/index.tsx`, `src/context/Toast.tsx`, `docs/architecture/AI_MEMORY.md`.
+- **Verify:** `pnpm typecheck:shell` PASS (0 gated errors); dev server verified responding with `HTTP/1.1 200 OK` on `http://localhost:3000`.
 
 ### 2026-09-23 — Grok Bot / Cursor (harden: ChatInput memo + rAF token flush + activePlan remote)
 

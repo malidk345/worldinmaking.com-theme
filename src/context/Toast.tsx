@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react'
 import Toasts from 'components/Toast'
 
 export interface Toast {
@@ -26,18 +26,23 @@ export const Context = createContext<ToastContext | undefined>(undefined)
 export const Provider = ({ children }: { children: React.ReactNode }): JSX.Element => {
     const [toasts, setToasts] = useState<Toast[]>([])
 
-    const addToast = (toast: Toast) => {
+    const addToast = useCallback((toast: Toast) => {
         const createdAt = toast.createdAt ?? Date.now()
         setToasts((prevToasts) => [...prevToasts, { ...toast, createdAt }])
         return createdAt
-    }
+    }, [])
 
-    const removeToast = (createdAt: number) => {
+    const removeToast = useCallback((createdAt: number) => {
         setToasts((prevToasts) => prevToasts.filter((toast) => toast.createdAt !== createdAt))
-    }
+    }, [])
+
+    const value = useMemo(
+        () => ({ addToast, toasts, removeToast }),
+        [addToast, toasts, removeToast]
+    )
 
     return (
-        <Context.Provider value={{ addToast, toasts, removeToast }}>
+        <Context.Provider value={value}>
             {children}
             <Toasts />
         </Context.Provider>

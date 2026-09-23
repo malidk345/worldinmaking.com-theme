@@ -1,4 +1,4 @@
-import type { PointerEvent } from 'react'
+import React, { memo, type PointerEvent } from 'react'
 import { IconCollapse45Chevrons, IconMinus, IconSquare, IconX } from '@posthog/icons'
 import Tooltip from 'components/RadixUI/Tooltip'
 import OSButton from 'components/OSButton'
@@ -16,7 +16,7 @@ interface WindowChromeProps {
     onDragHandlePointerDown?: (event: PointerEvent<HTMLDivElement>) => void
 }
 
-export default function WindowChrome({
+export default memo(function WindowChrome({
     item,
     hasToolbar,
     hideTitle,
@@ -123,4 +123,4 @@ export default function WindowChrome({
             </div>
         </div>
     )
-}
+})

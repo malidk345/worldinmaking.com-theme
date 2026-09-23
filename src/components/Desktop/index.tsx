@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import Link from 'components/Link'
@@ -7,6 +7,8 @@ import { openAskAiWindow } from '../../lib/open-ask-ai-window'
 import { GlassIcon } from 'components/OSIcons'
 import { AppIcon, AppItem } from 'components/OSIcons/AppIcon'
 import ContextMenu from 'components/RadixUI/ContextMenu'
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 import DesktopIcon from './DesktopIcon'
 import Wallpapers, { getWallpaperGlow } from './Wallpapers'
 import { apps, useProductLinks } from './desktopApps'
@@ -166,9 +168,13 @@ function Desktop() {
         }
     }, [loadPinnedApps])
 
-    const glow = getWallpaperGlow(siteSettings.wallpaper)
-    const applyGlow = (items: AppItem[]) =>
-        items.map((app) =>
+    const glow = useMemo(() => getWallpaperGlow(siteSettings.wallpaper), [siteSettings.wallpaper])
+    const visiblePinned = useMemo(
+        () => (user ? pinnedApps.filter((app) => !isHomeWindowPath(app.url)) : pinnedApps),
+        [user, pinnedApps]
+    )
+    const leftApps = useMemo(() => {
+        return [...productLinks, ...visiblePinned].map((app) =>
             React.isValidElement(app.Icon) && app.Icon.type === GlassIcon
                 ? {
                       ...app,
@@ -179,13 +185,23 @@ function Desktop() {
                   }
                 : app
         )
-    const visiblePinned = user
-        ? pinnedApps.filter((app) => !isHomeWindowPath(app.url))
-        : pinnedApps
-    const leftApps = applyGlow([...productLinks, ...visiblePinned])
-    const rightApps = applyGlow(apps)
+    }, [productLinks, visiblePinned, glow])
 
-    useLayoutEffect(() => {
+    const rightApps = useMemo(() => {
+        return apps.map((app) =>
+            React.isValidElement(app.Icon) && app.Icon.type === GlassIcon
+                ? {
+                      ...app,
+                      Icon: React.cloneElement(app.Icon as React.ReactElement, {
+                          glowColor: glow.light,
+                          glowColorDark: glow.dark,
+                      }),
+                  }
+                : app
+        )
+    }, [glow])
+
+    useIsomorphicLayoutEffect(() => {
         const query = window.matchMedia('(min-width: 640px)')
         const apply = () => setIconLayout(query.matches ? 'desktop' : 'mobile')
         apply()

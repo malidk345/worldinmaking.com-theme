@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import {
     AnimatePresence,
     motion,
@@ -10,7 +10,6 @@ import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } fro
 import type { MenuItemType } from 'components/RadixUI/MenuBar'
 import { IMenu } from 'components/PostLayout/types'
 import { useRouter } from 'next/router'
-import { useToast } from '../../context/Toast'
 import usePostHog from '../../hooks/usePostHog'
 import { MOTION_LAYER, WINDOW_BG } from '../../constants/frostedSurfaces'
 import { isAssistantWindowPath, isScratchpadWindowPath, isTrashWindowPath } from '../../lib/window-path'
@@ -108,7 +107,6 @@ const WindowContainer = ({ children, closing }: { children: React.ReactNode; clo
 }
 
 function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: boolean }) {
-    const { toasts } = useToast()
     const {
         minimizeWindow,
         bringToFront,
@@ -218,23 +216,25 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const isCompositorActive = animating || dragging || isResizing || closing
     const inView = useWindowVisibility({ item, windows, position, size })
 
-    const safeAppMenu = Array.isArray(appMenu) ? appMenu : []
-    const parent =
-        safeAppMenu.find(({ children, url }: any) => {
-            const currentURL = item?.path
-            return currentURL === url?.split('?')[0] || recursiveSearch(children, currentURL)
-        }) ||
-        safeAppMenu.find(({ url }: any) => url === `/${item?.path?.split('/')[1]}`) ||
-        safeAppMenu.find(({ name }: any) => name === 'Docs')
+    const safeAppMenu = useMemo(() => (Array.isArray(appMenu) ? appMenu : []), [appMenu])
+    const itemPath = item?.path
+    const parent = useMemo(() => {
+        return (
+            safeAppMenu.find(({ children, url }: any) => {
+                return itemPath === url?.split('?')[0] || recursiveSearch(children, itemPath)
+            }) ||
+            safeAppMenu.find(({ url }: any) => url === `/${itemPath?.split('/')[1]}`) ||
+            safeAppMenu.find(({ name }: any) => name === 'Docs')
+        )
+    }, [safeAppMenu, itemPath])
 
-    const internalMenu = parent?.children || []
+    const internalMenu = useMemo(() => parent?.children || [], [parent])
 
     const getActiveInternalMenu = useCallback(() => {
         return internalMenu?.find((menuItem: MenuItem) => {
-            const currentURL = item?.path
-            return currentURL === menuItem.url?.split('?')[0] || recursiveSearch(menuItem.children, currentURL)
+            return itemPath === menuItem.url?.split('?')[0] || recursiveSearch(menuItem.children, itemPath)
         })
-    }, [internalMenu, item])
+    }, [internalMenu, itemPath])
 
     const [activeInternalMenu, setActiveInternalMenu] = useState<MenuItem | undefined>(getActiveInternalMenu())
 
@@ -265,6 +265,18 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         setClosing,
         router,
     })
+
+    const handleMinimize = useCallback(() => {
+        minimizeWindow(item)
+    }, [minimizeWindow, item])
+
+    const handleDragHandlePointerDown = useCallback(
+        (event: React.PointerEvent<HTMLDivElement>) => {
+            if (item.fixedSize || inSwitcher) return
+            controls.start(event)
+        },
+        [item.fixedSize, inSwitcher, controls]
+    )
 
     useEffect(() => {
         setActiveInternalMenu(getActiveInternalMenu())
@@ -297,8 +309,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         const duration = endTime - startTime
         if (
             duration > 700 &&
-            !siteSettings.performanceBoost &&
-            !toasts.some((toast) => toast.title === 'Animations running slow')
+            !siteSettings.performanceBoost
         ) {
             posthog?.capture('animation_performance_reduced')
             // addToast({
@@ -531,14 +542,11 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         item={item}
                         hasToolbar={!!hasToolbar}
                         hideTitle={!!hideTitle}
-                        onMinimize={() => minimizeWindow(item)}
+                        onMinimize={handleMinimize}
                         onToggleExpanded={toggleExpanded}
                         onClose={handleClose}
                         onDoubleClick={handleDoubleClick}
-                        onDragHandlePointerDown={(event) => {
-                            if (item.fixedSize || inSwitcher) return
-                            controls.start(event)
-                        }}
+                        onDragHandlePointerDown={handleDragHandlePointerDown}
                     />
                     <WindowContent item={item} chrome={chrome} hasToolbar={!!hasToolbar}>
                         {routeReady ? (
@@ -550,12 +558,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         )}
                     </WindowContent>
                     {!item.fixedSize && !item.expanded && !isMobile && (
-                        <>
-                            <WindowResizeHandles
-                                onResize={(info, change, left) => handleDragResize(info, change, left)}
-                                onResizeEnd={handleResizeEnd}
-                            />
-                        </>
+                        <WindowResizeHandles
+                            onResize={handleDragResize}
+                            onResizeEnd={handleResizeEnd}
+                        />
                     )}
                 </motion.div>
             </WindowContainer>

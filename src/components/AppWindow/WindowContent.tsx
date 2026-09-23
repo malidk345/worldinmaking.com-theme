@@ -12,17 +12,19 @@ interface WindowContentProps {
     children: React.ReactNode
 }
 
-export default function WindowContent({ item, chrome, hasToolbar, children }: WindowContentProps) {
+const FORUM_SHELL_REGEX = /^\/(questions|forum)/
+const BLOG_SHELL_REGEX = /^\/(blog|posts)(\/|$)/
+
+export default React.memo(function WindowContent({ item, chrome, hasToolbar, children }: WindowContentProps) {
     const path = item.path || item.props?.path || ''
     // Forum (Inbox) is a fixed split layout (list + thread panel) like wimpos — needs
     // overflow-hidden + h-full chain. Blog + notebooks keep sidebar chrome window-tall.
     const isForumShell =
-        /^\/questions/.test(path) ||
-        /^\/forum/.test(path) ||
+        FORUM_SHELL_REGEX.test(path) ||
         (/^\/community/.test(path) &&
             !path.startsWith('/community/profiles') &&
             !path.startsWith('/community/achievements'))
-    const isBlogShell = /^\/(blog|posts)(\/|$)/.test(path)
+    const isBlogShell = BLOG_SHELL_REGEX.test(path)
     const lockToWindow =
         isForumShell ||
         isBlogShell ||
@@ -59,4 +61,4 @@ export default function WindowContent({ item, chrome, hasToolbar, children }: Wi
             <WindowErrorBoundary>{children}</WindowErrorBoundary>
         </div>
     )
-}
+})
