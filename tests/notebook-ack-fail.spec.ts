@@ -218,4 +218,46 @@ test.describe('Fail-closed nacks are present', () => {
     expect(chatSrc).toContain('syncNotebookChatBindForIdentity()');
   });
 
+  test('identity namespaces projects/settings/scratchpad and clears session leftovers', async () => {
+    const workspaceSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/workspace-local.ts'),
+      'utf-8'
+    );
+    const chatSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/components/ClaudeWorkspaceChat/index.tsx'),
+      'utf-8'
+    );
+    const scratchSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/scratchpad-store.ts'),
+      'utf-8'
+    );
+    const bindSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/notebook-chat-bind.ts'),
+      'utf-8'
+    );
+    const byokSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/byok-vault.ts'),
+      'utf-8'
+    );
+    const quotaSrc = fs.readFileSync(
+      path.join(process.cwd(), 'src/lib/chat-usage-client.ts'),
+      'utf-8'
+    );
+    // Projects/settings must be owner-namespaced (systemPrompt leak class).
+    expect(workspaceSrc).toContain("namespacedStorageKey(PROJECT_STORAGE_BASE");
+    expect(workspaceSrc).toContain("namespacedStorageKey(SETTINGS_STORAGE_BASE");
+    expect(workspaceSrc).toContain('syncWorkspaceLocalForIdentity');
+    expect(chatSrc).toContain('writeLocalProjects(projects)');
+    expect(chatSrc).toContain('writeLocalSettings(settings)');
+    expect(chatSrc).toContain('setProjects(readLocalProjects(INITIAL_PROJECTS))');
+    expect(chatSrc).toContain('syncWorkspaceLocalForIdentity()');
+    // Scratchpad / BYOK / sticky / quota — same global-leak class as bind.
+    expect(scratchSrc).toContain("namespacedStorageKey(STORAGE_BASE");
+    expect(scratchSrc).toContain('WIM_IDENTITY_EVENT');
+    expect(byokSrc).toContain("namespacedStorageKey(STORAGE_BASE");
+    expect(bindSrc).toContain('clearStickyNotebookSelection');
+    expect(quotaSrc).toContain('WIM_IDENTITY_EVENT');
+    expect(quotaSrc).toContain('clearCachedTokenQuota');
+  });
+
 });

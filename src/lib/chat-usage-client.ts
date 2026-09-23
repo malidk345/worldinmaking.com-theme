@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { chatAuthHeadersFresh } from './chat-remote'
+import { WIM_IDENTITY_EVENT } from './wim-identity'
 
 export interface TokenQuotaSnapshot {
     subject: string
@@ -42,6 +43,19 @@ function clearCachedTokenQuota(): void {
     } catch {
         /* ignore */
     }
+}
+
+/** Drop previous owner's quota cache on logout / account switch. */
+export function syncTokenQuotaCacheForIdentity(): void {
+    clearCachedTokenQuota()
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener(WIM_IDENTITY_EVENT, () => {
+        clearCachedTokenQuota()
+        // Refetch for the new owner so ChatInput does not keep a stale allowed:true.
+        void fetchTokenQuota()
+    })
 }
 
 export function getCachedTokenQuota(): TokenQuotaSnapshot | null {
@@ -147,11 +161,20 @@ export function useTokenQuota() {
             }
         }
 
+        const onIdentity = () => {
+            clearCachedTokenQuota()
+            setQuota(null)
+            void fetchTokenQuota().then((data) => {
+                if (mounted && data) setQuota(data)
+            })
+        }
         window.addEventListener(TOKEN_QUOTA_UPDATED_EVENT, handleUpdate)
+        window.addEventListener(WIM_IDENTITY_EVENT, onIdentity)
         return () => {
             mounted = false
             window.clearTimeout(hangId)
             window.removeEventListener(TOKEN_QUOTA_UPDATED_EVENT, handleUpdate)
+            window.removeEventListener(WIM_IDENTITY_EVENT, onIdentity)
         }
     }, [])
 

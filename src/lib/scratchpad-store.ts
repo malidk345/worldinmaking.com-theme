@@ -10,6 +10,14 @@
  * and Notebook pipelines.
  */
 
+import {
+    DEVICE_CHAT_OWNER_KEY,
+    getActiveOwnerKey,
+    getAuthUserId,
+    namespacedStorageKey,
+    WIM_IDENTITY_EVENT,
+} from './wim-identity'
+
 export type ScratchpadNodeType = 'citation' | 'concept' | 'source' | 'synthesis' | 'note'
 
 export interface ScratchpadNode {
@@ -56,45 +64,97 @@ export interface ScratchpadState {
     lastUpdated: number
 }
 
-const STORAGE_KEY = 'wim_os_scratchpad_v3'
+const STORAGE_BASE = 'wim_os_scratchpad_v3'
 
-let state: ScratchpadState = {
-    documents: [],
-    nodes: [],
-    tasks: [],
-    memories: [],
-    lastUpdated: Date.now(),
+function storageKey(): string {
+    return namespacedStorageKey(STORAGE_BASE, getActiveOwnerKey(DEVICE_CHAT_OWNER_KEY))
 }
 
-// Load persisted state safely in browser
-if (typeof window !== 'undefined') {
-    try {
-        const raw = window.localStorage.getItem(STORAGE_KEY)
-        if (raw) {
-            const parsed = JSON.parse(raw)
-            if (Array.isArray(parsed.nodes) || Array.isArray(parsed.tasks) || Array.isArray(parsed.documents) || Array.isArray(parsed.memories)) {
-                state = {
-                    documents: Array.isArray(parsed.documents) ? parsed.documents : [],
-                    nodes: Array.isArray(parsed.nodes) ? parsed.nodes : [],
-                    tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
-                    memories: Array.isArray(parsed.memories) ? parsed.memories : [],
-                    lastUpdated: parsed.lastUpdated || Date.now(),
-                }
-            }
-        }
-    } catch {
-        /* fallback to memory state */
+function emptyState(): ScratchpadState {
+    return {
+        documents: [],
+        nodes: [],
+        tasks: [],
+        memories: [],
+        lastUpdated: Date.now(),
     }
 }
 
+let state: ScratchpadState = emptyState()
+
+function parseScratchpad(raw: string | null): ScratchpadState | null {
+    if (!raw) return null
+    try {
+        const parsed = JSON.parse(raw)
+        if (
+            Array.isArray(parsed.nodes) ||
+            Array.isArray(parsed.tasks) ||
+            Array.isArray(parsed.documents) ||
+            Array.isArray(parsed.memories)
+        ) {
+            return {
+                documents: Array.isArray(parsed.documents) ? parsed.documents : [],
+                nodes: Array.isArray(parsed.nodes) ? parsed.nodes : [],
+                tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
+                memories: Array.isArray(parsed.memories) ? parsed.memories : [],
+                lastUpdated: parsed.lastUpdated || Date.now(),
+            }
+        }
+    } catch {
+        /* ignore */
+    }
+    return null
+}
+
+function load(): void {
+    if (typeof window === 'undefined') {
+        state = emptyState()
+        return
+    }
+    try {
+        const fromNs = parseScratchpad(window.localStorage.getItem(storageKey()))
+        if (fromNs) {
+            state = fromNs
+            return
+        }
+        // Never copy a previous guest/account scratchpad into a signed-in user.
+        if (getAuthUserId()) {
+            state = emptyState()
+            return
+        }
+        const legacy = parseScratchpad(window.localStorage.getItem(STORAGE_BASE))
+        if (legacy) {
+            state = legacy
+            try {
+                window.localStorage.setItem(storageKey(), JSON.stringify(legacy))
+            } catch {
+                /* quota */
+            }
+            return
+        }
+        state = emptyState()
+    } catch {
+        state = emptyState()
+    }
+}
+
+load()
+
 type Listener = (state: ScratchpadState) => void
 const listeners = new Set<Listener>()
+
+if (typeof window !== 'undefined') {
+    window.addEventListener(WIM_IDENTITY_EVENT, () => {
+        load()
+        listeners.forEach((l) => l(state))
+    })
+}
 
 function emit() {
     state.lastUpdated = Date.now()
     if (typeof window !== 'undefined') {
         try {
-            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+            window.localStorage.setItem(storageKey(), JSON.stringify(state))
         } catch {
             /* ignore quota err */
         }
