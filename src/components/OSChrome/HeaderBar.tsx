@@ -18,7 +18,7 @@ import { IconPDF } from 'components/OSIcons'
 import { useWindow } from '../../context/Window'
 import SearchBar from 'components/Editor/SearchBar'
 import Tooltip from 'components/RadixUI/Tooltip'
-import { useAppSettings, useAppWindows } from '../../context/App'
+import { useAppSettings, useShellFrame } from '../../context/App'
 import { HeaderCartButton } from './HeaderCartButton'
 import { exportToPdf as exportPresentationToPdf } from '../../lib/exportToPdf'
 import Loading from 'components/Loading'
@@ -104,7 +104,7 @@ export default function HeaderBar({
     className = '',
 }: HeaderBarProps) {
     const { compact } = useAppSettings()
-    const { focusedWindow } = useAppWindows()
+    const { focusedKey } = useShellFrame()
     const { goBack, goForward, canGoBack, canGoForward, appWindow, menu } = useWindow()
     const [searchOpen, setSearchOpen] = useState(false)
     const [isExportingPdf, setIsExportingPdf] = useState(false)
@@ -142,7 +142,7 @@ export default function HeaderBar({
                     return
                 }
                 // Only handle Shift+F if this window is the focused/active window
-                if (e.key === 'F' && e.shiftKey && focusedWindow === appWindow) {
+                if (e.key === 'F' && e.shiftKey && focusedKey === appWindow?.key) {
                     e.preventDefault()
                     setSearchOpen(true)
                 }
@@ -152,7 +152,7 @@ export default function HeaderBar({
                 document.removeEventListener('keydown', handleKeyDown)
             }
         }
-    }, [focusedWindow, appWindow])
+    }, [focusedKey, appWindow])
 
     const hasContent =
         Boolean(homeURL) ||

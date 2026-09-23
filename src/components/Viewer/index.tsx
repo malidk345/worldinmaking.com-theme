@@ -8,7 +8,7 @@ import EditorSearchProvider from 'components/Editor/SearchProvider'
 import { ViewerControls } from './ViewerControls'
 import { ViewerSidebar } from './ViewerSidebar'
 import { getProseClasses } from '../../constants/index'
-import { useAppActions, useAppWindows } from '../../context/App'
+import { useAppActions, useShellFrame } from '../../context/App'
 import Share from 'components/Share'
 import { useWindow } from '../../context/Window'
 import BookmarkButton from 'components/BookmarkButton'
@@ -177,7 +177,7 @@ export function Viewer({
     const [isHovering, setIsHovering] = useState(false)
     const searchContentRef = useRef<HTMLDivElement>(null)
     const { addWindow } = useAppActions()
-    const { focusedWindow } = useAppWindows()
+    const { focusedKey } = useShellFrame()
     const { appWindow } = useWindow()
     const [maxWidth, setMaxWidth] = useState(initialMaxWidth ?? 768)
     const fullWidthContent = typeof maxWidth === 'string' && maxWidth === '100%'
@@ -225,7 +225,7 @@ export function Viewer({
                 return
             }
             // Only handle Shift+F if this window is the focused/active window
-            if (e.key === 'F' && e.shiftKey && focusedWindow === appWindow) {
+            if (e.key === 'F' && e.shiftKey && focusedKey === appWindow?.key) {
                 e.preventDefault()
                 setShowSearch(true)
             }
@@ -235,7 +235,7 @@ export function Viewer({
         return () => {
             document.removeEventListener('keydown', handleSearchKeyDown)
         }
-    }, [focusedWindow, appWindow])
+    }, [focusedKey, appWindow])
 
     useEffect(() => {
         setShowCher(isHovering && isModifierKeyPressed)

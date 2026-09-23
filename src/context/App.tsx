@@ -201,6 +201,7 @@ export type AppActionsContextType = Pick<AppContextType, AppActionKeys> & {
     // A stable ref to the latest windowsInView, for consumers that need the value
     // lazily without subscribing to re-renders.
     windowsInViewRef: React.MutableRefObject<AppWindow[]>
+    windowsRef: React.MutableRefObject<AppWindow[]>
 }
 
 // Rarely-changing global state (display settings, environment flags, nav menu).
@@ -233,9 +234,16 @@ export type AppUIStateContextType = Pick<AppContextType, AppUIStateKeys>
 // The volatile window list, isolated into its own context so consumers that only need
 // `windows` (e.g. the taskbar, the window list) re-render only when windows actually
 // change — not on every unrelated AppProvider render. See `useAppWindows`.
-type AppWindowsKeys = 'windows' | 'focusedWindow' | 'isActiveWindowsPanelOpen' | 'closingAllWindowsAnimation'
+type AppWindowsKeys = 'windows'
 
 export type AppWindowsContextType = Pick<AppContextType, AppWindowsKeys>
+
+export type ShellFrameContextType = {
+    focusedKey?: string
+    windowCount: number
+    isActiveWindowsPanelOpen: boolean
+    closingAllWindowsAnimation: boolean
+}
 
 interface AppProviderProps {
     children: React.ReactNode
@@ -377,6 +385,7 @@ export const ActionsContext = createContext<AppActionsContextType>({
     setIsAuthModalOpen: () => {},
     exitSharedRoom: () => {},
     windowsInViewRef: { current: [] },
+    windowsRef: { current: [] },
 })
 
 // Rarely-changing settings context. Consumers that only read display settings /
@@ -421,7 +430,11 @@ export const UIStateContext = createContext<AppUIStateContextType>({
 
 export const WindowsContext = createContext<AppWindowsContextType>({
     windows: [],
-    focusedWindow: undefined,
+})
+
+export const ShellFrameContext = createContext<ShellFrameContextType>({
+    focusedKey: undefined,
+    windowCount: 0,
     isActiveWindowsPanelOpen: false,
     closingAllWindowsAnimation: false,
 })
@@ -1659,6 +1672,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
     // Keep the latest implementations in a ref so the stable wrappers below always
     // call the freshest closures (no stale state) while keeping a constant identity.
+    const windowsRef = useRef(windows)
+    windowsRef.current = windows
+
     const latestActionsRef = useRef<AppActionsContextType>()
     latestActionsRef.current = {
         closeWindow,
@@ -1697,6 +1713,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setIsAuthModalOpen,
         exitSharedRoom,
         windowsInViewRef,
+        windowsRef,
     }
 
     // Stable-identity actions object. Refs and state setters are already stable and
@@ -1741,6 +1758,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             constraintsRef,
             taskbarRef,
             windowsInViewRef,
+            windowsRef,
         }),
         []
     )
@@ -1790,9 +1808,15 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         ]
     )
 
-    const windowsValue = useMemo<AppWindowsContextType>(
-        () => ({ windows, focusedWindow, isActiveWindowsPanelOpen, closingAllWindowsAnimation }),
-        [windows, focusedWindow, isActiveWindowsPanelOpen, closingAllWindowsAnimation]
+    const windowsValue = useMemo<AppWindowsContextType>(() => ({ windows }), [windows])
+    const shellFrame = useMemo<ShellFrameContextType>(
+        () => ({
+            focusedKey: focusedWindow?.key,
+            windowCount: windows.length,
+            isActiveWindowsPanelOpen,
+            closingAllWindowsAnimation,
+        }),
+        [focusedWindow?.key, windows.length, isActiveWindowsPanelOpen, closingAllWindowsAnimation]
     )
 
     return (
@@ -1800,6 +1824,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             <SettingsContext.Provider value={settings}>
                 <UIStateContext.Provider value={uiState}>
                     <WindowsContext.Provider value={windowsValue}>
+                        <ShellFrameContext.Provider value={shellFrame}>
                         <Context.Provider
                             value={{
                                 windows,
@@ -1867,6 +1892,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                         >
                             {children}
                         </Context.Provider>
+                        </ShellFrameContext.Provider>
                     </WindowsContext.Provider>
                 </UIStateContext.Provider>
             </SettingsContext.Provider>
@@ -1914,4 +1940,10 @@ export const useAppUIState = (): AppUIStateContextType => {
 // only need `windows` (e.g. taskbar, window list).
 export const useAppWindows = (): AppWindowsContextType => {
     return useContext(WindowsContext)
+}
+
+// Focus and panel flags without the window list. A drag updates positions every
+// frame; this value stays the same until focus or the panel actually changes.
+export const useShellFrame = (): ShellFrameContextType => {
+    return useContext(ShellFrameContext)
 }

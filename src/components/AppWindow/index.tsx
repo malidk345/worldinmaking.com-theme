@@ -5,7 +5,7 @@ import {
     useDragControls,
 
 } from 'framer-motion'
-import { MenuItem, useAppActions, useAppSettings, useAppWindows } from '../../context/App'
+import { MenuItem, useAppActions, useAppSettings, useShellFrame } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
 import type { MenuItemType } from 'components/RadixUI/MenuBar'
 import { IMenu } from 'components/PostLayout/types'
@@ -118,8 +118,11 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         constraintsRef,
         expandWindow,
         addWindow,
+        windowsRef,
     } = useAppActions()
-    const { windows, focusedWindow, isActiveWindowsPanelOpen, closingAllWindowsAnimation } = useAppWindows()
+    const { focusedKey, isActiveWindowsPanelOpen, closingAllWindowsAnimation } = useShellFrame()
+    const windows = windowsRef.current
+    const focusedWindow = focusedKey === item.key ? item : undefined
     const { siteSettings, compact, menu: appMenu, isMobile, taskbarHeight } = useAppSettings()
 
     const navigate = useCallback(

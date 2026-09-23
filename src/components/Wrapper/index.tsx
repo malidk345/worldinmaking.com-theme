@@ -1,6 +1,6 @@
 import React from 'react'
 import dynamic from 'next/dynamic'
-import { useAppActions, useAppSettings, useAppUIState, useAppWindows } from '../../context/App'
+import { useAppActions, useAppSettings, useAppUIState, useShellFrame } from '../../context/App'
 import Desktop from 'components/Desktop'
 import GuestHomeGate from 'components/Home/GuestHomeGate'
 import TaskBarMenu from 'components/TaskBarMenu'
@@ -65,7 +65,7 @@ function VisitingRoomBanner() {
 export default function Wrapper() {
     const { constraintsRef, setIsAuthModalOpen } = useAppActions()
     const { compact } = useAppSettings()
-    const { isActiveWindowsPanelOpen } = useAppWindows()
+    const { isActiveWindowsPanelOpen } = useShellFrame()
     const { isAuthModalOpen, authModalView, authModalOnSuccess, searchOpen } = useAppUIState()
     const [searchMounted, setSearchMounted] = React.useState(false)
     const [authMounted, setAuthMounted] = React.useState(false)
