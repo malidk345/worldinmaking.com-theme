@@ -143,6 +143,7 @@ test.describe('HARDEN desk / WIM AI / notebook path locks', () => {
     expect(src).toContain('const handleNewChat = useCallback((projId?: string) => {')
     expect(src).toContain('stream paint tore down/rebound window keydown')
     expect(src).toContain('continueHandlerForMessages')
+    expect(src).toContain('if (pendingHumanTurn) return undefined')
     expect(src).toContain('handleOpenArtifactFromMessage')
     expect(src).toContain('onContinue={continueHandlerForMessages}')
     expect(src).toContain('onOpenArtifact={handleOpenArtifactFromMessage}')

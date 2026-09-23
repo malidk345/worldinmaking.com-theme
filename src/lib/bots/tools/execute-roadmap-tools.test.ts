@@ -352,6 +352,38 @@ describe('Roadmap AI Tools Execution', () => {
             expect(parsed.document).toContain('<h1 id="Section 1">Section 1</h1>')
             expect(res.artifact?.type).toBe('html')
         })
+        it('fails closed when notebookId is supplied but missing from host', async () => {
+            const host: HostSnapshot = {
+                notebooks: [
+                    {
+                        id: 'nb-real',
+                        title: 'Real Notes',
+                        content: '# Keep me\n\nBody.',
+                    },
+                ],
+                selection: 'SELECTION MUST NOT LEAK INTO WRONG-ID EXPORT',
+                notebookTitle: 'Bound title poison',
+            }
+
+            const res = await executeToolCall(
+                {
+                    id: 'call-export-missing',
+                    name: 'export_notebook',
+                    argumentsJson: JSON.stringify({
+                        notebookId: 'nb-missing',
+                        format: 'markdown',
+                    }),
+                },
+                undefined,
+                host
+            )
+
+            expect(res.ok).toBe(false)
+            expect(res.result).toContain('not found')
+            expect(res.result).not.toContain('SELECTION MUST NOT LEAK')
+            expect(res.artifact).toBeUndefined()
+        })
+
     })
 
     describe('create_concept_map', () => {
