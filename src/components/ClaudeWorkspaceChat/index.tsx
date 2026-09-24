@@ -3450,12 +3450,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           data-empty={isChatEmpty ? '' : undefined}
           className="pointer-events-none absolute inset-x-0 z-20"
         >
-          <div
-            aria-hidden
-            className={`pointer-events-none absolute inset-x-0 bottom-full h-16 bg-gradient-to-t from-primary via-primary/80 to-transparent ${
-              isChatEmpty ? 'opacity-0' : 'opacity-100'
-            }`}
-          />
           <div className="pointer-events-auto relative mx-auto w-full max-w-3xl px-3 sm:px-4">
               <h1
                 aria-hidden={!isChatEmpty}
