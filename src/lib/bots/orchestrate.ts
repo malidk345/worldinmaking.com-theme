@@ -198,7 +198,10 @@ function buildTurnSystemPrompt(
     const operator = Boolean(input.enableTools && taskType === 'autonomous_assistant')
 
     if (operator) {
-        const personaCard = buildPersonaHeader(persona, mood, taskType, density, { omitIdentityHeader: true })
+        const personaCard = buildPersonaHeader(persona, mood, taskType, density, {
+            omitIdentityHeader: true,
+            operatingRules: 'external',
+        })
         return getAskAiSystemPrompt({
             voiceName: persona.name,
             wimContext,
@@ -212,7 +215,7 @@ function buildTurnSystemPrompt(
         SECURITY_PREAMBLE,
         wimContext,
         input.trustedInstruction?.trim() ? `APPLICATION TASK:\n${input.trustedInstruction.trim().slice(0, 2000)}` : '',
-        buildPersonaHeader(persona, mood, taskType, density),
+        buildPersonaHeader(persona, mood, taskType, density, { operatingRules: 'external' }),
         buildThinkingInstruction(taskType, input.thinkingDepth, persona.name, Boolean(persona.thinkingMethod?.trim())),
     ]
         .filter(Boolean)
