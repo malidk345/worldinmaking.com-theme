@@ -141,7 +141,7 @@ import {
   scrollElementToScrollerPin,
 } from '../../lib/chat-scroll';
 import { getActiveByokPayload } from '../../lib/byok-vault';
-import { chatsForStorage, retainOpenChats, STORED_CHAT_LIMIT } from '../../lib/chat-local';
+import { chatsForStorage, protectedChatIds, retainOpenChats, STORED_CHAT_LIMIT } from '../../lib/chat-local';
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 
@@ -597,10 +597,20 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   isStreamingRefForPersist.current = isStreaming
 
   const cloudChatIdsRef = useRef<Set<string>>(new Set())
+  const notebookBindIdRef = useRef<string | undefined>(undefined)
+  notebookBindIdRef.current = notebookBind?.notebookId
+
+  const keepIdsFor = (list: Chat[]) =>
+    protectedChatIds(list, {
+      activeId: activeChatIdRef.current,
+      notebookId: notebookBindIdRef.current,
+    })
 
   useLayoutEffect(() => {
     setChats((prev) => {
-      const next = retainOpenChats(prev, activeChatId)
+      const next = retainOpenChats(prev, activeChatId, STORED_CHAT_LIMIT, {
+        notebookId: notebookBind?.notebookId,
+      })
       if (next.length === prev.length && next.every((chat, index) => chat.id === prev[index]?.id)) return prev
       const kept = new Set(next.map((chat) => chat.id))
       for (const chat of prev) {
@@ -624,7 +634,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }
       const serialized = JSON.stringify(next)
       if (serialized !== lastWrittenChatsStrRef.current) {
-        writeLocalChats(next)
+        writeLocalChats(next, keepIdsFor(next))
         lastWrittenChatsStrRef.current = serialized
       }
     } catch {
@@ -702,8 +712,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             (a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0)
           )
           const keep = new Set(ranked.slice(0, STORED_CHAT_LIMIT).map((chat) => chat.id))
-          const activeId = activeChatIdRef.current
-          if (activeId) keep.add(activeId)
+          for (const id of protectedChatIds([...chatsRef.current, ...remote.chats], {
+            activeId: activeChatIdRef.current,
+            notebookId: notebookBindIdRef.current,
+          })) {
+            keep.add(id)
+          }
           const extras = remote.chats.filter((chat) => !keep.has(chat.id))
           for (const chat of remote.chats) {
             if (keep.has(chat.id)) cloudChatIdsRef.current.add(chat.id)
@@ -875,12 +889,12 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   useEffect(() => {
     const flushPendingRemote = () => {
       const pendingId = persistChatIdRef.current
-      const list = chatsRef.current
+      const list = settleInterruptedStreams(chatsRef.current)
       const target = pendingId
         ? list.find((item) => item.id === pendingId)
         : list.find((item) => item.id === activeChatIdRef.current)
       flushLocalChats(list)
-      void flushLocalChatsToIdb(list)
+      void flushLocalChatsToIdb(list, keepIdsFor(list))
       if (!target) return
       if (readLocalDeletedChatIds().includes(target.id)) return
       if (!target.messages.some((message) => !message.isStreaming)) return
@@ -893,8 +907,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     window.addEventListener('pagehide', onPageHide)
     return () => {
       window.removeEventListener('pagehide', onPageHide)
-      flushPendingRemote()
       abortActiveStream()
+      flushPendingRemote()
     }
   }, [abortActiveStream, flushLocalChats])
 

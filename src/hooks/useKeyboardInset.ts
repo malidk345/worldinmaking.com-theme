@@ -198,17 +198,14 @@ function restoreScrollChain(snaps: ScrollSnap[]): void {
 
 let visualPanLock = false
 
-function resetVisualPan(vv: VisualViewport | null | undefined): void {
+function resetVisualPan(): void {
     if (visualPanLock) return
     const scrolling = document.scrollingElement
     const scrolled =
         (scrolling && (scrolling.scrollTop !== 0 || scrolling.scrollLeft !== 0)) ||
         window.scrollX !== 0 ||
         window.scrollY !== 0
-    const top = vv?.offsetTop ?? 0
-    const left = vv?.offsetLeft ?? 0
-    const panned = Math.abs(top) > 0.5 || Math.abs(left) > 0.5
-    if (!scrolled && !panned) return
+    if (!scrolled) return
     visualPanLock = true
     try {
         if (scrolling) {
@@ -216,12 +213,8 @@ function resetVisualPan(vv: VisualViewport | null | undefined): void {
             scrolling.scrollLeft = 0
         }
         if (window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0, 0)
-        if (panned) {
-            // iOS pans the visual viewport on input focus while window.scrollY stays 0,
-            // which slides the site header. A layout nudge is what WebKit actually clears.
-            window.scrollTo(left, top)
-            window.scrollTo(0, 0)
-        }
+        // Do not scrollTo(offsetTop). That nudge pulls the whole fixed shell downward
+        // on mobile when the composer focuses. Zero the document scroll only.
     } catch {
         /* older Safari */
     } finally {
@@ -242,7 +235,7 @@ export function useKeyboardInset(): void {
             const mobile = isMobileShell()
             const notebook = isNotebookEditing()
             // Always cancel browser layout/visual-viewport pan so headers & windows stay put.
-            resetVisualPan(vv)
+            resetVisualPan()
             layoutLock = nextStableLayoutHeight(layoutLock, window.innerWidth, window.innerHeight)
             const layoutH = layoutLock.height
             const visibleH = vv?.height ?? window.innerHeight
@@ -314,7 +307,7 @@ export function useKeyboardInset(): void {
         const pinFocusedScroll = () => {
             if (!focusSnaps) return
             restoreScrollChain(focusSnaps)
-            resetVisualPan(window.visualViewport)
+            resetVisualPan()
         }
         // Snapshot before the browser's focus scroll. focusin is already too late.
         const onPointerDown = (event: Event) => {

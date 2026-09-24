@@ -24,6 +24,8 @@ import {
     shouldSuppressSelfEchoHydrate,
     writeChatsToLocalStorage,
     writeLocalChatsDual,
+    chatsForStorage,
+    STORED_CHAT_LIMIT,
 } from './chat-local'
 
 export { mergeChats, mergeMessages } from './chat-merge'
@@ -103,14 +105,15 @@ export function readLocalChats<T>(fallback: T): T {
 }
 
 /** IDB primary + LS write-through. */
-export function writeLocalChats(chats: Chat[]): void {
-    writeLocalChatsDual(chats)
+export function writeLocalChats(chats: Chat[], protectedIds: readonly string[] = []): void {
+    writeLocalChatsDual(chats, protectedIds)
 }
 
 /** Awaitable IDB flush (pagehide / unmount). */
-export async function flushLocalChatsToIdb(chats: Chat[]): Promise<void> {
-    writeChatsToLocalStorage(chats)
-    await persistChatsToIdb(chats)
+export async function flushLocalChatsToIdb(chats: Chat[], protectedIds: readonly string[] = []): Promise<void> {
+    const kept = chatsForStorage(chats, STORED_CHAT_LIMIT, protectedIds)
+    writeChatsToLocalStorage(kept)
+    await persistChatsToIdb(kept, protectedIds)
 }
 
 /** Boot: migrate LS → IDB once, then prefer IDB. */

@@ -167,6 +167,21 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
     }
   }, [draftNonce, draftPrompt])
 
+  // A normal tap lets mobile Safari scroll the focused field into view, which
+  // drags the fixed site shell downward. Focus ourselves and skip that scroll.
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    const focusWithoutScroll = (event: TouchEvent) => {
+      if (window.innerWidth >= 768) return
+      if (document.activeElement === el) return
+      event.preventDefault()
+      el.focus({ preventScroll: true })
+    }
+    el.addEventListener('touchstart', focusWithoutScroll, { passive: false })
+    return () => el.removeEventListener('touchstart', focusWithoutScroll)
+  }, [])
+
   useEffect(() => {
     if (wasStreamingRef.current && !isStreaming) {
       setJustReady(true)
@@ -710,7 +725,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
           autoComplete="off"
           autoCorrect="on"
           spellCheck="true"
-          className="w-full resize-none overflow-y-auto border-none bg-transparent px-1 py-0 text-[13.5px] sm:text-[14px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[22px] max-h-[160px] leading-normal font-sans"
+          className="w-full resize-none overflow-y-auto scroll-m-0 border-none bg-transparent px-1 py-0 text-[13.5px] sm:text-[14px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[22px] max-h-[160px] leading-normal font-sans"
         />
 
         {/* Hidden File Input */}
