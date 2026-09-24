@@ -28,11 +28,9 @@ import WindowRouter from './WindowRouter'
 import SnapAssistOverlay, { type SnapZone } from './SnapAssistOverlay'
 
 
-/** Desktop-OS window morph (open ↔ close are true reverses).
- *  Width/height stay at the laid-out window size; scale does the visual grow/shrink
- *  so transform-origin stays centered on the click point (fromOrigin is already
- *  top-left adjusted by half size in the registry). Soft, lightly-damped springs
- *  avoid macOS/Windows-style overshoot pop at the end.
+/** Desktop-OS window morph. Open still grows from the click point.
+ *  Close does not reverse that path: it scales down around the window center.
+ *  Width/height stay at the laid-out size so the scale origin does not drift.
  */
 const OS_WINDOW_ORIGIN_SCALE = 0.08
 const OS_WINDOW_NON_ORIGIN_SCALE = 0.94
@@ -54,15 +52,10 @@ const OS_WINDOW_OPEN_TRANSITION = {
     default: OS_WINDOW_POSITION_SPRING,
 }
 
-const OS_WINDOW_CLOSE_ORIGIN_TRANSITION = {
-    scale: OS_WINDOW_SCALE_SPRING,
-    left: OS_WINDOW_POSITION_SPRING,
-    top: OS_WINDOW_POSITION_SPRING,
-    opacity: OS_WINDOW_OPACITY_OUT,
-}
+const OS_WINDOW_CLOSE_SCALE = 0.42
 
-const OS_WINDOW_CLOSE_DEFAULT_TRANSITION = {
-    scale: OS_WINDOW_SCALE_SPRING,
+const OS_WINDOW_CLOSE_CENTER_TRANSITION = {
+    scale: { duration: 0.22, ease: [0.4, 0, 0.2, 1] as const },
     opacity: OS_WINDOW_OPACITY_OUT,
 }
 
@@ -499,24 +492,11 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                                   opacity: 0,
                                   transition: { duration: 0 },
                               }
-                            : item.fromOrigin
-                              ? {
-                                    // True reverse of open-from-origin: same scale floor, same springs,
-                                    // complementary opacity ease — shrinks back to the click point.
-                                    scale: OS_WINDOW_ORIGIN_SCALE,
-                                    opacity: 0,
-                                    left: Math.round(item.fromOrigin.x),
-                                    top: Math.round(item.fromOrigin.y),
-                                    width: size.width,
-                                    height: size.height,
-                                    transition: OS_WINDOW_CLOSE_ORIGIN_TRANSITION,
-                                }
-                              : {
-                                    // Reverse of non-origin open (0.94 → 1): spring back to 0.94, not a hard fade.
-                                    scale: OS_WINDOW_NON_ORIGIN_SCALE,
-                                    opacity: 0,
-                                    transition: OS_WINDOW_CLOSE_DEFAULT_TRANSITION,
-                                }
+                            : {
+                                  scale: OS_WINDOW_CLOSE_SCALE,
+                                  opacity: 0,
+                                  transition: OS_WINDOW_CLOSE_CENTER_TRANSITION,
+                              }
                     }
                     transition={
                         compact || siteSettings?.performanceBoost || dragging
