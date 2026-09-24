@@ -10,6 +10,7 @@ import {
     SITE_APPEARANCE_DEFAULTS_VERSION,
     WALLPAPER_FIELDS,
     WALLPAPER_THEME_COLORS,
+    resolveChromeTheme,
     type WallpaperName,
 } from './wallpaperChrome'
 
@@ -65,6 +66,10 @@ describe('wallpaper chrome tokens match field 0% stops', () => {
             light: 'bg-[#FFFFFF]',
             dark: 'bg-[#121212]',
         },
+        'keyboard-garden': {
+            light: 'linear-gradient(180deg,#FDEECD_0%',
+            dark: 'linear-gradient(180deg,#1E1F23_0%',
+        },
     }
 
     it.each(Object.keys(fields) as WallpaperName[])('%s light/dark chrome equals wallpaper top and bottom', (name) => {
@@ -81,6 +86,21 @@ describe('wallpaper chrome tokens match field 0% stops', () => {
     })
 })
 
+
+describe('resolveChromeTheme follows the saved color mode', () => {
+    it('stays dark when the page class has not caught up', () => {
+        expect(resolveChromeTheme('dark', 'light', false)).toBe('dark')
+    })
+
+    it('stays light when the saved mode is light', () => {
+        expect(resolveChromeTheme('light', 'dark', true)).toBe('light')
+    })
+
+    it('uses the system preference when the mode is system', () => {
+        expect(resolveChromeTheme('system', 'light', true)).toBe('dark')
+        expect(resolveChromeTheme('system', 'dark', false)).toBe('light')
+    })
+})
 
 describe('migrateAppearanceSettings preserves user wallpaper', () => {
     it('keeps an explicit kept wallpaper when already on current defaults version', () => {

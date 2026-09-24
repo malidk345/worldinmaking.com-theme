@@ -79,6 +79,17 @@ html.dark[data-wallpaper='paper-white'] {
     --browser-chrome-field: linear-gradient(180deg, #121212 0%, #121212 100%);
 }
 
+html[data-wallpaper='keyboard-garden'] {
+    --browser-chrome: #fdeecd;
+    --browser-chrome-bottom: #fffef4;
+    --browser-chrome-field: linear-gradient(180deg, #fdeecd 0%, #fffef4 100%);
+}
+html.dark[data-wallpaper='keyboard-garden'] {
+    --browser-chrome: #1e1f23;
+    --browser-chrome-bottom: #1e1f23;
+    --browser-chrome-field: linear-gradient(180deg, #1e1f23 0%, #1e1f23 100%);
+}
+
 /* Paint into the notch / home-indicator band. inset:0 stops at the layout viewport. */
 body::before {
     top: calc(-1 * env(safe-area-inset-top, 0px));

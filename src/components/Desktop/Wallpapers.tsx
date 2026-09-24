@@ -107,8 +107,8 @@ const DRAFT_MARKS: DraftMark[] = [
 
 const InkMark = ({ size }: { size: number }) => (
     <svg width={size} height={size} viewBox="0 0 7 7" className="block" aria-hidden>
-        <rect x="3" y="0" width="1" height="7" fill="#1E4A86" />
-        <rect x="0" y="3" width="7" height="1" fill="#1E4A86" />
+        <rect x="3" y="0" width="1" height="7" className="fill-[#1E4A86] dark:fill-[#F3E6B4]" />
+        <rect x="0" y="3" width="7" height="1" className="fill-[#1E4A86] dark:fill-[#F3E6B4]" />
     </svg>
 )
 
@@ -198,14 +198,13 @@ const RAIN_EMBERS: RainDrop[] = (() => {
 
 const RainStreak = ({ drop }: { drop: RainDrop }) => (
     <div
-        className="absolute rounded-full"
+        className={`absolute rounded-full ${drop.ember ? 'bg-[#D08A3A]' : 'bg-[#D7E7F4] dark:bg-[#9EC4DE]'}`}
         style={{
             left: drop.left,
             top: drop.top,
             width: drop.w,
             height: drop.h,
             opacity: drop.o,
-            background: drop.ember ? '#D08A3A' : '#D7E7F4',
         }}
     />
 )
@@ -309,9 +308,11 @@ const PlazaBangWallpaper = () => <PlazaScene carpet bang />
 const KeyboardGardenField = () => (
     <>
         <div
-            className={`absolute inset-0 bg-gradient-to-b from-[#FDEECD] to-[#FFFEF4] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            className={`absolute inset-0 bg-[linear-gradient(180deg,#FDEECD_0%,#FFFEF4_100%)] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
         />
-        <div className={`absolute inset-0 bg-[#1e1f23] opacity-0 dark:opacity-100 ${FADE_OPACITY}`} />
+        <div
+            className={`absolute inset-0 bg-[linear-gradient(180deg,#1E1F23_0%,#1E1F23_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+        />
     </>
 )
 

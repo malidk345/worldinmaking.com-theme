@@ -423,6 +423,16 @@ export const themeOptions: ThemeOption[] = [
         },
     },
     {
+        label: 'Keyboard garden',
+        value: 'keyboard-garden',
+        background: {
+            thumb: {
+                light: svgThumb('#FDEECD'),
+                dark: svgThumb('#1E1F23'),
+            },
+        },
+    },
+    {
         label: 'Paper white',
         value: 'paper-white',
         background: {

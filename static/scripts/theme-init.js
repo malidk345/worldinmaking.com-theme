@@ -25,6 +25,7 @@
         'rain-embers': { light: '#1A3350', dark: '#0F2236' },
         'plaza-bang': { light: '#E6DFD2', dark: '#141E40' },
         'paper-white': { light: '#FFFFFF', dark: '#121212' },
+        'keyboard-garden': { light: '#FDEECD', dark: '#1E1F23' },
     }
     var FIELDS = {
         cobalt: {
@@ -55,8 +56,12 @@
             light: { top: '#FFFFFF', bottom: '#FFFFFF', css: 'linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 100%)' },
             dark: { top: '#121212', bottom: '#121212', css: 'linear-gradient(180deg, #121212 0%, #121212 100%)' },
         },
+        'keyboard-garden': {
+            light: { top: '#FDEECD', bottom: '#FFFEF4', css: 'linear-gradient(180deg, #FDEECD 0%, #FFFEF4 100%)' },
+            dark: { top: '#1E1F23', bottom: '#1E1F23', css: 'linear-gradient(180deg, #1E1F23 0%, #1E1F23 100%)' },
+        },
     }
-    var KEPT = ['keyboard-mint', 'cobalt', 'hogzilla', 'draft-world', 'rain-embers', 'plaza-bang', 'paper-white']
+    var KEPT = ['keyboard-mint', 'cobalt', 'hogzilla', 'draft-world', 'rain-embers', 'plaza-bang', 'paper-white', 'keyboard-garden']
 
     function resolveWallpaper() {
         if (typeof window.__wallpaper === 'string' && KEPT.indexOf(window.__wallpaper) !== -1) {

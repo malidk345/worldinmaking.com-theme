@@ -17,6 +17,7 @@ export type WallpaperName =
     | 'rain-embers'
     | 'plaza-bang'
     | 'paper-white'
+    | 'keyboard-garden'
 export type ColorMode = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
@@ -35,6 +36,7 @@ export const KEPT_WALLPAPERS: readonly WallpaperName[] = [
     'rain-embers',
     'plaza-bang',
     'paper-white',
+    'keyboard-garden',
 ]
 
 export interface WallpaperTone {
@@ -139,6 +141,18 @@ export const WALLPAPER_FIELDS: Record<WallpaperName, { light: WallpaperField; da
             css: 'linear-gradient(180deg, #121212 0%, #121212 100%)',
         },
     },
+    'keyboard-garden': {
+        light: {
+            top: '#FDEECD',
+            bottom: '#FFFEF4',
+            css: 'linear-gradient(180deg, #FDEECD 0%, #FFFEF4 100%)',
+        },
+        dark: {
+            top: '#1E1F23',
+            bottom: '#1E1F23',
+            css: 'linear-gradient(180deg, #1E1F23 0%, #1E1F23 100%)',
+        },
+    },
 }
 
 export const WALLPAPER_THEME_COLORS: Record<WallpaperName, WallpaperTone> = {
@@ -154,6 +168,10 @@ export const WALLPAPER_THEME_COLORS: Record<WallpaperName, WallpaperTone> = {
     'paper-white': {
         light: WALLPAPER_FIELDS['paper-white'].light.top,
         dark: WALLPAPER_FIELDS['paper-white'].dark.top,
+    },
+    'keyboard-garden': {
+        light: WALLPAPER_FIELDS['keyboard-garden'].light.top,
+        dark: WALLPAPER_FIELDS['keyboard-garden'].dark.top,
     },
 }
 
@@ -209,8 +227,9 @@ export function getWallpaperField(wallpaper: string, mode: ResolvedTheme): Wallp
 }
 
 export function resolveChromeTheme(colorMode: ColorMode, theme: ResolvedTheme, prefersDark = false): ResolvedTheme {
-    if (colorMode === 'system') return prefersDark ? 'dark' : 'light'
-    return theme === 'dark' ? 'dark' : 'light'
+    if (colorMode === 'dark') return 'dark'
+    if (colorMode === 'light') return 'light'
+    return prefersDark ? 'dark' : 'light'
 }
 
 export function chromeColorFor(
@@ -385,8 +404,11 @@ export function applyWallpaperBrowserChrome(opts: {
     root.style.setProperty('--browser-chrome', field.top)
     root.style.setProperty('--browser-chrome-bottom', field.bottom)
     root.style.setProperty('--browser-chrome-field', field.css)
-    root.style.removeProperty('background-color')
-    if (document.body) document.body.style.removeProperty('background-color')
+    // Inline color, not only the variable: mobile safe-area and overscroll
+    // repaint immediately when the wallpaper changes. theme-color is separate
+    // and some browsers still sample it late.
+    root.style.backgroundColor = field.top
+    if (document.body) document.body.style.backgroundColor = field.bottom
     // Leaving any wallpaper (esp. mint defaults): force a layout so body::before
     // resamples --browser-chrome-* for safe-area / overscroll gaps.
     if (prevWallpaper !== kept) void root.offsetHeight
