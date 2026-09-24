@@ -141,6 +141,7 @@ import {
   scrollElementToScrollerPin,
 } from '../../lib/chat-scroll';
 import { getActiveByokPayload } from '../../lib/byok-vault';
+import { chatsForStorage, retainOpenChats, STORED_CHAT_LIMIT } from '../../lib/chat-local';
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 
@@ -210,12 +211,31 @@ function settleInterruptedStreams(chats: Chat[]): Chat[] {
   return changed ? next : chats
 }
 
+function createOpeningChat(modelId: ModelId): Chat {
+  const now = new Date().toISOString()
+  return {
+    id: `chat-${Date.now()}`,
+    title: 'New chat',
+    modelId,
+    starred: false,
+    createdAt: now,
+    updatedAt: now,
+    thinkingBudget: 'extended',
+    webSearchEnabled: false,
+    messages: [],
+  }
+}
+
 export default function App({ onClose, layout = 'overlay' }: { onClose?: () => void; layout?: 'overlay' | 'window' }) {
-  // Persistence state
+  const openingChatIdRef = useRef('')
+  // Persistence state. Every visit starts a blank chat; storage keeps 3 threads with messages.
   const [chats, setChats] = useState<Chat[]>(() => {
     const stored = readLocalChats<unknown>(readStored<unknown>(CHAT_STORAGE_KEYS, INITIAL_CHATS));
     const list = Array.isArray(stored) ? (stored as Chat[]) : INITIAL_CHATS;
-    return settleInterruptedStreams(list);
+    const recent = chatsForStorage(settleInterruptedStreams(list));
+    const fresh = createOpeningChat(readLocalSettings(getDefaultWorkspaceSettings()).defaultModel);
+    openingChatIdRef.current = fresh.id
+    return [fresh, ...recent.filter((chat) => chat.id !== fresh.id)];
   });
 
 
@@ -308,7 +328,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   // Active chat state
   const [models, setModels] = useState<ModelOption[]>(AVAILABLE_MODELS);
-  const [activeChatId, setActiveChatId] = useState<string>(chats[0]?.id || '');
+  const [activeChatId, setActiveChatId] = useState<string>(() => openingChatIdRef.current || chats[0]?.id || '');
   /** Only pin-to-bottom on intentional chat switches (sidebar/new/search/delete), not rehydrate flicker. */
   const pinBottomOnNextChatRef = useRef(true);
   /** Keep last known open chat so metadata sync / hydrate gaps do not flash empty and reset scrollTop to 0. */
@@ -324,9 +344,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   }, [])
 
   useEffect(() => {
-    const applyBind = (bind: NotebookChatBind | null) => {
+    const applyBind = (bind: NotebookChatBind | null, switchChat: boolean) => {
       setNotebookBind(bind)
-      if (!bind) return
+      if (!bind || !switchChat) return
       setChats((prev) => {
         const existing = prev.find((chat) => chat.notebookId === bind.notebookId)
         if (existing) {
@@ -356,9 +376,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         return [boundChat, ...prev]
       })
     }
-    applyBind(readNotebookChatBind())
+    applyBind(readNotebookChatBind(), false)
     const onBind = (event: Event) => {
-      applyBind((event as CustomEvent<NotebookChatBind | null>).detail || readNotebookChatBind())
+      applyBind((event as CustomEvent<NotebookChatBind | null>).detail || readNotebookChatBind(), true)
     }
     window.addEventListener(NOTEBOOK_CHAT_BIND_EVENT, onBind)
     return () => window.removeEventListener(NOTEBOOK_CHAT_BIND_EVENT, onBind)
@@ -576,6 +596,25 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const isStreamingRefForPersist = useRef(isStreaming)
   isStreamingRefForPersist.current = isStreaming
 
+  const cloudChatIdsRef = useRef<Set<string>>(new Set())
+
+  useLayoutEffect(() => {
+    setChats((prev) => {
+      const next = retainOpenChats(prev, activeChatId)
+      if (next.length === prev.length && next.every((chat, index) => chat.id === prev[index]?.id)) return prev
+      const kept = new Set(next.map((chat) => chat.id))
+      for (const chat of prev) {
+        if (kept.has(chat.id)) continue
+        const onCloud = (chat.messages && chat.messages.length > 0) || cloudChatIdsRef.current.has(chat.id)
+        if (!onCloud) continue
+        rememberDeletedChatId(chat.id)
+        cloudChatIdsRef.current.delete(chat.id)
+        void deleteChatOnRemote(chat.id)
+      }
+      return next
+    })
+  }, [chats, activeChatId])
+
   const flushLocalChats = useCallback((next: Chat[] = chatsRef.current) => {
     try {
       const key = getChatStorageKey()
@@ -649,14 +688,42 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       try {
         if (claim) await claimDeviceAccountOnLogin()
         if (cancelled) return
-        const remote = await pullChatsFromRemote()
-        if (cancelled || !remote) return
-        const deletedIds = [...readLocalDeletedChatIds(), ...remote.deletedIds]
-        for (const id of remote.deletedIds) rememberDeletedChatId(id)
+        let keptRemote: Chat[] = []
+        let deletedIds = readLocalDeletedChatIds()
+        let pulled = false
+        for (let page = 0; page < 8; page++) {
+          const remote = await pullChatsFromRemote()
+          if (cancelled) return
+          if (!remote) break
+          pulled = true
+          deletedIds = [...deletedIds, ...remote.deletedIds]
+          for (const id of remote.deletedIds) rememberDeletedChatId(id)
+          const ranked = [...remote.chats].sort(
+            (a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0)
+          )
+          const keep = new Set(ranked.slice(0, STORED_CHAT_LIMIT).map((chat) => chat.id))
+          const activeId = activeChatIdRef.current
+          if (activeId) keep.add(activeId)
+          const extras = remote.chats.filter((chat) => !keep.has(chat.id))
+          for (const chat of remote.chats) {
+            if (keep.has(chat.id)) cloudChatIdsRef.current.add(chat.id)
+          }
+          keptRemote = remote.chats.filter((chat) => keep.has(chat.id))
+          if (extras.length === 0) break
+          const removed = await Promise.all(
+            extras.map(async (chat) => {
+              rememberDeletedChatId(chat.id)
+              cloudChatIdsRef.current.delete(chat.id)
+              return deleteChatOnRemote(chat.id)
+            })
+          )
+          if (cancelled || removed.every((ok) => !ok)) break
+        }
+        if (!pulled || cancelled) return
         let nextActive = activeChatIdRef.current
         setChats((prev) => {
           const openId = activeChatIdRef.current
-          const merged = mergeChats(prev, remote.chats, deletedIds, {
+          const merged = mergeChats(prev, keptRemote, deletedIds, {
             preferLocalIds:
               openId && isStreamingRef.current ? [openId] : undefined,
           })

@@ -101,6 +101,36 @@ export function readChatsFromLocalStorage<T>(fallback: T): T {
     return fallback
 }
 
+/** How many message threads this device keeps in IndexedDB and localStorage. */
+export const STORED_CHAT_LIMIT = 3
+
+/** Newest chats that actually have messages. Empty drafts stay out of storage. */
+export function chatsForStorage(chats: Chat[], limit = STORED_CHAT_LIMIT): Chat[] {
+    return [...chats]
+        .filter((chat) => Array.isArray(chat.messages) && chat.messages.length > 0)
+        .sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0))
+        .slice(0, limit)
+}
+
+/**
+ * Sidebar list: the three newest threads, plus the open empty draft.
+ * Remote list rows often arrive without messages; they still count so a
+ * metadata stub is not mistaken for a blank draft and deleted.
+ */
+export function retainOpenChats(chats: Chat[], activeId: string, limit = STORED_CHAT_LIMIT): Chat[] {
+    const active = chats.find((chat) => chat.id === activeId)
+    const activeIsDraft = Boolean(active && !(active.messages && active.messages.length > 0))
+    const ranked = chats
+        .filter((chat) => !(activeIsDraft && chat.id === activeId))
+        .sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0))
+        .slice(0, limit)
+    const ids = new Set(ranked.map((chat) => chat.id))
+    if (activeIsDraft && active) ids.add(active.id)
+    return chats
+        .filter((chat) => ids.has(chat.id))
+        .sort((a, b) => (Date.parse(b.updatedAt) || 0) - (Date.parse(a.updatedAt) || 0))
+}
+
 /** Short-term LS write-through so sync boot + older readers keep working. */
 export function writeChatsToLocalStorage(chats: Chat[]): void {
     if (typeof window === 'undefined') return
@@ -116,14 +146,15 @@ export function writeChatsToLocalStorage(chats: Chat[]): void {
  * Fire-and-forget IDB — callers that need durability on pagehide should await persistChatsToIdb.
  */
 export function writeLocalChatsDual(chats: Chat[]): void {
-    writeChatsToLocalStorage(chats)
-    void persistChatsToIdb(chats)
+    const kept = chatsForStorage(chats)
+    writeChatsToLocalStorage(kept)
+    void persistChatsToIdb(kept)
 }
 
 export async function persistChatsToIdb(chats: Chat[]): Promise<void> {
     if (typeof window === 'undefined') return
     try {
-        await persistChatsLocal(chats)
+        await persistChatsLocal(chatsForStorage(chats))
         markChatsIdbMigrated()
     } catch {
         /* IDB unavailable — LS write-through already attempted by caller */
