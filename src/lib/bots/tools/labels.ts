@@ -160,7 +160,12 @@ export function toolResultSummary(name: string, ok: boolean, result: string): st
         return humanToolError(name, result)
     }
     if (name === 'web_search' || name === 'search_site') {
-        const lines = result.split('\n').filter((line) => line.trim() && !line.startsWith('UNTRUSTED') && !line.startsWith('Site search'))
+        const quoted = result.match(/\bfor "([^"]+)"/)
+        if (quoted?.[1]?.trim()) return clipSummary(scrubSecretMaterial(quoted[1]))
+        const lines = result
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line && !line.startsWith('UNTRUSTED') && !line.startsWith('Site search') && !/^\[Source \d+/i.test(line))
         return clipSummary(scrubSecretMaterial(lines[0] || 'Search complete'))
     }
     if (name === 'fetch_url') {
