@@ -177,16 +177,57 @@ function isNotebookEditing(): boolean {
     return Boolean(isEditableTarget(active) && active.closest(NOTEBOOK_EDITOR))
 }
 
+type ScrollSnap = { el: HTMLElement; top: number; left: number }
+
+function captureScrollChain(node: HTMLElement): ScrollSnap[] {
+    const snaps: ScrollSnap[] = []
+    let current: HTMLElement | null = node.parentElement
+    while (current) {
+        snaps.push({ el: current, top: current.scrollTop, left: current.scrollLeft })
+        current = current.parentElement
+    }
+    return snaps
+}
+
+function restoreScrollChain(snaps: ScrollSnap[]): void {
+    for (const snap of snaps) {
+        if (snap.el.scrollTop !== snap.top) snap.el.scrollTop = snap.top
+        if (snap.el.scrollLeft !== snap.left) snap.el.scrollLeft = snap.left
+    }
+}
+
+let visualPanLock = false
+
 function resetVisualPan(vv: VisualViewport | null | undefined): void {
+    if (visualPanLock) return
+    const scrolling = document.scrollingElement
+    const scrolled =
+        (scrolling && (scrolling.scrollTop !== 0 || scrolling.scrollLeft !== 0)) ||
+        window.scrollX !== 0 ||
+        window.scrollY !== 0
+    const top = vv?.offsetTop ?? 0
+    const left = vv?.offsetLeft ?? 0
+    const panned = Math.abs(top) > 0.5 || Math.abs(left) > 0.5
+    if (!scrolled && !panned) return
+    visualPanLock = true
     try {
-        if (vv && (Math.abs(vv.offsetTop) > 0.5 || Math.abs(vv.offsetLeft) > 0.5)) {
-            vv.scrollTo(0, 0)
+        if (scrolling) {
+            scrolling.scrollTop = 0
+            scrolling.scrollLeft = 0
+        }
+        if (window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0, 0)
+        if (panned) {
+            // iOS pans the visual viewport on input focus while window.scrollY stays 0,
+            // which slides the site header. A layout nudge is what WebKit actually clears.
+            window.scrollTo(left, top)
+            window.scrollTo(0, 0)
         }
     } catch {
         /* older Safari */
-    }
-    if (Math.abs(window.scrollX) > 0.5 || Math.abs(window.scrollY) > 0.5) {
-        window.scrollTo(0, 0)
+    } finally {
+        window.setTimeout(() => {
+            visualPanLock = false
+        }, 32)
     }
 }
 
@@ -269,11 +310,27 @@ export function useKeyboardInset(): void {
         }
 
         const timers: number[] = []
+        let focusSnaps: ScrollSnap[] | null = null
+        const pinFocusedScroll = () => {
+            if (!focusSnaps) return
+            restoreScrollChain(focusSnaps)
+            resetVisualPan(window.visualViewport)
+        }
+        // Snapshot before the browser's focus scroll. focusin is already too late.
+        const onPointerDown = (event: Event) => {
+            if (!isMobileShell()) return
+            const target = event.target
+            if (!isEditableTarget(target)) return
+            focusSnaps = captureScrollChain(target)
+        }
         const onFocusIn = (event: FocusEvent) => {
             if (!isEditableTarget(event.target)) return
-            resetVisualPan(window.visualViewport)
+            if (!focusSnaps) focusSnaps = captureScrollChain(event.target)
+            pinFocusedScroll()
             apply(true)
+            timers.push(window.setTimeout(pinFocusedScroll, 50))
             timers.push(window.setTimeout(() => apply(true), 50))
+            timers.push(window.setTimeout(pinFocusedScroll, 300))
             timers.push(window.setTimeout(() => apply(true), 300))
         }
         const onFocusOut = () => {
@@ -314,6 +371,8 @@ export function useKeyboardInset(): void {
         window.visualViewport?.addEventListener('scroll', applyVars)
         window.addEventListener('resize', applyVars)
         window.addEventListener('scroll', onWindowScroll, { passive: true })
+        document.addEventListener('pointerdown', onPointerDown, true)
+        document.addEventListener('touchstart', onPointerDown, true)
         document.addEventListener('focusin', onFocusIn)
         document.addEventListener('focusout', onFocusOut)
         document.addEventListener('input', onInputOrSelection)
@@ -326,6 +385,8 @@ export function useKeyboardInset(): void {
             window.visualViewport?.removeEventListener('scroll', applyVars)
             window.removeEventListener('resize', applyVars)
             window.removeEventListener('scroll', onWindowScroll)
+            document.removeEventListener('pointerdown', onPointerDown, true)
+            document.removeEventListener('touchstart', onPointerDown, true)
             document.removeEventListener('focusin', onFocusIn)
             document.removeEventListener('focusout', onFocusOut)
             document.removeEventListener('input', onInputOrSelection)

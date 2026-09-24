@@ -450,6 +450,12 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
     }
   };
 
+  const hasComposerDraft =
+    prompt.trim().length > 0 || attachments.length > 0 || linkChips.length > 0
+  const showVoiceAction = isRecording || (!awaitingHuman && !isStreaming && !hasComposerDraft)
+  const sendReady =
+    (awaitingPlan || hasComposerDraft) && (awaitingHuman || !quotaBlocksSend)
+
   return (
     <div className="relative w-full pointer-events-none">
       {nextSectionTitle && onNextSection && !awaitingHuman && !isStreaming ? (
@@ -790,28 +796,6 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
           </div>
 
           <div className="flex items-center gap-1">
-            {/* Microphone Button */}
-            <button
-              type="button"
-              onClick={toggleSpeechRecognition}
-              disabled={awaitingHuman}
-              className={`flex items-center gap-1 p-1 text-primary hover:text-primary transition-transform duration-150 focus:outline-none cursor-pointer active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
-                isRecording ? 'text-accent' : ''
-              }`}
-              title={awaitingHuman ? 'Voice input paused' : isRecording ? 'Stop voice input' : 'Voice input'}
-              aria-label={awaitingHuman ? 'Voice input paused' : isRecording ? 'Stop voice input' : 'Voice input'}
-            >
-              {isRecording ? (
-                <span className="wim-mic-wave" aria-hidden>
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                </span>
-              ) : (
-                <IconMicrophone className={TOOLBAR_ICON} />
-              )}
-            </button>
             {awaitingAsk ? (
               <button
                 type="button"
@@ -838,26 +822,67 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
               </button>
             ) : null}
 
-            {/* Send / Stop Action Button — pending human interrupt wins over Stop so ask_user is not stuck behind Stop */}
+            {/* Voice sits in the send slot until there is something to send, then it turns into Send. */}
             {preferHumanAnswerOverStop(isStreaming, awaitingHuman) ? (
               <button
                 type="button"
-                onClick={handleSubmit}
-                disabled={
-                  (!awaitingHuman && isStreaming) ||
-                  (!awaitingHuman && quotaBlocksSend) ||
-                  (!awaitingPlan && !prompt.trim() && attachments.length === 0 && linkChips.length === 0)
-                }
-                className={`flex h-7 w-7 items-center justify-center rounded-md shadow-2xs transition-colors transition-transform duration-150 ${
-                   (awaitingPlan || prompt.trim() || attachments.length > 0 || linkChips.length > 0) &&
-                   (awaitingHuman || !quotaBlocksSend)
-                    ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white cursor-pointer active:scale-95'
-                    : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
+                onClick={showVoiceAction ? toggleSpeechRecognition : handleSubmit}
+                disabled={!showVoiceAction && !sendReady}
+                className={`relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-md shadow-2xs transition-[background-color,color,transform] duration-200 ease-out active:scale-95 ${
+                  showVoiceAction
+                    ? isRecording
+                      ? 'cursor-pointer bg-[#1E3A8A]/10 text-[#1E3A8A] hover:bg-[#1E3A8A]/20 dark:text-blue-300'
+                      : 'cursor-pointer bg-transparent text-primary shadow-none hover:bg-accent'
+                    : sendReady
+                      ? 'cursor-pointer bg-[#1E3A8A] text-white hover:bg-[#1e40af]'
+                      : 'cursor-not-allowed bg-[#1E3A8A]/35 text-white/50'
                 }`}
-                title={awaitingAsk ? 'Answer' : awaitingPlan ? 'Revise' : 'Send'}
-                aria-label={awaitingAsk ? 'Answer' : awaitingPlan ? 'Revise' : 'Send message'}
+                title={
+                  showVoiceAction
+                    ? isRecording
+                      ? 'Stop voice input'
+                      : 'Voice input'
+                    : awaitingAsk
+                      ? 'Answer'
+                      : awaitingPlan
+                        ? 'Revise'
+                        : 'Send'
+                }
+                aria-label={
+                  showVoiceAction
+                    ? isRecording
+                      ? 'Stop voice input'
+                      : 'Voice input'
+                    : awaitingAsk
+                      ? 'Answer'
+                      : awaitingPlan
+                        ? 'Revise'
+                        : 'Send message'
+                }
               >
-                <IconArrowRight className={`${TOOLBAR_ICON} -rotate-90`} />
+                <span
+                  className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-all duration-200 ease-out ${
+                    showVoiceAction ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
+                  }`}
+                >
+                  {isRecording ? (
+                    <span className="wim-mic-wave" aria-hidden>
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                  ) : (
+                    <IconMicrophone className={TOOLBAR_ICON} />
+                  )}
+                </span>
+                <span
+                  className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-all duration-200 ease-out ${
+                    showVoiceAction ? 'translate-y-1 scale-50 opacity-0' : 'translate-y-0 scale-100 opacity-100'
+                  }`}
+                >
+                  <IconArrowRight className={`${TOOLBAR_ICON} -rotate-90`} />
+                </span>
               </button>
             ) : (
               <button

@@ -3413,7 +3413,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         {/* Floating Input Dock: Centered with "How can I help?" when empty, docks to bottom once messages exist */}
         <div
           data-writing-dock
-          className="pointer-events-none absolute inset-x-0 top-9 z-20 flex flex-col overflow-y-auto"
+          className="pointer-events-none absolute inset-x-0 top-9 z-20 flex flex-col overflow-hidden overscroll-none"
           style={{ bottom: 'var(--keyboard-inset, 0px)' }}
         >
           <div
