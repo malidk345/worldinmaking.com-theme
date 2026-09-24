@@ -58,6 +58,24 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-24 — Grok (feature: composer glide + thicker frame)
+
+- **Scope:** Empty-state composer in `ClaudeWorkspaceChat` already sat in the center and jumped to the bottom dock when the first message appeared.
+- **Changes:** One-shot `translate3d` glide (520ms) on that flip only. `bottom` / `--keyboard-inset` is not transitioned. "How can I help?" rides with the box and fades. Composer frame is `border-2` with the site ink (`border-primary`) and a slightly deeper resting shadow. Reduced motion skips the glide.
+- **Files:** `src/components/ClaudeWorkspaceChat/index.tsx`, `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Not browser-checked this pass (no browser tool). No Playwright, no git push.
+
+### 2026-09-23 — Antigravity (feature: WIM AI empty state centered input + remove chips)
+
+- **Scope:** Initial open / empty state layout for WIM AI workspace chat (`ClaudeWorkspaceChat`).
+- **Changes:**
+  1. **Centered ChatInput on empty state:** Computed `isChatEmpty = !activeChat || activeChat.messages.length === 0`.
+  2. **'How can I help?' Heading:** Placed directly above `ChatInput` in the centered layout.
+  3. **Removed starter chips:** Completely removed `ASK_STARTERS` buttons below the input and cleaned up unused `ASK_STARTERS` import.
+  4. **Smooth transition to bottom dock:** Preserved `ChatInput` component hierarchy inside `[data-writing-dock]` so that upon sending the first query (`!isChatEmpty`), the input seamlessly glides down to the bottom dock while retaining focus and state without remounting.
+- **Files:** `src/components/ClaudeWorkspaceChat/index.tsx`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** Next.js runtime compile verified via HTTP 200 on `localhost:3000`. User directive strictly followed (no typecheck, no git push).
+
 ### 2026-09-23 — Grok Bot / Cursor (harden: host write unknown-id fail-closed + preview XSS)
 
 - **Scope:** HARDEN-ONLY after #839 — hunt sibling fail-open tools (export/flashcards/read_document class) + other proven bugs. Skip THINK / iOS / identity LS / memo / App write handlers / inflight / abort demux / checkpoint+IDB / #839.

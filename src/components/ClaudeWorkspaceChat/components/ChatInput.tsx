@@ -471,7 +471,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`pointer-events-auto relative rounded-2xl border bg-primary/95 backdrop-blur-xl px-3 py-2 transition-all duration-300 ease-out [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.08)] ${
+        className={`pointer-events-auto relative rounded-xl border-[1.5px] bg-primary/95 backdrop-blur-xl px-2.5 py-1.5 transition-[border-color,box-shadow,background-color] duration-300 ease-out [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.14),0_1px_0_0_rgba(20,30,64,0.04)] ${
 
           modeShake ? '[animation:wim-composer-shake_420ms_ease-in-out]' : ''
         } ${justReady ? '[animation:wim-composer-ready_480ms_ease-out]' : ''} ${
@@ -481,12 +481,12 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
             ? 'border-[#1E3A8A] shadow-[0_0_12px_rgba(30,58,138,0.55),0_0_22px_rgba(30,58,138,0.28)] bg-accent'
             : prompt.trim().length > 0
             ? 'border-[#1E3A8A]/70 shadow-[0_0_8px_rgba(30,58,138,0.22)] hover:border-[#1E3A8A] hover:shadow-[0_0_8px_rgba(30,58,138,0.45),0_0_16px_rgba(30,58,138,0.22)] focus-within:border-[#1E3A8A] focus-within:shadow-[0_0_10px_rgba(30,58,138,0.5),0_0_20px_rgba(30,58,138,0.25)] dark:hover:shadow-[0_0_8px_rgba(59,130,246,0.35),0_0_18px_rgba(30,58,138,0.35)] dark:focus-within:shadow-[0_0_10px_rgba(59,130,246,0.45),0_0_22px_rgba(30,58,138,0.4)]'
-            : 'border-primary/60 shadow-[0_4px_20px_rgba(0,0,0,0.06),0_1px_4px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4),0_1px_4px_rgba(255,255,255,0.05)] hover:border-[#1E3A8A] hover:shadow-[0_0_8px_rgba(30,58,138,0.45),0_0_16px_rgba(30,58,138,0.22)] focus-within:border-[#1E3A8A] focus-within:shadow-[0_0_10px_rgba(30,58,138,0.5),0_0_20px_rgba(30,58,138,0.25)] dark:hover:shadow-[0_0_8px_rgba(59,130,246,0.35),0_0_18px_rgba(30,58,138,0.35)] dark:focus-within:shadow-[0_0_10px_rgba(59,130,246,0.45),0_0_22px_rgba(30,58,138,0.4)]'
+            : 'border-primary shadow-[0_8px_28px_rgba(20,30,64,0.06),0_1px_2px_rgba(20,30,64,0.04)] dark:shadow-[0_8px_28px_rgba(0,0,0,0.45),0_1px_2px_rgba(255,255,255,0.04)] hover:border-[#1E3A8A] hover:shadow-[0_0_8px_rgba(30,58,138,0.45),0_0_16px_rgba(30,58,138,0.22)] focus-within:border-[#1E3A8A] focus-within:shadow-[0_0_10px_rgba(30,58,138,0.5),0_0_20px_rgba(30,58,138,0.25)] dark:hover:shadow-[0_0_8px_rgba(59,130,246,0.35),0_0_18px_rgba(30,58,138,0.35)] dark:focus-within:shadow-[0_0_10px_rgba(59,130,246,0.45),0_0_22px_rgba(30,58,138,0.4)]'
         }`}
       >
         {/* Dropzone Drag Overlay */}
         {isDragging && (
-          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-primary bg-primary/95 backdrop-blur-md text-primary pointer-events-none shadow-lg">
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary bg-primary/95 backdrop-blur-md text-primary pointer-events-none shadow-lg">
             <IconPlus className="size-5 text-primary mb-0.5" />
             <span className="text-xs font-semibold">Drop files here to attach</span>
             <span className="text-[10px] text-secondary">Images, documents or code snippets</span>
@@ -704,7 +704,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
           autoComplete="off"
           autoCorrect="on"
           spellCheck="true"
-          className="w-full resize-none overflow-y-auto border-none bg-transparent px-1 py-0 text-[13.5px] sm:text-[14px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[24px] max-h-[160px] leading-relaxed font-sans"
+          className="w-full resize-none overflow-y-auto border-none bg-transparent px-1 py-0 text-[13.5px] sm:text-[14px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[22px] max-h-[160px] leading-normal font-sans"
         />
 
         {/* Hidden File Input */}
@@ -717,7 +717,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
         />
 
         {/* Bottom Toolbar Row */}
-        <div className="mt-0.5 flex items-center justify-between gap-2">
+        <div className="mt-px flex items-center justify-between gap-1.5">
           {/* Left Side: + Icon & Bot Selector */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
             <button
@@ -785,7 +785,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
               type="tertiary"
               dropdownPlacement={menuPlacement}
               dropdownMatchSelectWidth={false}
-              className="border-none bg-transparent p-0 text-primary relative z-30 [&_.LemonButton]:border-none [&_.LemonButton]:bg-transparent [&_.LemonButton]:shadow-none [&_.LemonButton]:p-0 [&_.LemonButton]:min-h-0 [&_.LemonButton]:h-9 [&_.LemonButton\_\_side-icon]:size-3.5 [&_.LemonButton\_\_side-icon_svg]:size-3.5 [&_.LemonButton\_\_side-icon_svg]:shrink-0 [&_svg]:max-w-[14px] [&_svg]:max-h-[14px]"
+              className="border-none bg-transparent p-0 text-primary relative z-30 [&_.LemonButton]:border-none [&_.LemonButton]:bg-transparent [&_.LemonButton]:shadow-none [&_.LemonButton]:p-0 [&_.LemonButton]:min-h-0 [&_.LemonButton]:h-7 [&_.LemonButton\_\_side-icon]:size-3.5 [&_.LemonButton\_\_side-icon_svg]:size-3.5 [&_.LemonButton\_\_side-icon_svg]:shrink-0 [&_svg]:max-w-[14px] [&_svg]:max-h-[14px]"
             />
           </div>
 

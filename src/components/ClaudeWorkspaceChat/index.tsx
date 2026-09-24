@@ -26,7 +26,7 @@ import dynamic from 'next/dynamic';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { ChatMessage } from './components/ChatMessage';
-import { ASK_STARTERS, ChatInput } from './components/ChatInput';
+import { ChatInput } from './components/ChatInput';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Panels/modals are rare on cold open — keep them out of the Ask AI first paint chunk.
@@ -3279,6 +3279,55 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     [activeChatId, abortActiveStream]
   )
 
+  const isChatEmpty = !activeChat || activeChat.messages.length === 0;
+  const composerMotionRef = useRef<HTMLDivElement>(null);
+  const composerWasEmptyRef = useRef(isChatEmpty);
+  const composerLastTopRef = useRef<number | null>(null);
+
+  // One-shot glide when the composer leaves the empty-state center. Do not
+  // transition `bottom`: --keyboard-inset updates every frame and restarts it.
+  useLayoutEffect(() => {
+    const el = composerMotionRef.current;
+    if (!el) return;
+    const nextTop = el.getBoundingClientRect().top;
+    const prevTop = composerLastTopRef.current;
+    const wasEmpty = composerWasEmptyRef.current;
+    composerWasEmptyRef.current = isChatEmpty;
+    composerLastTopRef.current = nextTop;
+    if (prevTop == null || wasEmpty === isChatEmpty) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const dy = prevTop - nextTop;
+    if (Math.abs(dy) < 4) return;
+    const anim = el.animate(
+      [{ transform: `translate3d(0, ${dy}px, 0)` }, { transform: 'translate3d(0, 0, 0)' }],
+      { duration: 520, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'both' }
+    );
+    const settle = () => {
+      composerLastTopRef.current = el.getBoundingClientRect().top;
+    };
+    anim.addEventListener('finish', settle);
+    return () => {
+      anim.removeEventListener('finish', settle);
+      anim.cancel();
+    };
+  }, [isChatEmpty]);
+
+  useEffect(() => {
+    const sync = () => {
+      const el = composerMotionRef.current;
+      if (!el || el.getAnimations().some((entry) => entry.playState === 'running')) return;
+      composerLastTopRef.current = el.getBoundingClientRect().top;
+    };
+    window.addEventListener('resize', sync);
+    window.visualViewport?.addEventListener('resize', sync);
+    window.visualViewport?.addEventListener('scroll', sync);
+    return () => {
+      window.removeEventListener('resize', sync);
+      window.visualViewport?.removeEventListener('resize', sync);
+      window.visualViewport?.removeEventListener('scroll', sync);
+    };
+  }, []);
+
   return (
     <LemonScope fill>
     <div className="relative flex h-full min-h-0 w-full min-w-0 text-primary font-sans overflow-hidden antialiased">
@@ -3326,38 +3375,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           ref={chatScrollRef}
           className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-primary pt-9 [touch-action:pan-y] [overflow-anchor:none] [-webkit-overflow-scrolling:touch] [mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_2.25rem)]"
         >
-          {!activeChat || activeChat.messages.length === 0 ? (
-            <div className="flex min-h-full w-full max-w-3xl mx-auto flex-col items-center justify-center p-4 sm:p-6 pb-36 select-none">
-              <h1 className="m-0 text-center text-[22px] sm:text-[24px] font-medium tracking-tight text-primary">
-                How can I help?
-              </h1>
-              <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-                {ASK_STARTERS.map((starter) => (
-                  <button
-                    key={starter.label}
-                    type="button"
-                    title={starter.preview}
-                    onClick={() => {
-                      const mutating = 'mutating' in starter && starter.mutating
-                      if (mutating && (activeChat?.agentMode || 'ask') === 'plan') {
-                        setLockShakeNonce((n) => n + 1)
-                      }
-                      setComposerDraft(starter.prompt)
-                      setComposerDraftNonce((n) => n + 1)
-                    }}
-                    className="group/starter relative rounded-full border border-primary/50 bg-primary/80 px-3 py-1 text-[12.5px] text-primary hover:bg-accent cursor-pointer"
-                  >
-                    {starter.label === 'Write to notebook' && notebookBind?.title
-                      ? `Write to ${notebookBind.title}`
-                      : starter.label}
-                    <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 hidden w-max max-w-[220px] -translate-x-1/2 rounded border border-primary bg-primary px-2 py-1 text-[11px] leading-snug text-secondary shadow-sm group-hover/starter:block">
-                      {starter.preview}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
+          {isChatEmpty ? null : (
             <div className="space-y-5 px-0 pt-3 pb-36 sm:pb-40">
               {activeChat.messages.map((msg) => (
                 <ChatMessage
@@ -3392,37 +3410,59 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           )}
         </main>
 
-        {/* Floating Input Dock with smooth fade allowing messages to flow underneath */}
+        {/* Floating Input Dock: Centered with "How can I help?" when empty, docks to bottom once messages exist */}
         <div
           data-writing-dock
-          className="pointer-events-none absolute inset-x-0 z-20 flex flex-col justify-end bg-gradient-to-t from-primary via-primary/85 to-transparent pt-10 pb-[max(0.2rem,env(safe-area-inset-bottom,0px))] will-change-[bottom]"
+          className="pointer-events-none absolute inset-x-0 top-9 z-20 flex flex-col overflow-y-auto"
           style={{ bottom: 'var(--keyboard-inset, 0px)' }}
         >
-          <div className="pointer-events-auto mx-auto w-full max-w-3xl px-3 sm:px-4">
-            <ChatInput
-              onSendMessage={handleSendMessage}
-              onStopStreaming={handleStopStreaming}
-              isStreaming={isStreaming}
-              selectedStylePreset={selectedStylePreset}
-              onChangeStylePreset={setSelectedStylePreset}
-              pendingHumanTurn={pendingHumanTurn}
-              onHumanRespond={handleComposerHumanRespond}
-              models={models}
-              selectedModelId={selectedModelId}
-              onSelectModel={handleSelectModel}
-              draftPrompt={composerDraft}
-              draftNonce={composerDraftNonce}
-              incomingAttachments={incomingAttachments}
-              boundNotebookTitle={activeNotebookInfo?.title}
-              agentMode={activeChat?.agentMode || 'ask'}
-              onAgentModeChange={handleAgentModeChange}
-              lockShakeNonce={lockShakeNonce}
-              nextSectionTitle={nextSectionTitle}
-              nextSectionLabel={nextSectionLabel}
-              onNextSection={handleNextSection}
-              onDismissNotebookContext={handleDismissNotebookContext}
-              menuPlacement="top-start"
-            />
+          <div
+            aria-hidden
+            className={`pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-primary via-primary/85 to-transparent transition-opacity duration-300 ${
+              isChatEmpty ? 'opacity-0' : 'opacity-100'
+            }`}
+          />
+          <div
+            className={`pointer-events-auto mx-auto w-full max-w-3xl px-3 sm:px-4 ${
+              isChatEmpty
+                ? 'my-auto pt-14'
+                : 'mt-auto pb-[max(0.85rem,env(safe-area-inset-bottom,0px))]'
+            }`}
+          >
+            <div ref={composerMotionRef} className="relative w-full">
+              <h1
+                aria-hidden={!isChatEmpty}
+                className={`pointer-events-none absolute inset-x-0 bottom-full mb-5 select-none text-center text-[22px] font-medium tracking-tight text-primary transition-opacity duration-300 ease-out sm:mb-6 sm:text-[26px] ${
+                  isChatEmpty ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                How can I help?
+              </h1>
+              <ChatInput
+                onSendMessage={handleSendMessage}
+                onStopStreaming={handleStopStreaming}
+                isStreaming={isStreaming}
+                selectedStylePreset={selectedStylePreset}
+                onChangeStylePreset={setSelectedStylePreset}
+                pendingHumanTurn={pendingHumanTurn}
+                onHumanRespond={handleComposerHumanRespond}
+                models={models}
+                selectedModelId={selectedModelId}
+                onSelectModel={handleSelectModel}
+                draftPrompt={composerDraft}
+                draftNonce={composerDraftNonce}
+                incomingAttachments={incomingAttachments}
+                boundNotebookTitle={activeNotebookInfo?.title}
+                agentMode={activeChat?.agentMode || 'ask'}
+                onAgentModeChange={handleAgentModeChange}
+                lockShakeNonce={lockShakeNonce}
+                nextSectionTitle={nextSectionTitle}
+                nextSectionLabel={nextSectionLabel}
+                onNextSection={handleNextSection}
+                onDismissNotebookContext={handleDismissNotebookContext}
+                menuPlacement="top-start"
+              />
+            </div>
           </div>
         </div>
 
