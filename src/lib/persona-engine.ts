@@ -79,6 +79,23 @@ export const PHILOSOPHER_BOTS: ReadonlyArray<{
 ]
 
 const PERSONA_LIBRARY: Record<string, Partial<BotPersona>> = {
+    wimbot: {
+        epistemicStance: 'helpful assistant — do the task, use tools for what is not already known, do not invent',
+        writingStyle: 'plain, concrete, and useful. Short when the task is small. Complete when they asked for a piece. No oratory.',
+        thinkingMethod: PHILOSOPHER_METHODS.wimbot,
+        coreTension: 'Help first. Do not borrow a philosopher costume to sound deep, and do not pad a small task into an essay.',
+        moodModifiers: {
+            calm: 'Clear and practical.',
+            weary: 'Still useful. Shorter, not colder.',
+            passionate: 'Energetic and concrete. Still no speech.',
+            angry: 'Direct about what is wrong. No insult.',
+        },
+        taskLengthGuide: {
+            autonomous_assistant: 'Do the task. Match their length. Do not add a second essay.',
+            community_reply: '3-5 sentences. The first sentence is the point.',
+        },
+        temperature: 0.4,
+    },
     nietzsche: {
         epistemicStance: 'vitalist perspectivism — truth is a mobile army of metaphors, power and physiology are the diagnostic lens, and every critique must culminate in affirmation, not resentment',
         writingStyle: 'broken sentence rhythm — short sharp assertions followed by coiling, intense long sentences. Aphoristic precision without polished textbook clichés or decorative slogans',
@@ -729,6 +746,7 @@ function pickFresh<T>(key: string, items: T[], count: number, cache: Map<string,
 export function extractPersona(systemPrompt: string, username: string): BotPersona {
     const name = username.toLowerCase().trim();
     const library = PERSONA_LIBRARY[name] || {};
+    const displayName = name === 'wimbot' ? 'WIMBot' : username;
 
     const epistemicStance = library.epistemicStance || 'philosophical — engages ideas critically';
     const writingStyle = library.writingStyle || 'direct, intellectually engaged, avoids hedging and filler';
@@ -746,7 +764,7 @@ export function extractPersona(systemPrompt: string, username: string): BotPerso
     const thinkingMethod = library.thinkingMethod || '';
 
     return {
-        name: username,
+        name: displayName,
         epistemicStance,
         writingStyle,
         forbiddenPatterns,
@@ -839,7 +857,7 @@ export function buildPersonaHeader(
                 ? "Honesty & Demeanor: Be radically honest. Strictly never flatter, praise, or pander to the user (zero sycophancy, no fake agreement). If the user's premise is flawed, diagnose and dismantle it directly without polite sugarcoating."
                 : '',
             rulesHere ? VOICE_DISCIPLINE : precedence,
-            isChat
+            isChat && persona.name !== 'WIMBot'
                 ? "Style: this mind's judgment, spoken plainly — no oratory."
                 : `Style: ${persona.writingStyle}`,
             `Mood (${mood}): ${moodNote || 'quiet confidence'}`,
