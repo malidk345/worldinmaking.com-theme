@@ -101,7 +101,7 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
     const PUBLIC_ANSWER = 'Final public answer for the user.'
 
     function longUserPrompt() {
-        // Triggers shouldRunThinkPhase via length (>160) even in ask mode.
+        // Long ask. Ask mode must NOT open a blocking THINK call for this.
         return (
             'Please explain in careful analytical detail why comparative research methods ' +
             'matter for philosophy, including sources, structure, and counter-arguments.'
@@ -140,7 +140,7 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
                 { role: 'user', content: longUserPrompt() },
             ],
             provider: 'test',
-            agentMode: 'ask',
+            agentMode: 'plan',
             onThinking: (piece) => thoughtUi.push(piece),
             onToken: (piece) => publicTokens.push(piece),
             onActivity: (activity: AgentActivity) => {
@@ -232,7 +232,7 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
                 { role: 'user', content: longUserPrompt() },
             ],
             provider: 'test',
-            agentMode: 'ask',
+            agentMode: 'plan',
             onThinking: (piece) => thoughtUi.push(piece),
             onActivity: (activity: AgentActivity) => {
                 if (activity.kind === 'thought' && activity.delta) {
@@ -283,7 +283,7 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
                 { role: 'user', content: longUserPrompt() },
             ],
             provider: 'test',
-            agentMode: 'ask',
+            agentMode: 'plan',
             onThinking: (piece) => thoughtUi.push(piece),
         })
 
@@ -291,6 +291,37 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
         const thoughtJoined = thoughtUi.join('')
         expect(thoughtJoined).toContain(NATIVE_THINK)
         expect(thoughtJoined).not.toContain(DECISION_THOUGHT)
+    })
+
+    it('answers a long ask in the same call as native reasoning', async () => {
+        let rounds = 0
+        const thoughtUi: string[] = []
+        const publicTokens: string[] = []
+
+        const complete: AgentPipelineParams['complete'] = async (input) => {
+            rounds += 1
+            expect(input.omitTools).toBeFalsy()
+            input.onThinking?.('Reason first.')
+            input.onToken?.('Then the answer.')
+            return { ok: true, content: 'Then the answer.', toolCalls: [], reasoning: 'Reason first.' }
+        }
+
+        const result = await runAgentNodePipeline({
+            complete,
+            baseMessages: [
+                { role: 'system', content: 'You are helpful.' },
+                { role: 'user', content: longUserPrompt() },
+            ],
+            provider: 'test',
+            agentMode: 'ask',
+            onThinking: (piece) => thoughtUi.push(piece),
+            onToken: (piece) => publicTokens.push(piece),
+        })
+
+        expect(result.ok).toBe(true)
+        expect(rounds).toBe(1)
+        expect(thoughtUi.join('')).toContain('Reason first.')
+        expect(publicTokens.join('')).toContain('Then the answer.')
     })
 
     it('still paints decision-round native onThinking when think phase is skipped', async () => {
@@ -381,7 +412,7 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
                 { role: 'user', content: longUserPrompt() },
             ],
             provider: 'test',
-            agentMode: 'ask',
+            agentMode: 'plan',
             maxSteps: 6,
             onThinking: (piece) => thoughtUi.push(piece),
             onActivity: (activity: AgentActivity) => {

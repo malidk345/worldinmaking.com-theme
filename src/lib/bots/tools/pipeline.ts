@@ -131,7 +131,12 @@ export function finalizePlanReadinessReminder(input: {
 export const PUBLIC_CONTINUE_NUDGE =
     'Prefer continuing or refining the public text already in this bubble rather than restating it from the start.'
 
-/** Reflection and planning phase: runs at start of a turn and after tool executions to digest results. */
+/**
+ * A separate THINK call blocks the public answer behind a second round trip.
+ * Ask mode therefore plans inside the answer call: native reasoning and the
+ * reply share one stream. Plan, execute, forced web search, and post-tool
+ * reflection still get their own THINK.
+ */
 export function shouldRunThinkPhase(input: {
     userPrompt: string
     agentMode: AgentMode
@@ -143,16 +148,6 @@ export function shouldRunThinkPhase(input: {
     if (input.stepCount > 0) return false
     if (input.agentMode === 'plan' || input.agentMode === 'execute') return true
     if (input.forceWebSearch) return true
-    const text = String(input.userPrompt || '')
-        .replace(/\[Plan mode[^\]]*\]/gi, '')
-        .trim()
-    if (!text) return false
-    if (text.length > 160) return true
-    const words = text.split(/\s+/).filter(Boolean)
-    if (words.length > 18) return true
-    if (/\b(why|how|explain|analiz|araştır|research|compare|karşılaştır|planla|pdf|notebook)\b/i.test(text)) return true
-    if (/(nedir|nasıl|neden)/i.test(text) && words.length > 8) return true
-    if (/\?/i.test(text) && words.length > 10) return true
     return false
 }
 
@@ -511,20 +506,16 @@ async function runThinkPhase(
     params: AgentPipelineParams,
     thoughtId: string,
     postTool = false
-): Promise<{ paintedThought: boolean }> {
+): Promise<{ paintedThought: boolean; draft: string }> {
     let nativeThought = 0
     let paintedThought = false
+    let draft = ''
     /**
-     * Think-phase demux:
-     * - Native reasoning (onThinking) → Thought UI + thinkingText (always).
-     * - Content tokens (onToken):
-     *   - Pre-tool / planning THINK: thinkingText only (cycleThought / empty-public
-     *     fallback). Do NOT paint Thought — models often draft a full answer here
-     *     (#775 answer-leak guard).
-     *   - Post-tool / reflect THINK (`postTool`): also paint Thought. Gemini host
-     *     THINK uses omitTools + modest native budget; if the model still emits
-     *     content-only reflect, paint it so the second Thought after tools is
-     *     visible (#775/#785/#790). Planning content still buffered unpainted.
+     * Two channels, kept apart:
+     * - Native reasoning (onThinking) → Thought UI only.
+     * - Content tokens (onToken) → the user-facing draft, not Thought (#775).
+     *   Post-tool reflect is the exception: that content is private mastery and
+     *   stays in Thought.
      */
     const absorb = (delta: string, fromNative: boolean) => {
         if (!delta) return
@@ -535,17 +526,13 @@ async function runThinkPhase(
             paintedThought = true
             return
         }
-        // Content during think. If native reasoning already arrived, drop content
-        // (same as before). Otherwise buffer into thinkingText for cycleThought /
-        // extractFallbackAnswerFromThinking.
-        if (nativeThought > 0) return
-        state.thinkingText += delta
-        // Post-tool reflect only: paint content-only THINK into Thought UI so users
-        // see tool-result mastery. Planning/decision must not (#775).
         if (postTool) {
+            state.thinkingText += delta
             emitThoughtDelta(params, thoughtId, delta)
             paintedThought = true
+            return
         }
+        draft += delta
     }
     const started = state.thinkingText.length
     const think = await params.complete({
@@ -569,8 +556,9 @@ async function runThinkPhase(
     if (think.ok && think.reasoning && nativeThought === 0) {
         absorb(think.reasoning, true)
     }
-    state.cycleThought = state.thinkingText.slice(started)
-    return { paintedThought }
+    const nativeSlice = state.thinkingText.slice(started)
+    state.cycleThought = [nativeSlice, draft].filter((part) => part.trim()).join('\n')
+    return { paintedThought, draft }
 }
 
 async function runDecisionNode(state: AgentState, params: AgentPipelineParams): Promise<void> {
@@ -584,6 +572,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     // cycleThought alone must NOT suppress decision native streaming — that was
     // the #775 regression (Thought dumped only when decision reasoning arrived).
     let thoughtUiPainted = false
+    let thinkDraft = ''
     if (
         shouldRunThinkPhase({
             userPrompt: lastUserText(state.messages),
@@ -595,6 +584,9 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     ) {
         const thinkResult = await runThinkPhase(state, params, thoughtId, hasNewToolResults)
         thoughtUiPainted = thinkResult.paintedThought
+        thinkDraft = thinkResult.draft
+        // Thought is done. The answer call must not keep the box spinning.
+        if (thoughtUiPainted) closeThought(params, thoughtId)
     }
     const isLastStep = state.stepCount >= state.maxSteps - 1
     const toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write' = isLastStep
@@ -603,6 +595,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
           ? 'web_search'
           : 'auto'
 
+    let deliveredPublic = ''
     const emitPublic = (text: string) => {
         const cleaned = stripLeakedToolMarkup(text)
         if (!cleaned) return
@@ -613,7 +606,22 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
             state.currentToolCalls.length === 0
         )
             return
+        deliveredPublic += cleaned
         params.onToken?.(cleaned)
+    }
+    const deliverAnswer = (text: string) => {
+        const cleaned = stripLeakedToolMarkup(text).trim()
+        if (!cleaned) return
+        if (!state.publicText.trim()) state.publicText = cleaned
+        else if (!state.publicText.includes(cleaned)) state.publicText += `\n\n${cleaned}`
+        const rest = cleaned.startsWith(deliveredPublic)
+            ? cleaned.slice(deliveredPublic.length)
+            : deliveredPublic
+              ? ''
+              : cleaned
+        if (!rest) return
+        deliveredPublic += rest
+        params.onToken?.(rest)
     }
 
     let streamedThought = 0
@@ -709,11 +717,17 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
     }
 
     if (leftover) {
-        const remainingUnstreamed = leftover.slice(streamedPublicLength)
-        if (remainingUnstreamed) {
-            emitPublic(remainingUnstreamed)
-        }
-        state.publicText += (state.publicText ? '\n\n' : '') + leftover
+        // Round is finished and it did not call tools: this content is the answer.
+        // holdPublicUntilCitations must not keep it hidden until a later pass.
+        deliverAnswer(leftover)
+        closeThought(params, thoughtId)
+        emitNode(params, 'root', 'completed', cycle)
+        state.phase = 'synthesis'
+        return
+    }
+
+    if (thinkDraft.trim() && !params.holdPublicUntilCitations && !state.publicText.trim()) {
+        deliverAnswer(thinkDraft)
         closeThought(params, thoughtId)
         emitNode(params, 'root', 'completed', cycle)
         state.phase = 'synthesis'
