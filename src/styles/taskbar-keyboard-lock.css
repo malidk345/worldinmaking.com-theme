@@ -45,4 +45,24 @@
     }
 }
 
+/* Ask composer. Closed + empty: centered. Closed + thread: on the window edge.
+   Keyboard open: bottom is the measured visual-viewport overlap, per device. */
+[data-writing-dock][data-empty] {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+}
+
+[data-writing-dock]:not([data-empty]) {
+    top: auto;
+    bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
+    transform: none;
+}
+
+html[data-keyboard='open'] [data-writing-dock] {
+    top: auto !important;
+    bottom: calc(var(--keyboard-inset, 0px) + 0.5rem) !important;
+    transform: none !important;
+}
+
 

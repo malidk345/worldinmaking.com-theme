@@ -232,21 +232,16 @@ export function useKeyboardInset(): void {
 
         const apply = (keepCaret = false) => {
             const vv = window.visualViewport
-            const mobile = isMobileShell()
             const notebook = isNotebookEditing()
-            // Always cancel browser layout/visual-viewport pan so headers & windows stay put.
-            resetVisualPan()
+            const focusedNow = document.activeElement
+            const dockFocused = isEditableTarget(focusedNow) && Boolean(focusedNow.closest(WRITING_DOCK))
+            // Ask composer lifts itself with transform. Do not scroll the page to follow it.
+            if (!dockFocused) resetVisualPan()
             layoutLock = nextStableLayoutHeight(layoutLock, window.innerWidth, window.innerHeight)
             const layoutH = layoutLock.height
             const visibleH = vv?.height ?? window.innerHeight
             const offsetTop = vv?.offsetTop ?? 0
-            const { inset, pan, open } = measureKeyboardOverlay(layoutH, visibleH, offsetTop)
-
-            const currentInset = root.style.getPropertyValue('--keyboard-inset')
-            const nextInset = `${inset}px`
-            if (currentInset !== nextInset) {
-                root.style.setProperty('--keyboard-inset', nextInset)
-            }
+            const { inset, open } = measureKeyboardOverlay(layoutH, visibleH, offsetTop)
 
             const currentVvH = root.style.getPropertyValue('--vv-height')
             const nextVvH = `${Math.round(visibleH)}px`
@@ -276,6 +271,12 @@ export function useKeyboardInset(): void {
             const focused = document.activeElement
             const active = isEditableTarget(focused) ? focused : null
             const inDock = Boolean(active?.closest(WRITING_DOCK))
+            root.removeAttribute('data-keyboard-primed')
+            const currentInset = root.style.getPropertyValue('--keyboard-inset')
+            const nextInset = `${inset}px`
+            if (currentInset !== nextInset) {
+                root.style.setProperty('--keyboard-inset', nextInset)
+            }
 
             const targetSurface = notebook ? 'notebook' : (active && open ? 'write' : null)
             if (targetSurface) {
@@ -314,10 +315,20 @@ export function useKeyboardInset(): void {
             if (!isMobileShell()) return
             const target = event.target
             if (!isEditableTarget(target)) return
+            // The Ask composer is lifted in place. Restoring ancestor scroll
+            // replays the browser pan that drags the header down.
+            if (target.closest(WRITING_DOCK)) {
+                focusSnaps = null
+                return
+            }
             focusSnaps = captureScrollChain(target)
         }
         const onFocusIn = (event: FocusEvent) => {
             if (!isEditableTarget(event.target)) return
+            if (event.target.closest(WRITING_DOCK)) {
+                apply(false)
+                return
+            }
             if (!focusSnaps) focusSnaps = captureScrollChain(event.target)
             pinFocusedScroll()
             apply(true)

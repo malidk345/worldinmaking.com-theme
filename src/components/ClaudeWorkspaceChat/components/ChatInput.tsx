@@ -725,7 +725,7 @@ const ChatInputComponent: React.FC<ChatInputProps> = ({
           autoComplete="off"
           autoCorrect="on"
           spellCheck="true"
-          className="w-full resize-none overflow-y-auto scroll-m-0 border-none bg-transparent px-1 py-0 text-[13.5px] sm:text-[14px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[22px] max-h-[160px] leading-normal font-sans"
+          className="w-full resize-none overflow-y-auto scroll-m-0 touch-manipulation border-none bg-transparent px-1 py-0 text-[13.5px] sm:text-[14px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 min-h-[22px] max-h-[160px] leading-normal font-sans"
         />
 
         {/* Hidden File Input */}

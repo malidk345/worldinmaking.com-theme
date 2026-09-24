@@ -3361,53 +3361,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   )
 
   const isChatEmpty = !activeChat || activeChat.messages.length === 0;
-  const composerMotionRef = useRef<HTMLDivElement>(null);
-  const composerWasEmptyRef = useRef(isChatEmpty);
-  const composerLastTopRef = useRef<number | null>(null);
-
-  // One-shot glide when the composer leaves the empty-state center. Do not
-  // transition `bottom`: --keyboard-inset updates every frame and restarts it.
-  useLayoutEffect(() => {
-    const el = composerMotionRef.current;
-    if (!el) return;
-    const nextTop = el.getBoundingClientRect().top;
-    const prevTop = composerLastTopRef.current;
-    const wasEmpty = composerWasEmptyRef.current;
-    composerWasEmptyRef.current = isChatEmpty;
-    composerLastTopRef.current = nextTop;
-    if (prevTop == null || wasEmpty === isChatEmpty) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const dy = prevTop - nextTop;
-    if (Math.abs(dy) < 4) return;
-    const anim = el.animate(
-      [{ transform: `translate3d(0, ${dy}px, 0)` }, { transform: 'translate3d(0, 0, 0)' }],
-      { duration: 520, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'both' }
-    );
-    const settle = () => {
-      composerLastTopRef.current = el.getBoundingClientRect().top;
-    };
-    anim.addEventListener('finish', settle);
-    return () => {
-      anim.removeEventListener('finish', settle);
-      anim.cancel();
-    };
-  }, [isChatEmpty]);
-
-  useEffect(() => {
-    const sync = () => {
-      const el = composerMotionRef.current;
-      if (!el || el.getAnimations().some((entry) => entry.playState === 'running')) return;
-      composerLastTopRef.current = el.getBoundingClientRect().top;
-    };
-    window.addEventListener('resize', sync);
-    window.visualViewport?.addEventListener('resize', sync);
-    window.visualViewport?.addEventListener('scroll', sync);
-    return () => {
-      window.removeEventListener('resize', sync);
-      window.visualViewport?.removeEventListener('resize', sync);
-      window.visualViewport?.removeEventListener('scroll', sync);
-    };
-  }, []);
 
   return (
     <LemonScope fill>
@@ -3491,26 +3444,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           )}
         </main>
 
-        {/* Floating Input Dock: Centered with "How can I help?" when empty, docks to bottom once messages exist */}
+        {/* Input only. Keyboard lift is a transform on this bar, not the window or the thread. */}
         <div
           data-writing-dock
-          className="pointer-events-none absolute inset-x-0 top-9 z-20 flex flex-col overflow-hidden overscroll-none"
-          style={{ bottom: 'var(--keyboard-inset, 0px)' }}
+          data-empty={isChatEmpty ? '' : undefined}
+          className="pointer-events-none absolute inset-x-0 z-20"
         >
           <div
             aria-hidden
-            className={`pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-primary via-primary/85 to-transparent transition-opacity duration-300 ${
+            className={`pointer-events-none absolute inset-x-0 bottom-full h-16 bg-gradient-to-t from-primary via-primary/80 to-transparent ${
               isChatEmpty ? 'opacity-0' : 'opacity-100'
             }`}
           />
-          <div
-            className={`pointer-events-auto mx-auto w-full max-w-3xl px-3 sm:px-4 ${
-              isChatEmpty
-                ? 'my-auto pt-14'
-                : 'mt-auto pb-[max(0.85rem,env(safe-area-inset-bottom,0px))]'
-            }`}
-          >
-            <div ref={composerMotionRef} className="relative w-full">
+          <div className="pointer-events-auto relative mx-auto w-full max-w-3xl px-3 sm:px-4">
               <h1
                 aria-hidden={!isChatEmpty}
                 className={`pointer-events-none absolute inset-x-0 bottom-full mb-5 select-none text-center text-[22px] font-medium tracking-tight text-primary transition-opacity duration-300 ease-out sm:mb-6 sm:text-[26px] ${
@@ -3543,7 +3489,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
                 onDismissNotebookContext={handleDismissNotebookContext}
                 menuPlacement="top-start"
               />
-            </div>
           </div>
         </div>
 
