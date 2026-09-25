@@ -58,6 +58,14 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-25 — Grok Bot / Cursor (fix: package D — tool quota surcharge, notebook leftovers, Ask AI render loop)
+
+- **Scope:** Branch from `main` (`d2ff3e8d`, includes #846). No Supabase schema/data changes (read-only SELECTs on `wim_chat_token_usage` / `increment_wim_chat_token_usage` only), no change to the base token estimate, limits or fail-closed logic.
+- **D1 root cause:** `/api/chat` read `(result as any).tool_calls`, which `BotRunSuccess` never has (only `usedTools`), so the 2,000-token per-tool surcharge (and the tool payload estimate) were never charged. **Fix:** `createToolUsageMeter` (`src/lib/tool-usage-meter.ts`) observes the same `onTool` events the user sees and counts executed calls once per running→finish cycle — top-level, `task` sub-agent (task + nested reads), host live-web search, errored calls, and cached research repeats (the model still received the payload). Answer recovery (#844) is tools-off → no extra charge. Failed/aborted turns still record nothing (unchanged).
+- **D1 findings (not changed):** the base estimate counts only visible text (prompt + context + history + reply + thinking). Measured per academic turn with the real prompt builder: ~114k request chars (~32k tokens) for one search (3 provider rounds; each ACT round re-sends ~12.8k chars system + ~33.5k chars tool schemas), ~186k chars (~52k tokens) for search + related_papers, ~47k chars (~13k tokens) for a plain no-tool answer — vs ~290 tokens recorded. Owner decision needed; estimates in the PR.
+- **D2:** replace-selection and annotation handlers in `notebook-app/App.tsx` called the non-existent `appActions.addToast` (threw before the nack) → toast context. PDF (and print) export render `> [!NOTE|TIP|IMPORTANT|WARNING|CAUTION]` callouts as a bold label + body instead of the literal marker. "Maximum update depth exceeded": pre-existing on main — the Ask AI voice-title effect called `updateWindow(win, { title })`, but `WindowUpdate` has no `title`, so the title never stuck and the effect re-ran `setWindows` forever once the chat window was open; now `setWindowTitle` (no-op when unchanged) → 0 warnings (was ~210 on opening a chat, ~5/s idle afterwards).
+- **Files:** `src/pages/api/chat.ts`, `src/lib/tool-usage-meter.ts` (new), `src/components/ClaudeWorkspaceChat/index.tsx`, `src/notebook-app/App.tsx`, `src/notebook-app/scenes/notebooks/exportNotebookPdf.ts`; tests `src/lib/tool-usage-meter.test.ts`, `src/lib/bots/tools/tool-usage-meter.integration.test.ts`, `exportNotebookPdf.footnotes.test.ts`.
+
 ### 2026-09-25 — Grok Bot / Cursor (fix: notebook package C — add target, honest acks, footnotes, callouts, PDF footnotes, prior citations)
 
 - **Scope:** E2E notebook addendum items a–i. Branch from `main` (`54b9dd11`, includes #844 and #845), not stacked. No Supabase schema/data, quota, font, wallpaper or window-animation changes.

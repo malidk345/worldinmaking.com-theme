@@ -35,7 +35,8 @@ import { parseAgentCheckpoint, parseResumeAction } from 'lib/bots/agent/checkpoi
 import { parseAgentMode } from 'lib/bots/agent/modes'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
 import { isUserPro } from '../../lib/wim-billing'
-import { estimateTokens, estimateToolSurchargeTokens, getTokenQuota, recordTokenUsage, type UserTier } from '../../lib/token-quota'
+import { estimateTokens, getTokenQuota, recordTokenUsage, type UserTier } from '../../lib/token-quota'
+import { createToolUsageMeter } from '../../lib/tool-usage-meter'
 
 /** Upper bound for the post-answer citation check (Crossref DOI lookups); skipped when exceeded. */
 const CITATION_VERIFY_BUDGET_MS = 4_500
@@ -435,6 +436,8 @@ export default async function handler(req: Request) {
                 let livePublicText = ''
                 let sentVisiblePublic = ''
                 let liveThinkingAcc = ''
+                // Executed tool calls this turn (incl. sub-agent + host search) for the quota surcharge.
+                const toolMeter = createToolUsageMeter()
 
                 const byokEnv = readByokEnv(body)
                 const activeEnv = { ...getRuntimeEnv(), ...byokEnv }
@@ -458,7 +461,10 @@ export default async function handler(req: Request) {
                         resumePayload,
                         priorCitations: priorCitations.length ? priorCitations : undefined,
                         abortSignal: turnAbort.signal,
-                        onTool: (event) => send({ type: 'tool', tool: event }),
+                        onTool: (event) => {
+                            toolMeter.observe(event)
+                            send({ type: 'tool', tool: event })
+                        },
                         onNode: (event) => send({ type: 'node', node: event }),
                         onMode: (mode) => send({ type: 'mode', mode }),
                         onHuman: (human) => send({ type: 'human', human }),
@@ -582,14 +588,11 @@ export default async function handler(req: Request) {
 
                 // Record & stream real token usage to update client sidebar
                 if (!byokEnv.GROQ_API_KEY && !byokEnv.GEMINI_API_KEY && !byokEnv.OPENAI_API_KEY && !byokEnv.ANTHROPIC_API_KEY) {
-                    const toolCallsAcc = result.success && (result as any).tool_calls ? (result as any).tool_calls : []
                     const inTokens = estimateTokens(prompt) + estimateTokens(context) + estimateTokens(JSON.stringify(history))
                     const outTokens = estimateTokens(visibleReply) + estimateTokens(liveThinkingAcc)
-
-                    let toolTokens = 0
-                    if (toolCallsAcc.length > 0) {
-                        toolTokens = estimateTokens(JSON.stringify(toolCallsAcc)) + estimateToolSurchargeTokens(toolCallsAcc.length)
-                    }
+                    // Tool payload estimate + 2,000-token surcharge per executed tool call (was read
+                    // from a non-existent `result.tool_calls`, so tools were never charged).
+                    const toolTokens = toolMeter.tokens()
 
                     const totalTurnTokens = Math.max(10, inTokens + outTokens + toolTokens)
                     try {
