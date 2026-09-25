@@ -17,7 +17,7 @@ Canonical map of WorldInMaking AI as implemented in malidk345/worldinmaking.com-
 7. SSE: mode, token, tool, node, human, checkpoint, citations, artifacts, token_usage, done or typed error. Heartbeat 15s.
 8. If live web is needed and the model skipped web_search, the host runs Tavily. No invented headlines.
 
-`runBotTurn` runs `applyQualityGate`. The `streamBotTurn` tool-loop success path also applies the quality gate.
+`runBotTurn` runs `applyQualityGate`. The `streamBotTurn` tool-loop success path also applies the quality gate. Host fallback copy from the tool loop (`ToolLoopResult.fallback`: honest "could not finish" message or the generic action confirmation) skips the quality gate and carries no `qualityGate` flag, so the critic can never rewrite it into persona prose. When the post-tool answer round fails or comes back empty, `loop.ts` retries the answer once, tools off, on the next key/model in the chain from the tool results already gathered (`tools/answer-recovery.ts`), then falls back to a short localized (TR/EN) message while keeping the source cards; failures log `[tools] answer round failed` / `[tools] answer synthesis retry` / `[tools] candidate failed` (status + redacted provider detail, no content).
 
 ## Agent modes and tools
 `src/lib/bots/agent/modes.ts`: ask | plan | execute. Plan locks mutating OS tools (artifacts, notebook writes, windows, appearance, forum publish). Research, todo_write, ask_user, finalize_plan stay on. ask_user pauses via checkpoint.ts / human.ts.

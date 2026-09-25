@@ -25,9 +25,23 @@ import { compactToolHistory, type HistoryTurn } from './history'
 import { isAuthDetail, isRateLimitDetail, isToolProtocolReject } from '../provider-errors'
 import { modeAfterResume, resumeUserMessage, type AgentCheckpoint, type ResumeAction } from '../agent/checkpoint'
 import type { HumanTurn } from '../agent/human'
-import { modeSystemPrompt, parseAgentMode, PLAN_TOOL_PROTOCOL, type AgentMode } from '../agent/modes'
+import { modeSystemPrompt, nodeStatusLabel, parseAgentMode, PLAN_TOOL_PROTOCOL, type AgentMode } from '../agent/modes'
 import { OPENAI_CHAT_TOOLS, TOOL_PROTOCOL, toolsForAgentMode, type OpenAiToolSpec } from './spec'
-import { runAgentNodePipeline, type NodeEvent } from './pipeline'
+import { runAgentNodePipeline, type NodeEvent, type RoundFailure } from './pipeline'
+import {
+    answerIncompleteMessage,
+    buildNoToolSynthesisMessages,
+    gatheredToolResults,
+    hasResearchResults,
+    LOOP_ACTIONS_PLACEHOLDER,
+    PIPELINE_EMPTY_ANSWER_PLACEHOLDER,
+    redactProviderDetail,
+    SYNTHESIS_MAX_TOKENS,
+    toolResultChars,
+    type GatheredToolResult,
+    type ToolLoopFallback,
+} from './answer-recovery'
+import { stripLeakedToolMarkup } from './leak'
 import type { AgentActivity } from '../agent/activity'
 import { fetchWithTransientRetry } from './provider-retry'
 
@@ -121,6 +135,14 @@ export type ToolLoopResult = {
     error?: string
     interrupt?: HumanTurn
     checkpoint?: AgentCheckpoint
+    /**
+     * Set when `text` is host fallback copy (honest "could not finish" or the
+     * generic action confirmation), not a model answer. The orchestrator must
+     * skip the quality gate / persona rewrite for it.
+     */
+    fallback?: ToolLoopFallback
+    /** The answer was written by the tools-off retry after a failed/empty answer round. */
+    recoveredAnswer?: boolean
 }
 
 export type ToolCallDelta = {
@@ -427,16 +449,28 @@ function toGroqMessages(messages: ChatMessage[]): ChatMessage[] {
     })
 }
 
+type CompleteFn = (input: {
+    messages: ChatMessage[]
+    toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write'
+    onToken?: (text: string) => void
+    onThinking?: (text: string) => void
+    omitTools?: boolean
+    maxTokens?: number
+    timeoutMs?: number
+}) => Promise<CompletionRound>
+
+type StepPartial = {
+    usedTools: boolean
+    usedWebSearch: boolean
+    artifacts: ArtifactDocument[]
+    citations: AiCitation[]
+    actions: HostOsAction[]
+    text: string
+    messages: ChatMessage[]
+}
+
 async function runToolSteps(params: {
-    complete: (input: {
-        messages: ChatMessage[]
-        toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write'
-        onToken?: (text: string) => void
-        onThinking?: (text: string) => void
-        omitTools?: boolean
-        maxTokens?: number
-        timeoutMs?: number
-    }) => Promise<CompletionRound>
+    complete: CompleteFn
     baseMessages: ChatMessage[]
     onToken?: (text: string) => void
     onThinking?: (text: string) => void
@@ -454,19 +488,10 @@ async function runToolSteps(params: {
     checkpoint?: AgentCheckpoint
     signal?: AbortSignal
 }): Promise<
-    | { kind: 'done'; result: ToolLoopResult }
+    | { kind: 'done'; result: ToolLoopResult; answerMissing: boolean; messages: ChatMessage[] }
     | { kind: 'tools-rejected'; error: string }
     | { kind: 'auth'; error: string }
-    | {
-          kind: 'failed'
-          error: string
-          usedTools: boolean
-          usedWebSearch: boolean
-          artifacts: ArtifactDocument[]
-          citations: AiCitation[]
-          actions: HostOsAction[]
-          text: string
-      }
+    | ({ kind: 'failed'; error: string; roundFailure?: RoundFailure } & StepPartial)
 > {
     const pipelineRes = await runAgentNodePipeline({
         complete: params.complete,
@@ -492,6 +517,8 @@ async function runToolSteps(params: {
     if (pipelineRes.ok) {
         return {
             kind: 'done',
+            answerMissing: Boolean(pipelineRes.answerMissing),
+            messages: pipelineRes.messages || [],
             result: {
                 ok: true,
                 usedTools: pipelineRes.usedTools,
@@ -519,12 +546,14 @@ async function runToolSteps(params: {
     return {
         kind: 'failed',
         error: pipelineRes.error || 'tool loop failed',
+        roundFailure: pipelineRes.roundFailure,
         usedTools: pipelineRes.usedTools,
         usedWebSearch: pipelineRes.usedWebSearch,
         artifacts: pipelineRes.artifacts,
         citations: pipelineRes.citations,
         actions: pipelineRes.actions,
         text: pipelineRes.text,
+        messages: pipelineRes.messages || [],
     }
 }
 
@@ -536,7 +565,8 @@ function fallbackSuccessFromPartial(step: {
     citations: AiCitation[]
     actions: HostOsAction[]
 }, provider: string): ToolLoopResult {
-    const text = step.text.trim() || (step.artifacts.length > 0 ? '' : 'Completed requested tool actions.')
+    const trimmed = step.text.trim()
+    const text = trimmed || (step.artifacts.length > 0 ? '' : LOOP_ACTIONS_PLACEHOLDER)
     return {
         ok: true,
         usedTools: step.usedTools,
@@ -546,7 +576,118 @@ function fallbackSuccessFromPartial(step: {
         citations: step.citations,
         actions: step.actions,
         provider,
+        // Generic placeholder is host copy, not a model answer: never quality-gate it into prose.
+        ...(trimmed || step.artifacts.length > 0 ? {} : { fallback: 'actions_placeholder' as const }),
     }
+}
+
+function abortedResult(partial?: StepPartial): ToolLoopResult {
+    return {
+        ok: false,
+        usedTools: partial?.usedTools || false,
+        usedWebSearch: partial?.usedWebSearch || false,
+        text: partial?.text || '',
+        artifacts: partial?.artifacts || [],
+        citations: partial?.citations || [],
+        actions: partial?.actions || [],
+        provider: 'none',
+        error: 'client request aborted',
+    }
+}
+
+/** One entry of the existing fallback chain (family → key → model), in order. */
+type ToolCandidate = {
+    provider: string
+    model: string
+    /** Groq/Gemini: an auth/rate-limit miss skips the rest of this key's models. */
+    keyGroup?: string
+    onAuthMiss?: () => void
+    complete: CompleteFn
+}
+
+function logAnswerRoundFailure(input: {
+    provider: string
+    model: string
+    stage: 'failed' | 'empty'
+    roundFailure?: RoundFailure
+    error?: string
+    results: GatheredToolResult[]
+    citations: number
+}): void {
+    console.warn(
+        '[tools] answer round failed',
+        JSON.stringify({
+            provider: input.provider,
+            model: input.model,
+            stage: input.stage,
+            status: input.roundFailure?.status,
+            detail: redactProviderDetail(input.roundFailure?.detail || input.error || ''),
+            afterTools: input.roundFailure?.afterTools ?? true,
+            toolResults: input.results.length,
+            toolResultChars: toolResultChars(input.results),
+            tools: Array.from(new Set(input.results.map((item) => item.name))).slice(0, 8),
+            citations: input.citations,
+        })
+    )
+}
+
+/**
+ * Retry the answer once, tools off, on `candidate` using the tool results the
+ * failed pipeline already gathered. Returns the written answer or null.
+ */
+async function synthesizeAnswerWithoutTools(input: {
+    candidate: ToolCandidate
+    messages: ChatMessage[]
+    turnStart: number
+    results: GatheredToolResult[]
+    onToken?: (text: string) => void
+    onNode?: (event: NodeEvent) => void
+    signal?: AbortSignal
+}): Promise<string | null> {
+    if (input.signal?.aborted) return null
+    const messages = buildNoToolSynthesisMessages({
+        messages: input.messages,
+        turnStart: input.turnStart,
+        results: input.results,
+    })
+    input.onNode?.({ name: 'synthesis', status: 'started', detail: nodeStatusLabel('synthesis', 'started') })
+    let streamed = ''
+    const round = await input.candidate.complete({
+        messages,
+        toolChoice: 'none',
+        omitTools: true,
+        maxTokens: SYNTHESIS_MAX_TOKENS,
+        onToken: (text) => {
+            // Strip leaked tool markup, but keep chunk-edge whitespace when nothing
+            // leaked (stripLeakedToolMarkup trims, which glues streamed words).
+            const stripped = stripLeakedToolMarkup(text)
+            const cleaned = stripped === text.trim() ? text : stripped
+            if (!cleaned) return
+            streamed += cleaned
+            input.onToken?.(cleaned)
+        },
+    })
+    input.onNode?.({ name: 'synthesis', status: 'completed', detail: nodeStatusLabel('synthesis', 'completed') })
+    // A retry that dies mid-stream keeps what the user already saw rather than
+    // stacking the "could not finish" copy under a half-written answer.
+    const content = (round.ok ? stripLeakedToolMarkup(round.content || streamed) : streamed).trim()
+    console.info(
+        '[tools] answer synthesis retry',
+        JSON.stringify({
+            provider: input.candidate.provider,
+            model: input.candidate.model,
+            ok: round.ok && Boolean(content),
+            ...(round.ok ? {} : { partialChars: content.length }),
+            status: round.ok ? undefined : round.status,
+            detail: round.ok ? (content ? undefined : 'empty answer') : redactProviderDetail(round.detail),
+            chars: content.length,
+        })
+    )
+    if (!content) return null
+    // Tokens already reached the client through onToken; if the adapter buffered
+    // (no onToken calls), deliver the answer now so the bubble is not blank.
+    if (!streamed.trim()) input.onToken?.(content)
+    return content
 }
 
 export async function runToolLoop(params: {
@@ -568,22 +709,12 @@ export async function runToolLoop(params: {
     checkpoint?: AgentCheckpoint
     resumeAction?: ResumeAction
     resumePayload?: string
+    /** Raw user question — picks the language of host fallback copy (defaults to userPrompt). */
+    languageSample?: string
     /** Client disconnect / Stop — abort in-flight provider fetches. */
     signal?: AbortSignal
 }): Promise<ToolLoopResult> {
-    if (params.signal?.aborted) {
-        return {
-            ok: false,
-            usedTools: false,
-            usedWebSearch: false,
-            text: '',
-            artifacts: [],
-            citations: [],
-            actions: [],
-            provider: 'none',
-            error: 'client request aborted',
-        }
-    }
+    if (params.signal?.aborted) return abortedResult()
     const env = params.env ?? getRuntimeEnv()
     const groqKeys = takeGroqKeyOrder(collectGroqKeys(env)).filter((key) => !isGroqKeyCooling(key))
     const groqModels = resolveGroqToolModels(env)
@@ -638,39 +769,14 @@ export async function runToolLoop(params: {
     const anthropicKey = envFrom(env, 'ANTHROPIC_API_KEY', 'ANTHROPIC_KEY').trim()
     const anthropicModel = envFrom(env, 'ANTHROPIC_MODEL', 'ANTHROPIC_TOOL_MODEL') || 'claude-3-7-sonnet-20250219'
 
-    const families = nextToolFamilyOrder()
-
-    for (const family of families) {
-        if (params.signal?.aborted) {
-            return {
-                ok: false,
-                usedTools: false,
-                usedWebSearch: false,
-                text: '',
-                artifacts: [],
-                citations: [],
-                actions: [],
-                provider: 'none',
-                error: 'client request aborted',
-            }
-        }
+    // Same order as before: family rotation → keys → models. `agentMode` is read
+    // at call time (switch_mode can change it mid-turn).
+    const candidates: ToolCandidate[] = []
+    for (const family of nextToolFamilyOrder()) {
         if (family === 'anthropic' && anthropicKey) {
-            const step = await runToolSteps({
+            candidates.push({
                 provider: 'anthropic',
-                env,
-                host: params.host,
-                forceWebSearch: params.forceWebSearch,
-                holdPublicUntilCitations: params.holdPublicUntilCitations,
-                baseMessages,
-                onToken: params.onToken,
-                onThinking: params.onThinking,
-                onTool: params.onTool,
-                onNode: params.onNode,
-                onMode,
-                onHuman: params.onHuman,
-                onActivity: params.onActivity,
-                checkpoint: params.checkpoint,
-                agentMode,
+                model: anthropicModel,
                 complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
                     anthropicToolCompletion({
                         apiKey: anthropicKey,
@@ -687,56 +793,11 @@ export async function runToolLoop(params: {
                         signal: params.signal,
                     }),
             })
-            if (step.kind === 'done') return step.result
-            if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                return fallbackSuccessFromPartial(step, 'anthropic')
-            }
-            lastError = step.error
-            if (isClientAbortDetail(step.error)) {
-                if (step.kind === 'failed') {
-                    return {
-                        ok: false,
-                        usedTools: step.usedTools,
-                        usedWebSearch: step.usedWebSearch,
-                        text: step.text,
-                        artifacts: step.artifacts,
-                        citations: step.citations,
-                        actions: step.actions,
-                        provider: 'none',
-                        error: 'client request aborted',
-                    }
-                }
-                return {
-                    ok: false,
-                    usedTools: false,
-                    usedWebSearch: false,
-                    text: '',
-                    artifacts: [],
-                    citations: [],
-                    actions: [],
-                    provider: 'none',
-                    error: 'client request aborted',
-                }
-            }
         }
-
         if (family === 'openai' && byokOpenai) {
-            const step = await runToolSteps({
+            candidates.push({
                 provider: 'openai',
-                env,
-                host: params.host,
-                forceWebSearch: params.forceWebSearch,
-                holdPublicUntilCitations: params.holdPublicUntilCitations,
-                baseMessages,
-                onToken: params.onToken,
-                onThinking: params.onThinking,
-                onTool: params.onTool,
-                onNode: params.onNode,
-                onMode,
-                onHuman: params.onHuman,
-                onActivity: params.onActivity,
-                checkpoint: params.checkpoint,
-                agentMode,
+                model: openaiModel,
                 complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
                     openaiCompletion({
                         apiKey: byokOpenai,
@@ -752,57 +813,12 @@ export async function runToolLoop(params: {
                         signal: params.signal,
                     }),
             })
-            if (step.kind === 'done') return step.result
-            if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                return fallbackSuccessFromPartial(step, 'openai')
-            }
-            lastError = step.error
-            if (isClientAbortDetail(step.error)) {
-                if (step.kind === 'failed') {
-                    return {
-                        ok: false,
-                        usedTools: step.usedTools,
-                        usedWebSearch: step.usedWebSearch,
-                        text: step.text,
-                        artifacts: step.artifacts,
-                        citations: step.citations,
-                        actions: step.actions,
-                        provider: 'none',
-                        error: 'client request aborted',
-                    }
-                }
-                return {
-                    ok: false,
-                    usedTools: false,
-                    usedWebSearch: false,
-                    text: '',
-                    artifacts: [],
-                    citations: [],
-                    actions: [],
-                    provider: 'none',
-                    error: 'client request aborted',
-                }
-            }
         }
-
         if (family === 'nvidia' && nvidiaKey) {
             for (const nvidiaModel of nvidiaModels) {
-                const step = await runToolSteps({
+                candidates.push({
                     provider: 'nvidia:deepseek',
-                    env,
-                    host: params.host,
-                    forceWebSearch: params.forceWebSearch,
-                    holdPublicUntilCitations: params.holdPublicUntilCitations,
-                    baseMessages,
-                    onToken: params.onToken,
-                    onThinking: params.onThinking,
-                    onTool: params.onTool,
-                    onNode: params.onNode,
-                    onMode,
-                    onHuman: params.onHuman,
-                    onActivity: params.onActivity,
-                    checkpoint: params.checkpoint,
-                    agentMode,
+                    model: nvidiaModel,
                     complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
                         openaiCompletion({
                             apiKey: nvidiaKey,
@@ -819,61 +835,16 @@ export async function runToolLoop(params: {
                             signal: params.signal,
                         }),
                 })
-                if (step.kind === 'done') return step.result
-                if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                    return fallbackSuccessFromPartial(step, 'nvidia:deepseek')
-                }
-                lastError = step.error
-                if (isClientAbortDetail(step.error)) {
-                    if (step.kind === 'failed') {
-                        return {
-                            ok: false,
-                            usedTools: step.usedTools,
-                            usedWebSearch: step.usedWebSearch,
-                            text: step.text,
-                            artifacts: step.artifacts,
-                            citations: step.citations,
-                            actions: step.actions,
-                            provider: 'none',
-                            error: 'client request aborted',
-                        }
-                    }
-                    return {
-                        ok: false,
-                        usedTools: false,
-                        usedWebSearch: false,
-                        text: '',
-                        artifacts: [],
-                        citations: [],
-                        actions: [],
-                        provider: 'none',
-                        error: 'client request aborted',
-                    }
-                }
             }
         }
-
         if (family === 'groq') {
-            for (const apiKey of groqKeys) {
-                let skipKey = false
+            groqKeys.forEach((apiKey, keyIndex) => {
                 for (const groqModel of groqModels) {
-                    if (skipKey) break
-                    const step = await runToolSteps({
+                    candidates.push({
                         provider: 'groq',
-                        env,
-                        host: params.host,
-                        forceWebSearch: params.forceWebSearch,
-                        holdPublicUntilCitations: params.holdPublicUntilCitations,
-                        baseMessages,
-                        onToken: params.onToken,
-                        onThinking: params.onThinking,
-                        onTool: params.onTool,
-                        onNode: params.onNode,
-                        onMode,
-                        onHuman: params.onHuman,
-                        onActivity: params.onActivity,
-                        checkpoint: params.checkpoint,
-                        agentMode,
+                        model: groqModel,
+                        keyGroup: `groq:${keyIndex}`,
+                        onAuthMiss: () => markGroqKeyCooling(apiKey),
                         complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
                             groqCompletion({
                                 apiKey,
@@ -889,55 +860,17 @@ export async function runToolLoop(params: {
                                 signal: params.signal,
                             }),
                     })
-                    if (step.kind === 'done') return step.result
-                    lastError = step.error
-                    if (isClientAbortDetail(step.error)) {
-                        return {
-                            ok: false,
-                            usedTools: false,
-                            usedWebSearch: false,
-                            text: '',
-                            artifacts: [],
-                            citations: [],
-                            actions: [],
-                            provider: 'none',
-                            error: 'client request aborted',
-                        }
-                    }
-                    if (step.kind === 'tools-rejected') continue
-                    if (step.kind === 'auth') {
-                        markGroqKeyCooling(apiKey)
-                        skipKey = true
-                        break
-                    }
-                    if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                        return fallbackSuccessFromPartial(step, 'groq')
-                    }
                 }
-            }
+            })
         }
-
         if (family === 'gemini') {
-            for (const apiKey of geminiKeys) {
-                let skipKey = false
+            geminiKeys.forEach((apiKey, keyIndex) => {
                 for (const model of geminiModels) {
-                    if (skipKey) break
-                    const step = await runToolSteps({
+                    candidates.push({
                         provider: 'gemini',
-                        env,
-                        host: params.host,
-                        forceWebSearch: params.forceWebSearch,
-                        holdPublicUntilCitations: params.holdPublicUntilCitations,
-                        baseMessages,
-                        onToken: params.onToken,
-                        onThinking: params.onThinking,
-                        onTool: params.onTool,
-                        onNode: params.onNode,
-                        onMode,
-                        onHuman: params.onHuman,
-                        onActivity: params.onActivity,
-                        checkpoint: params.checkpoint,
-                        agentMode,
+                        model,
+                        keyGroup: `gemini:${keyIndex}`,
+                        onAuthMiss: () => markFamilyKeyCooling('gemini', apiKey),
                         complete: ({ messages, toolChoice, onToken, onThinking, omitTools, maxTokens, timeoutMs }) =>
                             geminiToolCompletion({
                                 apiKey,
@@ -954,19 +887,195 @@ export async function runToolLoop(params: {
                                 signal: params.signal,
                             }),
                     })
-                    if (step.kind === 'done') return step.result
-                    lastError = step.error
-                    if (step.kind === 'tools-rejected') continue
-                    if (step.kind === 'auth') {
-                        markFamilyKeyCooling('gemini', apiKey)
-                        skipKey = true
-                        break
-                    }
-                    if (step.kind === 'failed' && (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
-                        return fallbackSuccessFromPartial(step, 'gemini')
-                    }
                 }
+            })
+        }
+    }
+
+    const skippedKeyGroups = new Set<string>()
+    const languageSample = params.languageSample || params.userPrompt
+    const turnStart = baseMessages.length
+
+    /** Next usable candidate after `index` (fallback chain order); the same one when it is the last. */
+    function nextCandidateAfter(index: number): ToolCandidate {
+        for (let next = index + 1; next < candidates.length; next += 1) {
+            const group = candidates[next].keyGroup
+            if (group && skippedKeyGroups.has(group)) continue
+            return candidates[next]
+        }
+        return candidates[index]
+    }
+
+    /**
+     * Post-tool answer round failed or came back empty: one tools-off retry on
+     * the next candidate, then honest copy. Tool results / citations are kept.
+     */
+    async function recoverAnswer(input: {
+        index: number
+        stage: 'failed' | 'empty'
+        partial: StepPartial
+        /** Public text from before the failed answer round (interim notes), kept in front. */
+        leadText: string
+        roundFailure?: RoundFailure
+        error?: string
+    }): Promise<ToolLoopResult> {
+        const failed = candidates[input.index]
+        const results = gatheredToolResults(input.partial.messages, turnStart)
+        logAnswerRoundFailure({
+            provider: failed.provider,
+            model: failed.model,
+            stage: input.stage,
+            roundFailure: input.roundFailure,
+            error: input.error,
+            results,
+            citations: input.partial.citations.length,
+        })
+        const retry = nextCandidateAfter(input.index)
+        const written = await synthesizeAnswerWithoutTools({
+            candidate: retry,
+            messages: input.partial.messages,
+            turnStart,
+            results,
+            onToken: params.onToken,
+            onNode: params.onNode,
+            signal: params.signal,
+        })
+        const base = {
+            usedTools: input.partial.usedTools,
+            usedWebSearch: input.partial.usedWebSearch,
+            artifacts: input.partial.artifacts,
+            citations: input.partial.citations,
+            actions: input.partial.actions,
+        }
+        if (params.signal?.aborted) return abortedResult(input.partial)
+        const lead = input.leadText.trim()
+        if (written) {
+            return {
+                ok: true,
+                ...base,
+                text: lead ? `${lead}\n\n${written}` : written,
+                provider: retry.provider,
+                recoveredAnswer: true,
             }
+        }
+        const research = hasResearchResults(results, input.partial.citations.length)
+        if (!research) {
+            // Action-only turn: keep the pre-existing confirmation, never persona-rewrite it.
+            return {
+                ok: true,
+                ...base,
+                text: lead || (input.stage === 'empty' ? PIPELINE_EMPTY_ANSWER_PLACEHOLDER : LOOP_ACTIONS_PLACEHOLDER),
+                provider: failed.provider,
+                ...(lead ? {} : { fallback: 'actions_placeholder' as const }),
+                error: input.roundFailure?.detail || input.error,
+            }
+        }
+        const honest = answerIncompleteMessage(languageSample, input.partial.citations.length > 0)
+        params.onToken?.(lead ? `\n\n${honest}` : honest)
+        return {
+            ok: true,
+            ...base,
+            text: lead ? `${lead}\n\n${honest}` : honest,
+            provider: failed.provider,
+            fallback: 'answer_incomplete',
+            error: input.roundFailure?.detail || input.error || 'answer round empty',
+        }
+    }
+
+    for (let index = 0; index < candidates.length; index += 1) {
+        if (params.signal?.aborted) return abortedResult()
+        const candidate = candidates[index]
+        if (candidate.keyGroup && skippedKeyGroups.has(candidate.keyGroup)) continue
+        const step = await runToolSteps({
+            provider: candidate.provider,
+            env,
+            host: params.host,
+            forceWebSearch: params.forceWebSearch,
+            holdPublicUntilCitations: params.holdPublicUntilCitations,
+            baseMessages,
+            onToken: params.onToken,
+            onThinking: params.onThinking,
+            onTool: params.onTool,
+            onNode: params.onNode,
+            onMode,
+            onHuman: params.onHuman,
+            onActivity: params.onActivity,
+            checkpoint: params.checkpoint,
+            agentMode,
+            signal: params.signal,
+            complete: candidate.complete,
+        })
+        if (step.kind === 'done') {
+            const result = step.result
+            // Empty answer round after research tools: the pipeline filled in its
+            // generic placeholder. Retry the answer instead of shipping that.
+            if (step.answerMissing && result.artifacts.length === 0 && !result.interrupt) {
+                const results = gatheredToolResults(step.messages, turnStart)
+                if (hasResearchResults(results, result.citations.length)) {
+                    return recoverAnswer({
+                        index,
+                        stage: 'empty',
+                        partial: { ...result, messages: step.messages },
+                        leadText: '',
+                        error: 'answer round empty',
+                    })
+                }
+                return { ...result, fallback: 'actions_placeholder' }
+            }
+            return result
+        }
+        lastError = step.error
+        if (isClientAbortDetail(step.error)) {
+            return abortedResult(step.kind === 'failed' ? step : undefined)
+        }
+        if (step.kind !== 'failed' || !(step.usedTools || step.artifacts.length > 0 || step.citations.length > 0)) {
+            // Provider miss before any product: the chain moves on. Log why (no secrets, no content).
+            console.warn(
+                '[tools] candidate failed',
+                JSON.stringify({
+                    provider: candidate.provider,
+                    model: candidate.model,
+                    kind: step.kind,
+                    status: step.kind === 'failed' ? step.roundFailure?.status : undefined,
+                    detail: redactProviderDetail(step.error, 200),
+                })
+            )
+        }
+        if (step.kind === 'tools-rejected') continue
+        if (step.kind === 'auth') {
+            candidate.onAuthMiss?.()
+            if (candidate.keyGroup) skippedKeyGroups.add(candidate.keyGroup)
+            continue
+        }
+        if (step.usedTools || step.artifacts.length > 0 || step.citations.length > 0) {
+            const failure = step.roundFailure
+            const canRecover =
+                step.artifacts.length === 0 &&
+                step.messages.length > turnStart &&
+                !(failure && failure.streamedPublic)
+            if (canRecover) {
+                return recoverAnswer({
+                    index,
+                    stage: 'failed',
+                    partial: step,
+                    leadText: step.text,
+                    roundFailure: failure,
+                    error: step.error,
+                })
+            }
+            console.warn(
+                '[tools] answer round failed',
+                JSON.stringify({
+                    provider: candidate.provider,
+                    model: candidate.model,
+                    stage: 'failed',
+                    status: failure?.status,
+                    detail: redactProviderDetail(failure?.detail || step.error),
+                    recovery: 'skipped',
+                    reason: step.artifacts.length > 0 ? 'artifacts' : failure?.streamedPublic ? 'partial_streamed' : 'no_tool_results',
+                })
+            )
+            return fallbackSuccessFromPartial(step, candidate.provider)
         }
     }
 
@@ -978,7 +1087,7 @@ export async function runToolLoop(params: {
         artifacts: [],
         citations: [],
         actions: [],
-        provider: groqKeys.length || geminiKeys.length ? 'none' : 'none',
+        provider: 'none',
         error: lastError || (groqKeys.length === 0 && geminiKeys.length === 0 ? 'no groq or gemini keys' : 'tool loop failed'),
     }
 }
