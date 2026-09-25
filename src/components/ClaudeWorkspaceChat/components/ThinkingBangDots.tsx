@@ -75,6 +75,7 @@ export function pauseMoodFromTool(name?: string, status?: string): PauseMood {
         tool === 'search_site' ||
         tool === 'fetch_url' ||
         tool === 'search_academic_corpus' ||
+        tool === 'related_papers' ||
         tool === 'verified_corpus_search' ||
         tool === 'academic_search'
     ) {
@@ -82,6 +83,7 @@ export function pauseMoodFromTool(name?: string, status?: string): PauseMood {
     }
     if (
         tool === 'read_document' ||
+        tool === 'find_quotes' ||
         tool === 'read_notebook' ||
         tool === 'read_post' ||
         tool === 'add_notebook_footnote'

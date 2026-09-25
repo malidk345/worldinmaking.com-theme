@@ -8,7 +8,7 @@
 
 import type { AiCitation, AiCitationVerification } from '../ai/contracts'
 import { extractCitationIds, splitCodeSegments } from '../ai/citation-markers'
-import { cleanDoi, foldText } from './academic-common'
+import { NON_LETTER_DIGIT_RE, cleanDoi, foldText } from './academic-common'
 import type { AcademicPaper, DoiLookup } from './academic-search'
 import { ENCYCLOPEDIA_NAMES, type EncyclopediaEntry } from './academic-encyclopedia'
 
@@ -59,10 +59,25 @@ export function academicResultsToCitations(papers: AcademicPaper[], encyclopedia
     return out
 }
 
+/** Tools whose model payload labels papers `[P#]` (renumbered per turn). */
+export const ACADEMIC_MARKER_TOOLS = new Set(['search_academic_corpus', 'related_papers', 'find_quotes'])
+
+/**
+ * `[P@7]` = a reference to an EXISTING turn-global citation (id 7) inside a tool
+ * payload. Unlike local `[P#]` labels it is never shifted; renumbering turns it
+ * into plain `[P7]`.
+ */
+export const EXISTING_MARKER_RE = /\[P@(\d{1,3})\]/g
+
+export function existingMarker(id: number): string {
+    return `[P@${id}]`
+}
+
 /**
  * Shifts a tool's local citation ids (1..n) by `offset` and rewrites the labels
- * the model sees so they match: `[P3]` for search_academic_corpus and
+ * the model sees so they match: `[P3]` for the academic tools and
  * `[Source 3 - …]` for web_search. Other tools only get their ids shifted.
+ * Academic `[P@n]` markers (existing citations) become `[Pn]` unshifted.
  */
 export function renumberToolCitations(
     toolName: string,
@@ -70,15 +85,48 @@ export function renumberToolCitations(
     citations: AiCitation[] | undefined,
     offset: number
 ): { result: string; citations: AiCitation[] | undefined } {
-    if (!citations?.length || offset <= 0) return { result, citations }
+    const academic = ACADEMIC_MARKER_TOOLS.has(toolName)
+    const finalize = (text: string) => (academic ? text.replace(EXISTING_MARKER_RE, (_m, n: string) => `[P${Number(n)}]`) : text)
+    if (!citations?.length || offset <= 0) return { result: finalize(result), citations }
     const shifted = citations.map((c) => ({ ...c, id: c.id + offset }))
     let text = result
-    if (toolName === 'search_academic_corpus') {
+    if (academic) {
         text = text.replace(/\[P(\d{1,3})\]/g, (_m, n: string) => `[P${Number(n) + offset}]`)
     } else if (toolName === 'web_search') {
         text = text.replace(/\[Source (\d{1,3}) - /g, (_m, n: string) => `[Source ${Number(n) + offset} - `)
     }
-    return { result: text, citations: shifted }
+    return { result: finalize(text), citations: shifted }
+}
+
+function citationTitleKey(title: string): string {
+    const key = foldText(title).replace(NON_LETTER_DIGIT_RE, '')
+    return key.length >= 12 ? key : ''
+}
+
+/**
+ * The turn-global citation that describes the same work (DOI match, else the
+ * same Unicode-folded title), so later tools reuse its [P#] instead of adding a
+ * duplicate source.
+ */
+export function matchTurnCitation(
+    work: { doi?: string; title?: string; url?: string },
+    turnCitations: AiCitation[] | undefined
+): AiCitation | undefined {
+    if (!turnCitations?.length) return undefined
+    const academic = turnCitations.filter((c) => c.kind === 'paper' || c.kind === 'encyclopedia')
+    const doi = cleanDoi(work.doi) || cleanDoi(work.url)
+    if (doi) {
+        const hit = academic.find((c) => (cleanDoi(c.doi) || cleanDoi(c.url)) === doi)
+        if (hit) return hit
+    }
+    const key = citationTitleKey(work.title || '')
+    if (!key) return undefined
+    return academic.find((c) => {
+        if (c.verified === false) return false
+        const cDoi = cleanDoi(c.doi) || cleanDoi(c.url)
+        if (doi && cDoi && cDoi !== doi) return false
+        return citationTitleKey(c.title) === key
+    })
 }
 
 const DOI_IN_TEXT_RE = /\b10\.\d{4,9}\/[^\s"'<>()[\]{}]+/g

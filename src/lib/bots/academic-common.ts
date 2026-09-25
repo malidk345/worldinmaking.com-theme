@@ -21,6 +21,12 @@ export type AcademicSourceReason =
     | 'skipped_by_field'
     | 'skipped_by_filter'
     | 'cooldown'
+    /** Source needs an API key that is not configured (never attempted). */
+    | 'missing_key'
+    /** The paper identifier we have cannot be used with this source. */
+    | 'no_identifier'
+    /** No open full text available from this source for the paper. */
+    | 'no_fulltext'
 
 const RETRY_AFTER_MAX_MS = 3_000
 const DEFAULT_RETRY_BACKOFF_MS = 700
@@ -317,6 +323,12 @@ export function createSerialQueue(defaultIntervalMs: number): SerialQueue {
         },
     }
 }
+
+/**
+ * Semantic Scholar allows ~1 request / s per key (keyless shares a small pool):
+ * graph lookups (related papers, snippets) are serialized through this queue.
+ */
+export const s2Queue = createSerialQueue(1_100)
 
 export function __resetCooldownsForTests(): void {
     cooldownUntil.clear()

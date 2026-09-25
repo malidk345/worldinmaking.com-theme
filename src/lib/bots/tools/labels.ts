@@ -34,6 +34,9 @@ const LABELS: Record<string, [string, string, string]> = {
     generate_image: ['Generating image', 'Generated image', 'Image generation failed'],
     run_code_sandbox: ['Running code sandbox', 'Ran code sandbox', 'Code sandbox failed'],
     search_academic_corpus: ['Searching academic literature', 'Found academic papers', 'Academic search failed'],
+    related_papers: ['Finding related papers', 'Found related papers', 'Related-paper lookup failed'],
+    find_quotes: ['Searching full text for quotes', 'Searched full text for quotes', 'Quote search failed'],
+    annotated_bibliography: ['Building annotated bibliography', 'Built annotated bibliography', 'Could not build bibliography'],
     analyze_image: ['Analyzing image', 'Analyzed image', 'Image analysis failed'],
     transcribe_audio: ['Transcribing audio', 'Transcribed audio', 'Audio transcription failed'],
     synthesize_speech: ['Synthesizing speech', 'Synthesized speech', 'Speech synthesis failed'],
@@ -74,6 +77,9 @@ export function parseToolArgPreview(name: string, raw?: string): string {
         if (!args || typeof args !== 'object' || Array.isArray(args)) return ''
         if (name === 'web_search' || name === 'search_site' || name === 'search_academic_corpus') return pickArg(args, ['query', 'q', 'search'])
         if (name === 'verified_corpus_search') return pickArg(args, ['query', 'thinker', 'work'])
+        if (name === 'related_papers') return pickArg(args, ['paper', 'doi', 'id'])
+        if (name === 'find_quotes') return pickArg(args, ['claim', 'paper'])
+        if (name === 'annotated_bibliography') return pickArg(args, ['title', 'topic'])
         if (name === 'cross_examine_argument') return pickArg(args, ['argument', 'claim', 'thesis'])
         if (name === 'fetch_url') return pickArg(args, ['url', 'uri', 'href'])
         if (name === 'analyze_image') return pickArg(args, ['question', 'prompt', 'image_url'])

@@ -13,6 +13,8 @@ export const ACADEMIC_SEARCH_TTL_S = 3 * 24 * 60 * 60 // ~3 days
 export const ACADEMIC_PARTIAL_TTL_S = 30 * 60 // partial (some sources failed) results
 export const ACADEMIC_DOI_TTL_S = 30 * 24 * 60 * 60 // ~30 days (Unpaywall / Crossref DOI)
 export const ACADEMIC_DOI_MISS_TTL_S = 24 * 60 * 60 // DOI not found — re-check daily
+export const ACADEMIC_GRAPH_TTL_S = 7 * 24 * 60 * 60 // citation graph (related papers) — changes slowly
+export const ACADEMIC_QUOTES_TTL_S = 7 * 24 * 60 * 60 // verbatim passages from full text (content is stable)
 
 const CACHE_ORIGIN = 'https://academic-cache.worldinmaking.com'
 const CACHE_VERSION = 'v1'

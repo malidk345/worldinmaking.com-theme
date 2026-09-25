@@ -709,6 +709,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   (toolName === 'web_search' ||
                     toolName === 'search_site' ||
                     toolName === 'search_academic_corpus' ||
+                    toolName === 'related_papers' ||
+                    toolName === 'find_quotes' ||
                     toolName === 'academic_search') &&
                   message.citations?.length
                 ) {

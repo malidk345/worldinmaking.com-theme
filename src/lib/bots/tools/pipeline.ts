@@ -80,6 +80,8 @@ export const PLAN_RESEARCH_TOOL_NAMES = new Set([
     'read_document',
     'search_site',
     'search_academic_corpus',
+    'related_papers',
+    'find_quotes',
     'verified_corpus_search',
     'read_notebook',
     'read_post',
@@ -930,6 +932,8 @@ const PARALLEL_READ_TOOLS = new Set([
     'search_site',
     'list_notebooks',
     'search_academic_corpus',
+    'related_papers',
+    'find_quotes',
     'verified_corpus_search',
     'run_code_sandbox',
 ])
@@ -938,6 +942,8 @@ const PARALLEL_READ_TOOLS = new Set([
 const RESEARCH_CACHE_TOOLS = new Set([
     'web_search',
     'search_academic_corpus',
+    'related_papers',
+    'find_quotes',
     'verified_corpus_search',
     'fetch_url',
 ])
@@ -1017,6 +1023,24 @@ export function researchToolCacheKey(call: ToolCall): string | null {
             const qo = asCacheQuery(parsed.query_original ?? parsed.original_query ?? parsed.query_tr ?? parsed.queryOriginal)
             return `search_academic_corpus:${q}|qo=${qo}|f=${field}|s=${sort}|yf=${yf}|yt=${yt}|lim=${lim}|oa=${oa}|lang=${lang}|t=${type}`
         }
+        if (name === 'related_papers') {
+            // [P#] ids are turn-global and append-only, so the raw ref is a stable key within a turn.
+            const paper = asCacheQuery(parsed.paper ?? parsed.doi ?? parsed.id ?? parsed.ref)
+            if (paper.length < 2) return null
+            const dir = asCacheToken(parsed.direction ?? parsed.mode)
+            const focus = asCacheQuery(parsed.focus ?? parsed.topic ?? parsed.query)
+            const sort = asCacheToken(parsed.sort_by ?? parsed.sort)
+            const lim = asCacheToken(parsed.limit)
+            return `related_papers:${paper}|d=${dir}|f=${focus}|s=${sort}|lim=${lim}`
+        }
+        if (name === 'find_quotes') {
+            const claim = asCacheQuery(parsed.claim ?? parsed.statement ?? parsed.query ?? parsed.q)
+            if (claim.length < 2) return null
+            const paper = asCacheQuery(parsed.paper ?? parsed.doi ?? parsed.id ?? parsed.ref)
+            const max = asCacheToken(parsed.max_quotes ?? parsed.max ?? parsed.limit)
+            const pdf = asCacheQuery(parsed.pdf_url ?? parsed.url ?? parsed.pdf)
+            return `find_quotes:${paper}|c=${claim}|n=${max}|pdf=${pdf}`
+        }
         // verified_corpus_search
         const q = asCacheQuery(parsed.query ?? parsed.search ?? parsed.q)
         if (q.length < 2) return null
@@ -1071,13 +1095,13 @@ async function executeToolCallCached(
         // Parallel identical queries in one ACT: share the in-flight fetch before
         // either side can write searchCache (TOCTOU with Promise.all).
         const shared = await shareInflight(state.searchInflight, key, () =>
-            executeToolCall(call, params.env, params.host, state.agentMode, params.signal)
+            executeToolCall(call, params.env, params.host, state.agentMode, params.signal, { citations: state.citations })
         )
         if (shared.ok) state.searchCache.set(key, shared)
         // Remap when we joined another call's promise (callId/summary must match this call).
         return shared.callId === call.id ? shared : remapCachedResearchTool(shared, call)
     }
-    return executeToolCall(call, params.env, params.host, state.agentMode, params.signal)
+    return executeToolCall(call, params.env, params.host, state.agentMode, params.signal, { citations: state.citations })
 }
 
 function emitToolRunning(call: ToolCall, params: AgentPipelineParams): string {
