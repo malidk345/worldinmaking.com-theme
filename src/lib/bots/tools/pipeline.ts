@@ -1011,7 +1011,9 @@ export function researchToolCacheKey(call: ToolCall): string | null {
             const yt = asCacheToken(parsed.year_to ?? parsed.yearTo)
             const lim = asCacheToken(parsed.limit)
             const oa = asCacheToken(parsed.open_access_only ?? parsed.openAccessOnly)
-            return `search_academic_corpus:${q}|f=${field}|s=${sort}|yf=${yf}|yt=${yt}|lim=${lim}|oa=${oa}`
+            const lang = asCacheToken(parsed.language ?? parsed.lang)
+            const type = asCacheToken(parsed.type ?? parsed.work_type)
+            return `search_academic_corpus:${q}|f=${field}|s=${sort}|yf=${yf}|yt=${yt}|lim=${lim}|oa=${oa}|lang=${lang}|t=${type}`
         }
         // verified_corpus_search
         const q = asCacheQuery(parsed.query ?? parsed.search ?? parsed.q)

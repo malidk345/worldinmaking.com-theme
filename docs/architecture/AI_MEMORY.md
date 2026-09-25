@@ -58,6 +58,13 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-25 — Grok Bot / Cursor (feature: academic search step 1 — keys, source status, compact payload)
+
+- **Scope:** `search_academic_corpus` was effectively Crossref-only (OpenAlex keyless 429 since Feb 2026, arXiv/S2 429 under fan-out), returned `ok:true` with `[]` on any failure, and sent the model ~3 copies of the same data clipped mid-JSON at 4,000 chars.
+- **Changes:** Optional env `OPENALEX_API_KEY` (`api_key` param), `SEMANTIC_SCHOLAR_API_KEY` (`x-api-key`), `NCBI_API_KEY` (`api_key`), `ACADEMIC_CONTACT_EMAIL` (default unchanged), read per request via `runtime-env` (names added to the CF probe list; never logged). One retry on 429/5xx honouring Retry-After ≤ 3 s inside the existing per-source timeouts. Per-source status (`ok` / `failed` / `skipped` + `rate_limited` / `timeout` / `http_error` / `skipped_by_field` …); all-failed → `ok:false, degraded:true` with an "unavailable, not no-literature" message. Model payload is one `[P#]` line per paper (size-bounded: shorten abstracts, then drop whole papers); citations for the UI unchanged (id N ↔ [PN]). Duplicate merge by DOI, else NFKD `\p{L}\p{N}` title key (Turkish-safe), filling abstract / PDF / venue / cites. New schema args `year_to`, `language`, `type`; `field` maps to OpenAlex `topics.subfield.id` / `topics.field.id` + S2 `fieldsOfStudy`; year / OA / language pushed to every source that supports them. PubMed/Europe PMC only for biomedical field/query; arXiv only for STEM-ish topics, serialized module-wide (≥ 3 s spacing), no longer skipped for OA-only. OpenAlex `concepts` → `topics`; web fallback keeps URLs in `url` (not `doi`) and no domain-as-author; canon fallback no fake `citationCount: 100`; Unpaywall bounded-parallel. Sci-Hub / Anna's Archive links removed entirely (owner decision); DOI, OA PDF, Unpaywall and Google Scholar links kept.
+- **Files:** `src/lib/bots/academic-search.ts`, `src/lib/bots/tools/execute.ts`, `src/lib/bots/tools/spec.ts`, `src/lib/bots/tools/pipeline.ts`, `src/lib/bots/runtime-env.ts`, `src/lib/bots/tools/academic-search*.test.ts`, `docs/architecture/WIM_AI.md`, `docs/architecture/AI_MEMORY.md`
+- **Verify:** vitest `src/lib/bots` (academic suites all green; 6 pre-existing unrelated failures unchanged), `pnpm typecheck:shell` (only the 5 pre-existing `App.tsx` WallpaperName errors), `pnpm lint:shell --quiet` clean. Not merged; no Supabase changes.
+
 ### 2026-09-24 — Grok (feature: composer glide + thicker frame)
 
 - **Scope:** Empty-state composer in `ClaudeWorkspaceChat` already sat in the center and jumped to the bottom dock when the first message appeared.
