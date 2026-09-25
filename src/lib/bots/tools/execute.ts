@@ -17,6 +17,9 @@ import {
     type AcademicSearchOptions,
     type AcademicWorkType,
 } from '../academic-search'
+import { buildRelatedToolOutput, findRelatedPapers, parsePaperRef, RELATED_DIRECTIONS, type PaperRef, type RelatedDirection } from '../academic-graph'
+import { buildQuotesToolOutput, findGroundedQuotes, QUOTES_DEFAULT, QUOTES_MAX } from '../academic-quotes'
+import { buildAnnotatedBibliography, normalizeBibliographyEntries } from '../academic-bibliography'
 import { executeCodeSandbox } from './run-code-sandbox'
 import { executeReadDocument } from './read-document'
 import {
@@ -74,6 +77,12 @@ export type ToolExecution = {
     artifact?: ArtifactDocument
     citations?: AiCitation[]
     action?: HostOsAction
+}
+
+/** Turn state the pipeline shares with tools (read-only). */
+export type ToolExecutionContext = {
+    /** Citations already emitted this turn (turn-global ids = [P#]). */
+    citations?: AiCitation[]
 }
 
 function clip(value: string, max: number): string {
@@ -187,6 +196,9 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     finalize_plan: { text: 'summary', plan: 'summary', description: 'summary' },
     task: { prompt: 'goal', task: 'goal', instruction: 'goal', query: 'goal' },
     generate_image: { p: 'prompt', description: 'prompt', query: 'prompt', text: 'prompt', image_prompt: 'prompt' },
+    related_papers: { doi: 'paper', id: 'paper', ref: 'paper', source: 'paper', seed: 'paper', paper_id: 'paper', mode: 'direction', relation: 'direction', type: 'direction', topic: 'focus', query: 'focus', sort: 'sort_by' },
+    find_quotes: { doi: 'paper', id: 'paper', ref: 'paper', source: 'paper', statement: 'claim', query: 'claim', text: 'claim', q: 'claim', max: 'max_quotes', limit: 'max_quotes', url: 'pdf_url', pdf: 'pdf_url' },
+    annotated_bibliography: { items: 'entries', papers: 'entries', sources: 'entries', references: 'entries', topic: 'title', name: 'title', insert: 'add_to_notebook', save_to_notebook: 'add_to_notebook', notebookId: 'notebook_id', notebook: 'notebook_id' },
     search_academic_corpus: { q: 'query', search: 'query', text: 'query', topic: 'query', subject: 'field', discipline: 'field', lang: 'language', work_type: 'type', until: 'year_to', year_until: 'year_to', since: 'year_from', original_query: 'query_original', query_tr: 'query_original', queryOriginal: 'query_original' },
     cross_examine_argument: {
         arg: 'argument',
@@ -611,6 +623,152 @@ async function executeAcademicSearch(
             ok: false,
             result: JSON.stringify({ ok: false, error: message }),
         }
+    }
+}
+
+type ExecutedWithSummary = Omit<ToolExecution, 'callId' | 'name'>
+
+const clientAborted = (): ExecutedWithSummary => ({ ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) })
+
+function isClientAbort(err: unknown, signal?: AbortSignal): boolean {
+    return Boolean(signal?.aborted || (signal && err instanceof Error && err.name === 'AbortError'))
+}
+
+async function executeRelatedPapers(
+    args: Record<string, unknown>,
+    env: EnvStore | undefined,
+    signal: AbortSignal | undefined,
+    context: ToolExecutionContext
+): Promise<ExecutedWithSummary> {
+    if (signal?.aborted) return clientAborted()
+    const parsed = parsePaperRef(asText(args.paper, 300), context.citations)
+    if (!parsed.ok) return { ok: false, result: JSON.stringify({ ok: false, error: parsed.error }) }
+    const rawDirection = asText(args.direction, 20).trim().toLowerCase()
+    const directionAliases: Record<string, RelatedDirection> = { cited_by: 'citations', citing: 'citations', cites: 'references', refs: 'references', recommendations: 'similar', related: 'similar' }
+    const direction = (RELATED_DIRECTIONS as readonly string[]).includes(rawDirection)
+        ? (rawDirection as RelatedDirection)
+        : directionAliases[rawDirection] || 'all'
+    const sortRaw = asText(args.sort_by, 20).trim().toLowerCase()
+    const sortBy = sortRaw === 'citations' || sortRaw === 'recent' ? sortRaw : 'relevance'
+    const limit = typeof args.limit === 'number' ? args.limit : undefined
+    const focus = asText(args.focus, 200).trim() || undefined
+    try {
+        const result = await findRelatedPapers(parsed.ref, { direction, limit, sortBy, focus, env }, signal)
+        if (signal?.aborted) return clientAborted()
+        if (!result.ok) {
+            const sources: Record<string, string> = {}
+            for (const s of result.sources) sources[s.source] = s.status === 'ok' ? `ok(${s.count})` : `${s.status}:${s.reason || 'error'}`
+            return {
+                ok: false,
+                result: JSON.stringify({ ok: false, degraded: true, error: result.error || result.notice || 'Related-paper lookup failed.', sources }),
+            }
+        }
+        const out = buildRelatedToolOutput(result, parsed.ref, context.citations, MAX_TOOL_RESULT)
+        const n = result.papers.length
+        return {
+            ok: true,
+            result: out.text,
+            citations: out.citations.length ? out.citations : undefined,
+            summary: n ? `Found ${n} related paper${n === 1 ? '' : 's'}` : 'No related papers found',
+        }
+    } catch (err) {
+        if (isClientAbort(err, signal)) return clientAborted()
+        return { ok: false, result: JSON.stringify({ ok: false, error: err instanceof Error ? err.message.slice(0, 200) : 'related_papers failed' }) }
+    }
+}
+
+async function executeFindQuotes(
+    args: Record<string, unknown>,
+    env: EnvStore | undefined,
+    signal: AbortSignal | undefined,
+    context: ToolExecutionContext
+): Promise<ExecutedWithSummary> {
+    if (signal?.aborted) return clientAborted()
+    const claim = asText(args.claim, 300).trim()
+    if (!claim) return { ok: false, result: JSON.stringify({ ok: false, error: 'claim is required for find_quotes' }) }
+    const paperArg = asText(args.paper, 300).trim()
+    let ref: PaperRef | undefined
+    if (paperArg) {
+        const parsed = parsePaperRef(paperArg, context.citations)
+        if (!parsed.ok) return { ok: false, result: JSON.stringify({ ok: false, error: parsed.error }) }
+        ref = parsed.ref
+    }
+    const maxQuotes = typeof args.max_quotes === 'number' ? Math.min(Math.max(1, Math.floor(args.max_quotes)), QUOTES_MAX) : QUOTES_DEFAULT
+    const pdfUrl = asText(args.pdf_url, 2_000).trim() || undefined
+    try {
+        const result = await findGroundedQuotes(ref, claim, { maxQuotes, pdfUrl, env }, signal)
+        if (signal?.aborted) return clientAborted()
+        if (!result.ok) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: result.error || 'find_quotes failed' }) }
+        }
+        const out = buildQuotesToolOutput(result, ref, context.citations)
+        const n = result.quotes.length
+        return {
+            ok: true,
+            result: out.text,
+            citations: out.citations.length ? out.citations : undefined,
+            summary: n ? `Found ${n} verbatim passage${n === 1 ? '' : 's'}` : 'No matching passage found',
+        }
+    } catch (err) {
+        if (isClientAbort(err, signal)) return clientAborted()
+        return { ok: false, result: JSON.stringify({ ok: false, error: err instanceof Error ? err.message.slice(0, 200) : 'find_quotes failed' }) }
+    }
+}
+
+async function executeAnnotatedBibliography(
+    args: Record<string, unknown>,
+    env: EnvStore | undefined,
+    host: HostSnapshot | undefined,
+    signal: AbortSignal | undefined,
+    context: ToolExecutionContext
+): Promise<ExecutedWithSummary> {
+    if (signal?.aborted) return clientAborted()
+    const entries = normalizeBibliographyEntries(args.entries)
+    const title = asText(args.title, 120).trim() || undefined
+    try {
+        const built = await buildAnnotatedBibliography(entries, context.citations, { title, env, signal })
+        if (signal?.aborted) return clientAborted()
+        if (!built.ok) {
+            return { ok: false, result: JSON.stringify({ ok: false, error: built.error, rejected: built.rejected.length ? built.rejected : undefined }) }
+        }
+        const payload: Record<string, unknown> = {
+            ok: true,
+            title: title ? `Annotated bibliography: ${title}` : 'Annotated bibliography',
+            entries: built.entries.length,
+            rejected: built.rejected.length ? built.rejected : undefined,
+        }
+        let action: HostOsAction | undefined
+        if (args.add_to_notebook === true) {
+            const inserted = executeInsertNotebookBlock(host, built.markdown, asText(args.notebook_id, 80) || undefined)
+            if (inserted.ok && inserted.action) {
+                action = inserted.action
+                payload.added_to_notebook = true
+                payload.instruction = 'The bibliography was added to the notebook. Tell the user briefly; do not paste it again in the reply.'
+            } else {
+                let error = 'notebook insert failed'
+                try {
+                    error = (JSON.parse(inserted.result) as { error?: string }).error || error
+                } catch {
+                    /* keep default */
+                }
+                payload.added_to_notebook = false
+                payload.notebook_error = error
+                payload.instruction = 'Could not add it to a notebook (see notebook_error); show the markdown to the user instead.'
+            }
+        } else {
+            payload.instruction =
+                'Show this markdown to the user as the annotated bibliography (references are built from real metadata — do not edit them or add entries). The user can use Add to notebook on the reply.'
+        }
+        payload.markdown = built.markdown.slice(0, 6_000)
+        return {
+            ok: true,
+            result: JSON.stringify(payload),
+            action,
+            summary: `Built annotated bibliography (${built.entries.length} entr${built.entries.length === 1 ? 'y' : 'ies'})`,
+        }
+    } catch (err) {
+        if (isClientAbort(err, signal)) return clientAborted()
+        return { ok: false, result: JSON.stringify({ ok: false, error: err instanceof Error ? err.message.slice(0, 200) : 'annotated_bibliography failed' }) }
     }
 }
 
@@ -1732,6 +1890,19 @@ const TOOL_NAME_ALIASES: Record<string, string> = {
     query_academic: 'search_academic_corpus',
     search_philosophy_papers: 'search_academic_corpus',
     scholarly_search: 'search_academic_corpus',
+    citation_graph: 'related_papers',
+    related_works: 'related_papers',
+    find_related_papers: 'related_papers',
+    citing_papers: 'related_papers',
+    get_citations: 'related_papers',
+    get_references: 'related_papers',
+    grounded_quotes: 'find_quotes',
+    find_quote: 'find_quotes',
+    quote_evidence: 'find_quotes',
+    find_passages: 'find_quotes',
+    literature_review: 'annotated_bibliography',
+    build_bibliography: 'annotated_bibliography',
+    bibliography: 'annotated_bibliography',
     inspect_visual: 'analyze_image',
     analyze_visual: 'analyze_image',
     vision: 'analyze_image',
@@ -1799,7 +1970,8 @@ export async function executeToolCall(
     env?: EnvStore,
     host?: HostSnapshot,
     mode: AgentMode = 'ask',
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    context: ToolExecutionContext = {}
 ): Promise<ToolExecution> {
     const name = resolveToolName(call.name)
     const base = { callId: call.id, name }
@@ -2156,6 +2328,22 @@ export async function executeToolCall(
                 signal
             )
             return { ...base, ...executed, summary: toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'related_papers') {
+            const executed = await executeRelatedPapers(args, env, signal, context)
+            return { ...base, ...executed, summary: executed.summary || toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'find_quotes') {
+            const executed = await executeFindQuotes(args, env, signal, context)
+            return { ...base, ...executed, summary: executed.summary || toolResultSummary(name, executed.ok, executed.result) }
+        }
+        if (name === 'annotated_bibliography') {
+            const executed = await executeAnnotatedBibliography(args, env, host, signal, context)
+            return {
+                ...base,
+                ...executed,
+                summary: executed.action?.title || executed.summary || toolResultSummary(name, executed.ok, executed.result),
+            }
         }
         if (name === 'analyze_image') {
             const imageUrl = asText(args.image_url || args.imageUrl || args.url, 2_000).trim()

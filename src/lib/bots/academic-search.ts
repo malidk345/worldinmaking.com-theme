@@ -45,6 +45,7 @@ import {
     readJson,
     readText,
     resolveAcademicApiKeys,
+    s2Queue,
     stripTags,
     truncateAtWord,
     userAgent,
@@ -223,6 +224,7 @@ export function __resetAcademicSearchStateForTests(minIntervalMs = 3_000, extraM
     arxivQueue.reset(minIntervalMs)
     coreQueue.reset(extraMs)
     doajQueue.reset(extraMs)
+    s2Queue.reset(extraMs)
     __resetCooldownsForTests()
 }
 
@@ -868,6 +870,61 @@ export function buildOpenAlexUrl(ctx: AcademicSourceContext): string {
     return `https://api.openalex.org/works?${params.toString()}`
 }
 
+/** OpenAlex work record (subset used here). */
+export interface OpenAlexWork {
+    id: string
+    title?: string
+    publication_year?: number
+    doi?: string
+    cited_by_count?: number
+    primary_location?: { source?: { display_name?: string }; pdf_url?: string; landing_page_url?: string }
+    best_oa_location?: { pdf_url?: string; landing_page_url?: string }
+    authorships?: Array<{ author?: { display_name?: string } }>
+    open_access?: { is_oa?: boolean; oa_url?: string }
+    abstract_inverted_index?: Record<string, number[]>
+    topics?: Array<{ display_name?: string; subfield?: { display_name?: string } }>
+    language?: string
+    type?: string
+    referenced_works?: string[]
+    related_works?: string[]
+}
+
+/** OpenAlex work → AcademicPaper (shared by search and the citation graph). */
+export function openAlexWorkToPaper(r: OpenAlexWork): AcademicPaper {
+    const authors = (r.authorships || [])
+        .map((a) => a.author?.display_name?.trim())
+        .filter((name): name is string => Boolean(name))
+        .slice(0, 4)
+    const topicNames: string[] = []
+    for (const t of r.topics || []) {
+        if (t.display_name) topicNames.push(t.display_name.trim())
+        if (t.subfield?.display_name) topicNames.push(t.subfield.display_name.trim())
+    }
+    const topics = Array.from(new Set(topicNames)).slice(0, 4)
+    return {
+        id: r.id || `openalex-${Math.random()}`,
+        title: r.title?.trim() || 'Untitled Academic Paper',
+        authors,
+        year: r.publication_year,
+        venue: r.primary_location?.source?.display_name?.trim() || undefined,
+        citationCount: r.cited_by_count || 0,
+        doi: doiUrl(r.doi),
+        pdfUrl: pickOaPdfUrl(
+            r.best_oa_location?.pdf_url,
+            r.primary_location?.pdf_url,
+            r.open_access?.oa_url,
+            r.best_oa_location?.landing_page_url
+        ),
+        url: r.primary_location?.landing_page_url || undefined,
+        abstract: reconstructAbstract(r.abstract_inverted_index) || undefined,
+        topics: topics.length > 0 ? topics : undefined,
+        language: r.language || undefined,
+        type: r.type || undefined,
+        isOpenAccess: r.open_access?.is_oa === true ? true : undefined,
+        source: 'OpenAlex' as const,
+    }
+}
+
 async function queryOpenAlex(ctx: AcademicSourceContext): Promise<AcademicPaper[]> {
     const res = await fetchAcademic(
         buildOpenAlexUrl(ctx),
@@ -875,59 +932,9 @@ async function queryOpenAlex(ctx: AcademicSourceContext): Promise<AcademicPaper[
         SEARCH_TIMEOUT_MS,
         ctx.signal
     )
-    const data = await readJson<{
-        results?: Array<{
-            id: string
-            title?: string
-            publication_year?: number
-            doi?: string
-            cited_by_count?: number
-            primary_location?: { source?: { display_name?: string }; pdf_url?: string; landing_page_url?: string }
-            best_oa_location?: { pdf_url?: string; landing_page_url?: string }
-            authorships?: Array<{ author?: { display_name?: string } }>
-            open_access?: { is_oa?: boolean; oa_url?: string }
-            abstract_inverted_index?: Record<string, number[]>
-            topics?: Array<{ display_name?: string; subfield?: { display_name?: string } }>
-            language?: string
-            type?: string
-        }>
-    }>(res)
+    const data = await readJson<{ results?: OpenAlexWork[] }>(res)
     if (!data || !Array.isArray(data.results)) throw new AcademicSourceError('parse_error')
-
-    return data.results.slice(0, ctx.limit).map((r) => {
-        const authors = (r.authorships || [])
-            .map((a) => a.author?.display_name?.trim())
-            .filter((name): name is string => Boolean(name))
-            .slice(0, 4)
-        const topicNames: string[] = []
-        for (const t of r.topics || []) {
-            if (t.display_name) topicNames.push(t.display_name.trim())
-            if (t.subfield?.display_name) topicNames.push(t.subfield.display_name.trim())
-        }
-        const topics = Array.from(new Set(topicNames)).slice(0, 4)
-        return {
-            id: r.id || `openalex-${Math.random()}`,
-            title: r.title?.trim() || 'Untitled Academic Paper',
-            authors,
-            year: r.publication_year,
-            venue: r.primary_location?.source?.display_name?.trim() || undefined,
-            citationCount: r.cited_by_count || 0,
-            doi: doiUrl(r.doi),
-            pdfUrl: pickOaPdfUrl(
-                r.best_oa_location?.pdf_url,
-                r.primary_location?.pdf_url,
-                r.open_access?.oa_url,
-                r.best_oa_location?.landing_page_url
-            ),
-            url: r.primary_location?.landing_page_url || undefined,
-            abstract: reconstructAbstract(r.abstract_inverted_index) || undefined,
-            topics: topics.length > 0 ? topics : undefined,
-            language: r.language || undefined,
-            type: r.type || undefined,
-            isOpenAccess: r.open_access?.is_oa === true ? true : undefined,
-            source: 'OpenAlex' as const,
-        }
-    })
+    return data.results.slice(0, ctx.limit).map(openAlexWorkToPaper)
 }
 
 const CROSSREF_TYPES: Partial<Record<AcademicWorkType, string[]>> = {
@@ -967,6 +974,72 @@ export function buildCrossrefUrl(ctx: AcademicSourceContext): string {
     return `https://api.crossref.org/works?${params.toString()}`
 }
 
+/** Crossref work record (subset used here). */
+export interface CrossrefItem {
+    DOI?: string
+    URL?: string
+    title?: string[]
+    author?: Array<{ given?: string; family?: string; name?: string }>
+    issued?: { 'date-parts'?: number[][] }
+    'published-print'?: { 'date-parts'?: number[][] }
+    'published-online'?: { 'date-parts'?: number[][] }
+    'container-title'?: string[]
+    'is-referenced-by-count'?: number
+    abstract?: string
+    subject?: string[]
+    link?: Array<{ URL?: string; 'content-type'?: string }>
+    language?: string
+    type?: string
+    license?: Array<{ URL?: string }>
+}
+
+/** Crossref work → AcademicPaper (shared by search and the citation graph). */
+export function crossrefItemToPaper(item: CrossrefItem): AcademicPaper {
+    const rawTitle = Array.isArray(item.title) && item.title.length > 0 ? item.title[0] : 'Untitled Work'
+    const authors: string[] = []
+    if (Array.isArray(item.author)) {
+        for (const a of item.author.slice(0, 4)) {
+            const name = [a.given, a.family].filter(Boolean).join(' ') || a.name || ''
+            if (name.trim()) authors.push(name.trim())
+        }
+    }
+    const yearParts =
+        item.issued?.['date-parts']?.[0] ||
+        item['published-print']?.['date-parts']?.[0] ||
+        item['published-online']?.['date-parts']?.[0]
+    const year = Array.isArray(yearParts) && typeof yearParts[0] === 'number' ? yearParts[0] : undefined
+    const venue =
+        Array.isArray(item['container-title']) && item['container-title'].length > 0
+            ? stripTags(item['container-title'][0]) || undefined
+            : undefined
+    // Crossref `link` entries are often subscription TDM endpoints; only
+    // treat a PDF link as open when the record carries a CC licence.
+    const ccLicensed = Array.isArray(item.license) && item.license.some((l) => /creativecommons\.org/i.test(l.URL || ''))
+    let pdfUrl: string | undefined
+    if (ccLicensed && Array.isArray(item.link)) {
+        const pdfLink = item.link.find((l) => l['content-type']?.toLowerCase().includes('pdf'))
+        if (pdfLink?.URL) pdfUrl = pdfLink.URL
+    }
+    const doi = doiUrl(item.DOI)
+    return {
+        id: item.DOI || `crossref-${Math.random()}`,
+        title: stripTags(rawTitle),
+        authors,
+        year,
+        venue,
+        citationCount: typeof item['is-referenced-by-count'] === 'number' ? item['is-referenced-by-count'] : 0,
+        doi,
+        pdfUrl,
+        url: !doi && item.URL ? item.URL : undefined,
+        abstract: typeof item.abstract === 'string' ? clipText(stripTags(item.abstract), ABSTRACT_KEEP_CHARS) : undefined,
+        topics: Array.isArray(item.subject) ? item.subject.slice(0, 4) : undefined,
+        language: typeof item.language === 'string' ? item.language.slice(0, 2).toLowerCase() : undefined,
+        type: item.type,
+        isOpenAccess: ccLicensed ? true : undefined,
+        source: 'Crossref' as const,
+    }
+}
+
 async function queryCrossref(ctx: AcademicSourceContext): Promise<AcademicPaper[]> {
     const res = await fetchAcademic(
         buildCrossrefUrl(ctx),
@@ -974,75 +1047,10 @@ async function queryCrossref(ctx: AcademicSourceContext): Promise<AcademicPaper[
         SEARCH_TIMEOUT_MS,
         ctx.signal
     )
-    const data = await readJson<{
-        message?: {
-            items?: Array<{
-                DOI?: string
-                URL?: string
-                title?: string[]
-                author?: Array<{ given?: string; family?: string; name?: string }>
-                issued?: { 'date-parts'?: number[][] }
-                'published-print'?: { 'date-parts'?: number[][] }
-                'published-online'?: { 'date-parts'?: number[][] }
-                'container-title'?: string[]
-                'is-referenced-by-count'?: number
-                abstract?: string
-                subject?: string[]
-                link?: Array<{ URL?: string; 'content-type'?: string }>
-                language?: string
-                type?: string
-                license?: Array<{ URL?: string }>
-            }>
-        }
-    }>(res)
+    const data = await readJson<{ message?: { items?: CrossrefItem[] } }>(res)
     const items = data?.message?.items
     if (!Array.isArray(items)) throw new AcademicSourceError('parse_error')
-
-    return items.map((item) => {
-        const rawTitle = Array.isArray(item.title) && item.title.length > 0 ? item.title[0] : 'Untitled Work'
-        const authors: string[] = []
-        if (Array.isArray(item.author)) {
-            for (const a of item.author.slice(0, 4)) {
-                const name = [a.given, a.family].filter(Boolean).join(' ') || a.name || ''
-                if (name.trim()) authors.push(name.trim())
-            }
-        }
-        const yearParts =
-            item.issued?.['date-parts']?.[0] ||
-            item['published-print']?.['date-parts']?.[0] ||
-            item['published-online']?.['date-parts']?.[0]
-        const year = Array.isArray(yearParts) && typeof yearParts[0] === 'number' ? yearParts[0] : undefined
-        const venue =
-            Array.isArray(item['container-title']) && item['container-title'].length > 0
-                ? stripTags(item['container-title'][0]) || undefined
-                : undefined
-        // Crossref `link` entries are often subscription TDM endpoints; only
-        // treat a PDF link as open when the record carries a CC licence.
-        const ccLicensed = Array.isArray(item.license) && item.license.some((l) => /creativecommons\.org/i.test(l.URL || ''))
-        let pdfUrl: string | undefined
-        if (ccLicensed && Array.isArray(item.link)) {
-            const pdfLink = item.link.find((l) => l['content-type']?.toLowerCase().includes('pdf'))
-            if (pdfLink?.URL) pdfUrl = pdfLink.URL
-        }
-        const doi = doiUrl(item.DOI)
-        return {
-            id: item.DOI || `crossref-${Math.random()}`,
-            title: stripTags(rawTitle),
-            authors,
-            year,
-            venue,
-            citationCount: typeof item['is-referenced-by-count'] === 'number' ? item['is-referenced-by-count'] : 0,
-            doi,
-            pdfUrl,
-            url: !doi && item.URL ? item.URL : undefined,
-            abstract: typeof item.abstract === 'string' ? clipText(stripTags(item.abstract), ABSTRACT_KEEP_CHARS) : undefined,
-            topics: Array.isArray(item.subject) ? item.subject.slice(0, 4) : undefined,
-            language: typeof item.language === 'string' ? item.language.slice(0, 2).toLowerCase() : undefined,
-            type: item.type,
-            isOpenAccess: ccLicensed ? true : undefined,
-            source: 'Crossref' as const,
-        }
-    })
+    return items.map(crossrefItemToPaper)
 }
 
 const S2_TYPES: Partial<Record<AcademicWorkType, string>> = {
@@ -1066,54 +1074,56 @@ export function buildSemanticScholarUrl(ctx: AcademicSourceContext): string {
     return `https://api.semanticscholar.org/graph/v1/paper/search?${params.toString()}`
 }
 
+/** Semantic Scholar paper record (subset used here). */
+export interface S2Paper {
+    paperId?: string
+    title?: string
+    year?: number
+    venue?: string
+    citationCount?: number
+    authors?: Array<{ name?: string }>
+    externalIds?: { DOI?: string; ArXiv?: string; CorpusId?: number | string; PubMedCentral?: string }
+    openAccessPdf?: { url?: string } | null
+    abstract?: string | null
+    isOpenAccess?: boolean
+}
+
+/** Semantic Scholar paper → AcademicPaper (shared by search and the citation graph). */
+export function s2PaperToPaper(p: S2Paper): AcademicPaper {
+    const authors = (p.authors || [])
+        .map((a) => a.name?.trim())
+        .filter((n): n is string => Boolean(n))
+        .slice(0, 4)
+    const pdfUrl =
+        (p.openAccessPdf?.url && p.openAccessPdf.url.startsWith('http') ? p.openAccessPdf.url : undefined) ||
+        (p.externalIds?.ArXiv ? `https://arxiv.org/pdf/${p.externalIds.ArXiv}.pdf` : undefined)
+    return {
+        id: p.paperId || `s2-${Math.random()}`,
+        title: p.title?.trim() || 'Untitled Paper',
+        authors,
+        year: p.year,
+        venue: p.venue?.trim() || undefined,
+        citationCount: p.citationCount || 0,
+        doi: doiUrl(p.externalIds?.DOI),
+        pdfUrl,
+        url: p.paperId ? `https://www.semanticscholar.org/paper/${p.paperId}` : undefined,
+        abstract: clipText(p.abstract || undefined, ABSTRACT_KEEP_CHARS),
+        isOpenAccess: p.isOpenAccess === true || Boolean(pdfUrl) ? true : undefined,
+        source: 'Semantic Scholar' as const,
+    }
+}
+
 async function querySemanticScholar(ctx: AcademicSourceContext): Promise<AcademicPaper[]> {
     const headers: Record<string, string> = { 'User-Agent': userAgent(ctx.keys.contactEmail), Accept: 'application/json' }
     if (ctx.keys.semanticScholarKey) headers['x-api-key'] = ctx.keys.semanticScholarKey
     const res = await fetchAcademic(buildSemanticScholarUrl(ctx), { headers }, S2_TIMEOUT_MS, ctx.signal)
-    const data = await readJson<{
-        data?: Array<{
-            paperId: string
-            title?: string
-            year?: number
-            venue?: string
-            citationCount?: number
-            authors?: Array<{ name?: string }>
-            externalIds?: { DOI?: string; ArXiv?: string }
-            openAccessPdf?: { url?: string }
-            abstract?: string
-            isOpenAccess?: boolean
-        }>
-        total?: number
-    }>(res)
+    const data = await readJson<{ data?: S2Paper[]; total?: number }>(res)
     if (!data || typeof data !== 'object') throw new AcademicSourceError('parse_error')
     if (!Array.isArray(data.data)) {
         if (typeof data.total === 'number') return []
         throw new AcademicSourceError('parse_error')
     }
-
-    return data.data.map((p) => {
-        const authors = (p.authors || [])
-            .map((a) => a.name?.trim())
-            .filter((n): n is string => Boolean(n))
-            .slice(0, 4)
-        const pdfUrl =
-            (p.openAccessPdf?.url && p.openAccessPdf.url.startsWith('http') ? p.openAccessPdf.url : undefined) ||
-            (p.externalIds?.ArXiv ? `https://arxiv.org/pdf/${p.externalIds.ArXiv}.pdf` : undefined)
-        return {
-            id: p.paperId || `s2-${Math.random()}`,
-            title: p.title?.trim() || 'Untitled Paper',
-            authors,
-            year: p.year,
-            venue: p.venue?.trim() || undefined,
-            citationCount: p.citationCount || 0,
-            doi: doiUrl(p.externalIds?.DOI),
-            pdfUrl,
-            url: p.paperId ? `https://www.semanticscholar.org/paper/${p.paperId}` : undefined,
-            abstract: clipText(p.abstract, ABSTRACT_KEEP_CHARS),
-            isOpenAccess: p.isOpenAccess === true || Boolean(pdfUrl) ? true : undefined,
-            source: 'Semantic Scholar' as const,
-        }
-    })
+    return data.data.map(s2PaperToPaper)
 }
 
 export function buildArxivUrl(ctx: AcademicSourceContext): string {
@@ -1349,7 +1359,7 @@ async function queryEuropePmc(ctx: AcademicSourceContext): Promise<AcademicPaper
 }
 
 /** Open-access location via Unpaywall for a DOI (undefined when closed / failed). */
-async function resolveOaPdfViaUnpaywall(doi: string, email: string, signal?: AbortSignal, useCache = true): Promise<string | undefined> {
+export async function resolveOaPdfViaUnpaywall(doi: string, email: string, signal?: AbortSignal, useCache = true): Promise<string | undefined> {
     assertAcademicNotAborted(signal)
     const bare = cleanDoi(doi)
     if (!bare) return undefined
