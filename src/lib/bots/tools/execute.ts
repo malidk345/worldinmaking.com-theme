@@ -4,6 +4,7 @@ import type { ArtifactDocument, ArtifactKind } from '../../artifacts/kinds'
 import { artifactContentError } from '../../artifacts/validate-source'
 import type { EnvStore } from '../runtime-env'
 import { formatSearchResults, searchWebSources } from '../web-search'
+import { academicResultsToCitations } from '../academic-citations'
 import { fetchPublicUrl, isBlockedFetchUrl, assertPublicHostname } from './fetch-url'
 import {
     searchAcademicCorpus,
@@ -186,7 +187,7 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     finalize_plan: { text: 'summary', plan: 'summary', description: 'summary' },
     task: { prompt: 'goal', task: 'goal', instruction: 'goal', query: 'goal' },
     generate_image: { p: 'prompt', description: 'prompt', query: 'prompt', text: 'prompt', image_prompt: 'prompt' },
-    search_academic_corpus: { q: 'query', search: 'query', text: 'query', topic: 'query', subject: 'field', discipline: 'field', lang: 'language', work_type: 'type', until: 'year_to', year_until: 'year_to', since: 'year_from' },
+    search_academic_corpus: { q: 'query', search: 'query', text: 'query', topic: 'query', subject: 'field', discipline: 'field', lang: 'language', work_type: 'type', until: 'year_to', year_until: 'year_to', since: 'year_from', original_query: 'query_original', query_tr: 'query_original', queryOriginal: 'query_original' },
     cross_examine_argument: {
         arg: 'argument',
         claim: 'argument',
@@ -375,6 +376,7 @@ async function executeWebSearch(
         }
         const citations: AiCitation[] = hits.slice(0, 6).map((item, index) => ({
             id: index + 1,
+            kind: 'web' as const,
             title: item.title,
             url: item.url,
             snippet: item.snippet.slice(0, 280),
@@ -575,7 +577,7 @@ async function executeAcademicSearch(
         }
 
         // All scholarly sources failed and nothing to show: report unavailability, not "no literature".
-        if (result.allSourcesFailed && result.papers.length === 0) {
+        if (result.allSourcesFailed && result.papers.length === 0 && !result.encyclopedia?.length) {
             const sources: Record<string, string> = {}
             for (const s of result.sources || []) {
                 sources[s.source] = s.status === 'ok' ? `ok(${s.count})` : `${s.status}:${s.reason || 'error'}`
@@ -591,20 +593,9 @@ async function executeAcademicSearch(
             }
         }
 
-        // Citation objects for the UI (chat.ts citations event / SourcesPanel) — id N matches [PN].
-        const citations: AiCitation[] = result.papers.map((p, idx) => {
-            let url = p.doi || p.pdfUrl || p.url || (p.id.startsWith('http') ? p.id : `https://doi.org/${p.id}`)
-            if (p.id.startsWith('canon-')) {
-                url = `https://scholar.google.com/scholar?q=${encodeURIComponent(p.title)}`
-            }
-            return {
-                id: idx + 1,
-                url,
-                title: `${p.title} (${p.authors[0] || 'Unknown'}, ${p.year || 'n.d.'})`,
-                snippet: p.abstract ? clip(p.abstract, 200) : clip(p.title, 120),
-                source: p.venue || p.source,
-            }
-        })
+        // Citation objects for the UI (chat.ts citations event / SourcesPanel) — id N matches [PN]
+        // (papers first, then encyclopedia entries). pipeline.ts shifts both per turn.
+        const citations: AiCitation[] = academicResultsToCitations(result.papers, result.encyclopedia || [])
 
         return {
             ok: true,
@@ -2147,9 +2138,11 @@ export async function executeToolCall(
             const type = (ACADEMIC_WORK_TYPES as readonly string[]).includes(rawType)
                 ? (rawType as AcademicWorkType)
                 : undefined
+            const queryOriginal = asText(args.query_original, MAX_SEARCH_QUERY).trim() || undefined
             const executed = await executeAcademicSearch(
                 query,
                 {
+                    queryOriginal,
                     field,
                     limit,
                     yearFrom,

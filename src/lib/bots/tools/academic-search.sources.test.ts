@@ -205,7 +205,7 @@ describe('academic search step 1 — sources, keys, status, payload', () => {
             expect(result.papers).toHaveLength(0)
             expect(result.notice).toContain('NOT evidence that no literature exists')
             expect(result.sources?.filter((s) => s.status === 'skipped').map((s) => s.source).sort()).toEqual(
-                ['arxiv', 'europepmc', 'pubmed'].sort()
+                ['arxiv', 'core', 'doaj', 'europepmc', 'iep', 'pubmed', 'sep', 'trdizin'].sort()
             )
         }, 15000)
 

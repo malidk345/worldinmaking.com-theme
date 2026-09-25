@@ -63,6 +63,11 @@ describe('academic search web fallback hygiene', () => {
         expect(doiLine).toContain('https://doi.org/10.1234/enframe.1.')
         const cites = executed.citations || []
         expect(cites.find((c) => c.title.includes('Stanford'))?.url).toBe('https://plato.stanford.edu/entries/heidegger/')
-        expect(cites.find((c) => c.title.includes('Stanford'))?.title).toContain('(Unknown, n.d.)')
+        const webCite = cites.find((c) => c.title.includes('Stanford'))
+        // Web fallback hits are web sources (no fake authors / year / DOI).
+        expect(webCite?.kind).toBe('web')
+        expect(webCite?.authors).toBeUndefined()
+        expect(webCite?.year).toBeUndefined()
+        expect(webCite?.doi).toBeUndefined()
     })
 })

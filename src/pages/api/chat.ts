@@ -17,6 +17,8 @@ import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-
 import { stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { stripLeakedToolMarkup } from 'lib/bots/tools/leak'
+import { verifyAnswerCitations } from 'lib/bots/academic-citations'
+import { lookupDoiViaCrossref } from 'lib/bots/academic-search'
 import { shouldAdvertiseQualityCorrection, formatAiSseEvent, toPublicProviderLabel, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
 import { finalizeArtifactTurn } from '../../lib/artifacts'
 import { visibleStreamingReply } from '../../components/ClaudeWorkspaceChat/utils/extractArtifacts'
@@ -33,6 +35,25 @@ import { parseAgentMode } from 'lib/bots/agent/modes'
 import { parseHostSnapshot } from 'lib/bots/tools/host'
 import { isUserPro } from '../../lib/wim-billing'
 import { estimateTokens, estimateToolSurchargeTokens, getTokenQuota, recordTokenUsage, type UserTier } from '../../lib/token-quota'
+
+/** Upper bound for the post-answer citation check (Crossref DOI lookups); skipped when exceeded. */
+const CITATION_VERIFY_BUDGET_MS = 4_500
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | undefined> {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => resolve(undefined), ms)
+        promise.then(
+            (value) => {
+                clearTimeout(timer)
+                resolve(value)
+            },
+            (err) => {
+                clearTimeout(timer)
+                reject(err)
+            }
+        )
+    })
+}
 
 const MAX_BODY_BYTES = 1024 * 1024
 
@@ -526,6 +547,27 @@ export default async function handler(req: Request) {
                 // Safety fallback: if no live tokens were streamed during generation, flush visible reply
                 if (livePublicTokensCount === 0 && visibleReply) {
                     send({ type: 'token', text: visibleReply })
+                }
+
+                // Deterministic citation check (0 LLM tokens): cited [P#]/[n], DOIs and titles vs
+                // this turn's academic sources; unknown DOIs via Crossref. Never rewrites the answer.
+                if (result.success && citations.some((c) => c.kind === 'paper' || c.kind === 'encyclopedia')) {
+                    try {
+                        const checked = await withTimeout(
+                            verifyAnswerCitations(visibleReply, citations, {
+                                lookupDoi: (doi) => lookupDoiViaCrossref(doi, { env: activeEnv, signal: turnAbort.signal }),
+                                maxLookups: 5,
+                            }),
+                            CITATION_VERIFY_BUDGET_MS
+                        )
+                        if (checked?.changed) {
+                            citations = checked.citations
+                            send({ type: 'citations', citations, verification: checked.verification })
+                        }
+                    } catch (verifyErr) {
+                        if (turnAbort.signal.aborted) throw verifyErr
+                        console.warn('[chat] citation verification skipped', verifyErr instanceof Error ? verifyErr.message : 'error')
+                    }
                 }
 
                 if (turn.artifacts.length > 0) {

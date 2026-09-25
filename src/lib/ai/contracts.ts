@@ -51,12 +51,40 @@ export interface AiLifecycleEvent {
     provider?: AiPublicProvider
 }
 
+export type AiCitationKind = 'paper' | 'encyclopedia' | 'web'
+
 export interface AiCitation {
     id: number
     title: string
     url: string
     snippet: string
     source?: string
+    /** Optional scholarly metadata (academic search). Old stored citations omit all of these. */
+    kind?: AiCitationKind
+    authors?: string[]
+    year?: number
+    venue?: string
+    citationCount?: number
+    /** Bare DOI ("10.x/y"). */
+    doi?: string
+    /** Open-access landing / full-text URL. */
+    oaUrl?: string
+    /** Direct open-access PDF URL. */
+    pdfUrl?: string
+    /**
+     * Deterministic post-answer check: true = cited and matches this turn's results
+     * (or Crossref confirmed the DOI); false = cited in the answer but could not be verified.
+     */
+    verified?: boolean
+}
+
+/** Summary of the deterministic citation check attached to the final `citations` event. */
+export interface AiCitationVerification {
+    checked: number
+    verified: number
+    unverified: number
+    /** Markers like [P9] that point at no source in this turn. */
+    unknownMarkers?: string[]
 }
 
 export type AiArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart' | 'posthog-analytics'
@@ -161,6 +189,7 @@ export type AiSseEvent =
     | {
           type: 'citations'
           citations: AiCitation[]
+          verification?: AiCitationVerification
       }
     | {
           type: 'artifacts'
