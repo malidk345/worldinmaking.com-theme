@@ -17,6 +17,18 @@ function clip(text: string, max: number): string {
     return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean
 }
 
+/** Source work type → the small vocabulary the export / style code understands. */
+export function normalizeWorkType(type: unknown): string | undefined {
+    const raw = String(type || '').trim().toLowerCase()
+    if (!raw) return undefined
+    if (raw === 'journal-article' || raw === 'article' || raw === 'proceedings-article' || raw === 'review') return 'article'
+    if (raw === 'posted-content' || raw === 'preprint') return 'preprint'
+    if (raw === 'book' || raw === 'monograph' || raw === 'edited-book' || raw === 'reference-book') return 'book'
+    if (raw === 'book-chapter' || raw === 'book-section' || raw === 'book-part' || raw === 'reference-entry') return 'book-chapter'
+    if (raw === 'dissertation' || raw === 'thesis') return 'dissertation'
+    return undefined
+}
+
 /** Citation objects for the UI — id N matches [PN] in the model payload (papers first, then encyclopedia). */
 export function academicResultsToCitations(papers: AcademicPaper[], encyclopedia: EncyclopediaEntry[] = []): AiCitation[] {
     const out: AiCitation[] = papers.map((p, idx) => {
@@ -36,6 +48,8 @@ export function academicResultsToCitations(papers: AcademicPaper[], encyclopedia
         if (p.authors?.length) citation.authors = p.authors.slice(0, 20)
         if (p.authorCount && p.authorCount > (citation.authors?.length || 0)) citation.authorCount = p.authorCount
         if (p.retracted) citation.retracted = true
+        const workType = normalizeWorkType(p.type)
+        if (workType) citation.workType = workType
         if (p.year) citation.year = p.year
         if (p.venue) citation.venue = p.venue
         if (p.citationCount > 0) citation.citationCount = p.citationCount

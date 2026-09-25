@@ -4,7 +4,8 @@
  *    (`[^k]` + `[^k]: APA reference`), which the notebook renumbers on insert;
  *  - duplicate detection for Sources panel "Add to notebook" (DOI / URL / title).
  */
-import { bareDoi, formatApaReference } from './ai/citation-format'
+import { bareDoi } from './ai/citation-format'
+import { formatReference, type CitationStyle } from './ai/citation-styles'
 import { mapCitationMarkers } from './ai/citation-markers'
 import type { WebCitation } from '../components/ClaudeWorkspaceChat/types'
 
@@ -14,7 +15,7 @@ export type NotebookSourceKey = { doi?: string; url?: string; title?: string }
  * Rewrites known citation markers to footnote references numbered 1..k by first use and
  * appends one definition per cited source. Unknown ids keep their marker text.
  */
-export function citationMarkersToFootnotes(markdown: string, citations: WebCitation[] | undefined): string {
+export function citationMarkersToFootnotes(markdown: string, citations: WebCitation[] | undefined, style: CitationStyle = 'apa'): string {
     const text = String(markdown || '')
     const byId = new Map((citations || []).map((c) => [c.id, c]))
     if (!text || byId.size === 0) return text
@@ -34,7 +35,7 @@ export function citationMarkersToFootnotes(markdown: string, citations: WebCitat
         return known.map(footnoteFor).join('') + (unknown.length ? ` [${unknown.join(', ')}]` : '')
     })
     if (order.length === 0) return text
-    const definitions = order.map((id, index) => `[^${index + 1}]: ${formatApaReference(byId.get(id)!).replace(/\s*\n\s*/g, ' ')}`)
+    const definitions = order.map((id, index) => `[^${index + 1}]: ${formatReference(byId.get(id)!, style).replace(/\s*\n\s*/g, ' ')}`)
     return `${body.trimEnd()}\n\n${definitions.join('\n')}`
 }
 

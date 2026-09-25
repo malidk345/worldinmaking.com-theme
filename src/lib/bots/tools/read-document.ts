@@ -1,4 +1,5 @@
 import { isPdfWithoutText, PDF_NO_TEXT, slicePdfByPage } from '../../pdf-pages'
+import { extractPdfPages, looksLikePdf, PDF_TEXT_LIMITS, type PdfTextResult } from '../pdf-text'
 import { isBlockedFetchUrl, assertPublicHostname } from './fetch-url'
 import type { HostSnapshot } from './host'
 
@@ -128,6 +129,175 @@ function extractPdfTextFast(uint8: Uint8Array): string[] {
     return pages
 }
 
+type PublicFetch = { ok: true; res: Response; currentUrl: string } | { ok: false; error: string }
+
+/**
+ * GET a public URL following up to 3 redirects, re-checking every hop (and the
+ * final host, against DNS rebinding) with the SSRF guards. Shared by
+ * read_document and the find_quotes PDF reader.
+ */
+async function fetchPublicDocument(rawUrl: string, controller: AbortController, signal?: AbortSignal): Promise<PublicFetch> {
+    let currentUrl = rawUrl
+    let res: Response | null = null
+    let lastHost = ''
+    let isLastIpv4Literal = false
+
+    for (let hop = 0; hop < 4; hop++) {
+        if (signal?.aborted) return { ok: false, error: 'client request aborted' }
+
+        const blocked = isBlockedFetchUrl(currentUrl)
+        if (blocked) return { ok: false, error: blocked }
+
+        let parsed: URL
+        try {
+            parsed = new URL(currentUrl)
+        } catch {
+            return { ok: false, error: 'url is invalid' }
+        }
+        const parsedHost = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+        const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(parsedHost)
+
+        if (!ipv4Literal && !parsedHost.includes(':')) {
+            const resolved = await assertPublicHostname(parsedHost, controller.signal)
+            if (resolved) return { ok: false, error: resolved }
+        }
+
+        lastHost = parsedHost
+        isLastIpv4Literal = ipv4Literal
+
+        const hopRes = await fetch(currentUrl, {
+            method: 'GET',
+            redirect: 'manual',
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'WorldInMaking-DocumentReader/1.0',
+                Accept: 'application/pdf,text/csv,application/json,text/plain,text/markdown,text/html,*/*',
+            },
+        })
+
+        if (hopRes.status >= 300 && hopRes.status < 400) {
+            const location = hopRes.headers.get('location')
+            if (!location) {
+                return { ok: false, error: `document fetch failed (${hopRes.status})` }
+            }
+            currentUrl = new URL(location, currentUrl).href
+            continue
+        }
+
+        res = hopRes
+        break
+    }
+
+    if (!res) {
+        return { ok: false, error: 'too many redirects' }
+    }
+
+    if (!res.ok) {
+        return { ok: false, error: `document fetch failed (${res.status})` }
+    }
+
+    if (!isLastIpv4Literal && !lastHost.includes(':')) {
+        const rebound = await assertPublicHostname(lastHost, controller.signal)
+        if (rebound) return { ok: false, error: rebound }
+    }
+    return { ok: true, res, currentUrl }
+}
+
+/** Reads at most `maxBytes` of the body (streams when possible; never buffers an unbounded response). */
+async function readBodyCapped(res: Response, maxBytes: number): Promise<{ bytes: Uint8Array; truncated: boolean }> {
+    const reader = res.body?.getReader?.()
+    if (!reader) {
+        const buf = new Uint8Array(await res.arrayBuffer())
+        return buf.byteLength > maxBytes ? { bytes: buf.slice(0, maxBytes), truncated: true } : { bytes: buf, truncated: false }
+    }
+    const parts: Uint8Array[] = []
+    let size = 0
+    let truncated = false
+    for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        if (!value) continue
+        if (size + value.byteLength > maxBytes) {
+            parts.push(value.subarray(0, maxBytes - size))
+            size = maxBytes
+            truncated = true
+            try {
+                await reader.cancel()
+            } catch {
+                /* ignore */
+            }
+            break
+        }
+        parts.push(value)
+        size += value.byteLength
+    }
+    const bytes = new Uint8Array(size)
+    let offset = 0
+    for (const part of parts) {
+        bytes.set(part, offset)
+        offset += part.byteLength
+    }
+    return { bytes, truncated }
+}
+
+/** pdf.js text (real pages) or null when the file is not decodable (caller falls back to the legacy scan). */
+async function decodePdf(bytes: Uint8Array, truncated: boolean, signal?: AbortSignal): Promise<PdfTextResult | null> {
+    if (truncated || !looksLikePdf(bytes)) return null
+    try {
+        const decoded = await extractPdfPages(bytes, { signal })
+        return decoded.pages.some((p) => p.text.replace(/\s+/g, '').length > 20) ? decoded : null
+    } catch {
+        return null
+    }
+}
+
+export type RemotePdfPages =
+    | { ok: true; pdf: PdfTextResult; url: string }
+    | { ok: false; error: string; notPdf?: boolean; fetchFailed?: boolean }
+
+/**
+ * All pages of a remote PDF (within PDF_TEXT_LIMITS) for callers that search
+ * the whole text, e.g. find_quotes. `notPdf` = the URL served something else
+ * (an HTML landing page) — the caller can use executeReadDocument instead.
+ */
+export async function readRemotePdfPages(rawUrl: string, signal?: AbortSignal): Promise<RemotePdfPages> {
+    if (signal?.aborted) return { ok: false, error: 'client request aborted' }
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+    const onExternalAbort = () => controller.abort()
+    signal?.addEventListener('abort', onExternalAbort)
+    try {
+        const fetched = await fetchPublicDocument(rawUrl.trim(), controller, signal)
+        if (!fetched.ok) return { ...fetched, fetchFailed: true }
+        const contentType = (fetched.res.headers.get('content-type') || '').toLowerCase()
+        const declared = Number(fetched.res.headers.get('content-length') || 0)
+        if (declared > PDF_TEXT_LIMITS.maxBytes) {
+            return { ok: false, error: `PDF is larger than ${Math.round(PDF_TEXT_LIMITS.maxBytes / 1_000_000)} MB` }
+        }
+        if (contentType.includes('text/html')) {
+            try {
+                await fetched.res.body?.cancel()
+            } catch {
+                /* ignore */
+            }
+            return { ok: false, error: 'not a PDF', notPdf: true }
+        }
+        const { bytes, truncated } = await readBodyCapped(fetched.res, PDF_TEXT_LIMITS.maxBytes)
+        if (!looksLikePdf(bytes)) return { ok: false, error: 'not a PDF', notPdf: true }
+        if (truncated) return { ok: false, error: `PDF is larger than ${Math.round(PDF_TEXT_LIMITS.maxBytes / 1_000_000)} MB` }
+        clearTimeout(timer) // the download finished; extraction has its own time budget
+        const pdf = await extractPdfPages(bytes, { signal })
+        return { ok: true, pdf, url: fetched.currentUrl }
+    } catch (error) {
+        if (signal?.aborted) return { ok: false, error: 'client request aborted' }
+        const message = error instanceof Error ? error.message : 'PDF read failed'
+        return { ok: false, error: message.slice(0, 180) }
+    } finally {
+        clearTimeout(timer)
+        signal?.removeEventListener('abort', onExternalAbort)
+    }
+}
+
 export async function executeReadDocument(
     args: ReadDocumentArgs,
     host?: HostSnapshot,
@@ -249,83 +419,27 @@ export async function executeReadDocument(
     try {
         if (signal?.aborted) return { ok: false, error: 'client request aborted' }
 
-        let currentUrl = rawUrl
-        let res: Response | null = null
-        let lastHost = ''
-        let isLastIpv4Literal = false
-
-        for (let hop = 0; hop < 4; hop++) {
-            if (signal?.aborted) return { ok: false, error: 'client request aborted' }
-
-            const blocked = isBlockedFetchUrl(currentUrl)
-            if (blocked) return { ok: false, error: blocked }
-
-            let parsed: URL
-            try {
-                parsed = new URL(currentUrl)
-            } catch {
-                return { ok: false, error: 'url is invalid' }
-            }
-            const parsedHost = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
-            const ipv4Literal = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(parsedHost)
-
-            if (!ipv4Literal && !parsedHost.includes(':')) {
-                const resolved = await assertPublicHostname(parsedHost, controller.signal)
-                if (resolved) return { ok: false, error: resolved }
-            }
-
-            lastHost = parsedHost
-            isLastIpv4Literal = ipv4Literal
-
-            const hopRes = await fetch(currentUrl, {
-                method: 'GET',
-                redirect: 'manual',
-                signal: controller.signal,
-                headers: {
-                    'User-Agent': 'WorldInMaking-DocumentReader/1.0',
-                    Accept: 'application/pdf,text/csv,application/json,text/plain,text/markdown,text/html,*/*',
-                },
-            })
-
-            if (hopRes.status >= 300 && hopRes.status < 400) {
-                const location = hopRes.headers.get('location')
-                if (!location) {
-                    return { ok: false, error: `document fetch failed (${hopRes.status})` }
-                }
-                currentUrl = new URL(location, currentUrl).href
-                continue
-            }
-
-            res = hopRes
-            break
-        }
-
-        if (!res) {
-            return { ok: false, error: 'too many redirects' }
-        }
-
-        if (!res.ok) {
-            return { ok: false, error: `document fetch failed (${res.status})` }
-        }
-
-        if (!isLastIpv4Literal && !lastHost.includes(':')) {
-            const rebound = await assertPublicHostname(lastHost, controller.signal)
-            if (rebound) return { ok: false, error: rebound }
-        }
+        const fetched = await fetchPublicDocument(rawUrl, controller, signal)
+        if (!fetched.ok) return fetched
+        const { res, currentUrl } = fetched
 
         const contentType = (res.headers.get('content-type') || '').toLowerCase()
         const isPdf = currentUrl.toLowerCase().endsWith('.pdf') || contentType.includes('application/pdf')
         const isCsv = currentUrl.toLowerCase().endsWith('.csv') || contentType.includes('text/csv')
         const isJson = currentUrl.toLowerCase().endsWith('.json') || contentType.includes('application/json')
 
-        const arrayBuffer = await res.arrayBuffer()
-        const buf = new Uint8Array(arrayBuffer)
-        const slice = buf.byteLength > MAX_BYTES ? buf.slice(0, MAX_BYTES) : buf
+        // PDFs are read whole (up to PDF_TEXT_LIMITS.maxBytes) so pdf.js can reach the xref at the end;
+        // everything else keeps the old 500 KB window.
+        const body = await readBodyCapped(res, isPdf ? PDF_TEXT_LIMITS.maxBytes : MAX_BYTES)
+        const slice = body.bytes.byteLength > MAX_BYTES ? body.bytes.slice(0, MAX_BYTES) : body.bytes
 
         let extracted = ''
 
         if (isPdf) {
-            const pages = extractPdfTextFast(slice)
+            // Real text (compressed / object-stream PDFs, real page numbers) first; the legacy
+            // BT…ET byte scan stays as the fallback for anything pdf.js cannot open.
+            const decoded = await decodePdf(body.bytes, body.truncated, signal)
+            const pages = decoded ? decoded.pages.map((p) => p.text) : extractPdfTextFast(slice)
             if (pages.length === 0) {
                 return { ok: false, error: 'PDF contained no readable text or is image-only scan' }
             }
@@ -342,7 +456,11 @@ export async function executeReadDocument(
                     text: `[PDF Document: ${rawUrl} — page ${targetPage} of ${pages.length}]\n${pages[pageIndex].slice(0, MAX_DOC_CHARS)}`,
                 }
             }
-            extracted = pages.map((p, idx) => `[Page ${idx + 1}]\n${p}`).join('\n\n')
+            // Keep real page numbers: blank (image-only) pages are skipped, not renumbered.
+            extracted = pages
+                .map((p, idx) => (p.trim() ? `[Page ${idx + 1}]\n${p}` : ''))
+                .filter(Boolean)
+                .join('\n\n')
         } else {
             const decoded = new TextDecoder('utf-8', { fatal: false }).decode(slice)
             if (isCsv) {

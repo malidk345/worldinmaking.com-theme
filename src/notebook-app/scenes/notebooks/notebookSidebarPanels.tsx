@@ -20,6 +20,10 @@ import {
 import { notebookFilename } from './outlineModel'
 import { exportNotebookAsPdf, printNotebook } from './exportNotebookPdf'
 import { useToast } from '../../../context/Toast'
+import { CITATION_STYLES, parseCitationStyle } from '../../../lib/ai/citation-styles'
+import { citationExportFile, type CitationExportFormat } from '../../../lib/ai/citation-export'
+import { useCitationStyle } from '../../../lib/citation-style-pref'
+import { notebookReferencesForExport } from '../../../lib/notebook-references'
 
 export function NotebookSettingsPanel({
     settings,
@@ -93,6 +97,7 @@ export function NotebookSettingsPanel({
                     ]}
                 />
             </Fieldset>
+            <CitationStyleFieldset />
             {extra}
             <p className="text-[13px]">
                 Toggle light/dark mode in{' '}
@@ -103,6 +108,24 @@ export function NotebookSettingsPanel({
                 </span>
             </p>
         </div>
+    )
+}
+
+/** Reference style for Add to notebook / whole-reply footnotes / bibliographies (this browser only). */
+function CitationStyleFieldset(): JSX.Element {
+    const [style, setStyle] = useCitationStyle()
+    return (
+        <Fieldset legend="Citations">
+            <ToggleGroup
+                title="Reference style"
+                size="sm"
+                value={style}
+                onValueChange={(value) => {
+                    if (value) setStyle(parseCitationStyle(value))
+                }}
+                options={CITATION_STYLES.map((option) => ({ label: option.label, value: option.value }))}
+            />
+        </Fieldset>
     )
 }
 
@@ -161,6 +184,28 @@ export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX
         }
     }
 
+    const [refsBusy, setRefsBusy] = useState<CitationExportFormat | null>(null)
+    const handleReferences = async (format: CitationExportFormat) => {
+        if (refsBusy) return
+        setRefsBusy(format)
+        try {
+            const notebook = await withBody()
+            if (!notebook) return
+            const refs = await notebookReferencesForExport(notebook.content || '')
+            if (!refs.length) {
+                addToast({ description: 'No references with a DOI or full details found in this notebook.', error: true })
+                return
+            }
+            const file = citationExportFile(refs, format)
+            downloadTextFile(notebookFilename(notebook.title || title(), format === 'ris' ? 'ris' : 'bib'), file.text, file.mime)
+            addToast({ description: `${refs.length === 1 ? '1 reference' : `${refs.length} references`} exported` })
+        } catch {
+            addToast({ description: 'Could not export references.', error: true })
+        } finally {
+            setRefsBusy(null)
+        }
+    }
+
     const handlePrint = async () => {
         if (printBusy) return
         setPrintBusy(true)
@@ -198,6 +243,13 @@ export function NotebookExportPanel({ notebookId }: { notebookId: string }): JSX
                 </OSButton>
                 <OSButton size="sm" width="full" align="left" hover="background" disabled={printBusy} onClick={() => { void handlePrint() }}>
                     {printBusy ? 'Preparing print…' : 'Print'}
+                </OSButton>
+                <h4 className="font-semibold text-muted m-0 px-1 pt-1 text-sm">References</h4>
+                <OSButton size="sm" width="full" align="left" hover="background" disabled={Boolean(refsBusy)} onClick={() => { void handleReferences('bibtex') }}>
+                    {refsBusy === 'bibtex' ? 'Preparing BibTeX…' : 'BibTeX (.bib)'}
+                </OSButton>
+                <OSButton size="sm" width="full" align="left" hover="background" disabled={Boolean(refsBusy)} onClick={() => { void handleReferences('ris') }}>
+                    {refsBusy === 'ris' ? 'Preparing RIS…' : 'RIS (.ris)'}
                 </OSButton>
             </div>
     )

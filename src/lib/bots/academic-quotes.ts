@@ -43,7 +43,8 @@ import { coreQueue } from './academic-sources-extra'
 import { ACADEMIC_PARTIAL_TTL_S, ACADEMIC_QUOTES_TTL_S, academicCacheGet, academicCachePut } from './academic-cache'
 import { academicResultsToCitations, existingMarker, matchTurnCitation } from './academic-citations'
 import type { PaperRef } from './academic-graph'
-import { executeReadDocument } from './tools/read-document'
+import { executeReadDocument, readRemotePdfPages } from './tools/read-document'
+import { pdfPageLabel } from './pdf-text'
 import type { EnvStore } from './runtime-env'
 
 export const QUOTE_MAX_CHARS = 320
@@ -396,8 +397,23 @@ async function coreFullText(doi: string | undefined, title: string | undefined, 
     )
 }
 
-/** OA PDF / full-text page through the existing read_document reader. */
+/**
+ * OA PDF / full-text page. PDFs go through the pdf.js extractor (compressed /
+ * object-stream PDFs such as DergiPark's, every page within PDF_TEXT_LIMITS,
+ * real page numbers); HTML landing pages and PDFs pdf.js cannot open fall back
+ * to the read_document reader as before.
+ */
 async function readDocumentChunks(url: string, signal?: AbortSignal): Promise<{ chunks: Array<{ label: string; text: string }>; note?: string }> {
+    const pdf = await readRemotePdfPages(url, signal)
+    if (signal?.aborted) throw abortError()
+    if (pdf.ok) {
+        const chunks = pdf.pdf.pages
+            .filter((p) => p.text.trim())
+            .map((p) => ({ label: `open-access PDF, ${pdfPageLabel(p)}`, text: p.text }))
+        if (chunks.length) return { chunks, note: pdf.pdf.note }
+    } else if (pdf.fetchFailed) {
+        throw Object.assign(new AcademicSourceError('http_error'), { note: truncateAtWord(pdf.error, 90) })
+    }
     const read = await executeReadDocument({ url }, undefined, signal)
     if (signal?.aborted) throw abortError()
     if (!read.ok) throw Object.assign(new AcademicSourceError('http_error'), { note: truncateAtWord(read.error, 90) })

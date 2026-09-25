@@ -4,7 +4,8 @@ import { runAgentNodePipeline, type AgentPipelineParams, type ChatMessage, type 
 import { __resetAcademicSearchStateForTests, normalizeTitleKey } from '../academic-search'
 import { __setAcademicCacheForTests, ACADEMIC_GRAPH_TTL_S, ACADEMIC_PARTIAL_TTL_S } from '../academic-cache'
 import { cleanDoi } from '../academic-common'
-import { balanceByRelation, buildRelatedToolOutput, findRelatedPapers, parsePaperRef, type PaperRef } from '../academic-graph'
+import { balanceByRelation, buildRelatedToolOutput, dropUnrelatedSimilar, findRelatedPapers, isNonScholarlyWork, parsePaperRef, rankRelatedPapers, type PaperRef } from '../academic-graph'
+import type { AcademicPaper } from '../academic-search'
 import { matchTurnCitation, renumberToolCitations } from '../academic-citations'
 import type { AiCitation } from '../../ai/contracts'
 
@@ -269,6 +270,74 @@ describe('related_papers (citation graph)', () => {
         await findRelatedPapers(seedRef, { env: {}, direction: 'references' })
         await findRelatedPapers(seedRef, { env: {}, direction: 'citations' })
         expect(puts.filter((p) => p.url.includes('/related/')).at(-1)?.cacheControl).toBe(`public, max-age=${ACADEMIC_PARTIAL_TTL_S}`)
+    })
+
+    it('similar: seed without related_works falls back to its OpenAlex topic; off-topic and front matter are dropped', async () => {
+        const seedWork = {
+            ...OA.W100,
+            related_works: [],
+            topics: [{ id: 'https://openalex.org/T12345', display_name: 'Philosophy of Technology' }],
+            abstract_inverted_index: { Heidegger: [0], argues: [1], technology: [2], enframing: [3], standing: [4], reserve: [5] },
+        }
+        const topicWorks = [
+            oaWork('W501', '10.1234/t.1', 'Postphenomenology and the enframing of digital technology', { topics: [{ id: 'T12345', display_name: 'Philosophy of Technology' }], cited_by_count: 90 }),
+            oaWork('W502', '10.1234/t.2', 'Soil microbiome dynamics under drought', { topics: [{ id: 'T12345', display_name: 'Philosophy of Technology' }], cited_by_count: 900 }),
+            oaWork('W503', '10.1234/t.3', 'Front matter', { type: 'paratext', cited_by_count: 5000 }),
+            oaWork('W504', '10.1234/t.4', 'Heidegger on technology and the standing reserve', { cited_by_count: 12 }),
+        ]
+        const { calls } = installFetch({
+            oaSingle: (url) => (url.includes('W100') || url.includes('doi:') ? json(seedWork) : json({ error: 'not found' }, 404)),
+            oaList: (url) => (new URL(url).searchParams.get('filter') === 'topics.id:T12345' ? json({ results: topicWorks }) : json({ results: [] })),
+            s2Recs: () => json({ recommendedPapers: [] }),
+        })
+        const res = await findRelatedPapers(seedRef, { direction: 'similar', env: {}, noCache: true })
+        const lists = calls.filter((c) => c.key === 'oaList').map((c) => new URL(c.url).searchParams.get('filter'))
+        expect(lists).toContain('topics.id:T12345')
+        expect(res.sources.find((s) => s.source === 'openalex:related')).toMatchObject({ status: 'ok', note: 'by topic: Philosophy of Technology' })
+        const titles = res.papers.map((p) => p.title)
+        expect(titles).toHaveLength(2)
+        expect(titles).toEqual(expect.arrayContaining(['Heidegger on technology and the standing reserve', 'Postphenomenology and the enframing of digital technology']))
+    })
+
+    it('topical overlap filter + ranking and the non-scholarly filter (unit)', () => {
+        const seed = { title: 'Heidegger and the question concerning technology', abstract: 'Enframing reveals nature as standing reserve.', topics: ['Philosophy of Technology'] } as AcademicPaper
+        const mk = (title: string, rel: string, extra: Partial<AcademicPaper> = {}) =>
+            ({ title, citationCount: 10, ranks: { [rel]: 1 }, source: 'openalex', authors: [], ...extra }) as unknown as AcademicPaper
+        const papers = [
+            mk('Valeological culture of schoolchildren', 'openalex:related', { citationCount: 5000 }),
+            mk('Technology in schools', 'openalex:related'), // one generic stem, no topic → dropped
+            mk('Technology ethics after Heidegger', 'openalex:related'), // 2 stems (heidegger, techno)
+            mk('Digital ethics', 'openalex:related', { topics: ['Philosophy of Technology'], abstract: 'Questions concerning digital technology.' }),
+            mk('Unrelated but cites the seed', 'openalex:cited_by'), // facts are kept
+            mk('Erratum: Heidegger and technology', 'openalex:cited_by'),
+            mk('Issue Information', 's2:recommendations'),
+        ]
+        const kept = dropUnrelatedSimilar(papers, seed).map((p) => p.title)
+        expect(kept).toEqual(['Technology ethics after Heidegger', 'Digital ethics', 'Unrelated but cites the seed'])
+        expect(isNonScholarlyWork(mk('Table of Contents', 'x'))).toBe(true)
+        expect(isNonScholarlyWork(mk('Book review essay: Heidegger', 'x'))).toBe(false)
+        const ranked = rankRelatedPapers(
+            [mk('Popular but loosely related technology survey', 's2:recommendations', { citationCount: 5000 }), mk('Heidegger, enframing and the standing reserve of technology', 's2:recommendations', { citationCount: 3 })],
+            'relevance',
+            undefined,
+            seed
+        )
+        expect(ranked[0].title).toBe('Heidegger, enframing and the standing reserve of technology')
+
+        // Turkish seed vs English candidates: two shared OpenAlex topics count as a conceptual match.
+        const trSeed = {
+            title: 'Heidegger’in tekniğe yönelik düşüncesinde ontik-ontolojik ayrımı',
+            abstract: 'Tekniğin özü nedir sorusu, Varlık ve Zaman’daki ayrım ışığında yorumlanır.',
+            topics: ['Phenomenology and Existential Philosophy', 'Political Theology and Sovereignty'],
+        } as AcademicPaper
+        const cross = dropUnrelatedSimilar(
+            [
+                mk('The essence of technology in Being and Time', 'openalex:related', { topics: ['Phenomenology and Existential Philosophy', 'Political Theology and Sovereignty'] }),
+                mk('Le langage de la guerre', 'openalex:related', { topics: ['Political Theology and Sovereignty'], abstract: 'La politique et la guerre.' }),
+            ],
+            trSeed
+        ).map((p) => p.title)
+        expect(cross).toEqual(['The essence of technology in Being and Time'])
     })
 
     it('fails closed on a paper without any identifier', async () => {

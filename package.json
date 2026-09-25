@@ -182,6 +182,7 @@
     "tailwind-merge": "2.5.2",
     "tailwindcss-animated": "^2.1.0",
     "three": "^0.185.1",
+    "unpdf": "1.8.1",
     "yup": "^0.32.11",
     "zustand": "^4.4.5"
   },

@@ -12,6 +12,8 @@ export const runtime = 'edge'
 
 import { streamBotTurn } from 'lib/bots/orchestrate'
 import { formatPriorCitationsContext, parsePriorCitations } from 'lib/ai/prior-citations'
+import { parseCitationStyle } from 'lib/ai/citation-styles'
+import { formatAcademicRoutingHint } from 'lib/bots/academic-routing'
 import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
@@ -145,6 +147,8 @@ export default async function handler(req: Request) {
     if (!conversationId.ok) return jsonError(conversationId.error, 400)
 
     const host = parseHostSnapshot(body.workspace)
+    // Reference-style preference (browser localStorage) → annotated_bibliography default.
+    if (host) host.citationStyle = parseCitationStyle(body.citationStyle)
     // Earlier-turn citations (compact, capped) so "tell me more about P3" / related_papers("P3") resolve.
     const priorCitations = parsePriorCitations(body.priorCitations)
     const agentMode = parseAgentMode(body.agentMode)
@@ -417,6 +421,7 @@ export default async function handler(req: Request) {
                         ? `User-uploaded files this turn (in the room; use them when they help the Query):\n"""${attachmentContext.value}"""`
                         : '',
                     formatPriorCitationsContext(priorCitations),
+                    formatAcademicRoutingHint(prompt),
                     webSearchContext,
                 ]
                     .filter(Boolean)

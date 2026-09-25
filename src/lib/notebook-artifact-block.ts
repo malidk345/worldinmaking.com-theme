@@ -1,6 +1,7 @@
 import { parseChartSpec, parsePostHogAnalyticsSpec, type ChartSpec } from './ai/chart-artifacts'
 import { getRenderer } from './artifacts'
 import { citationMarkersToFootnotes } from './notebook-citations'
+import type { CitationStyle } from './ai/citation-styles'
 import { artifactLooksLikeMermaid, cleanMermaidSource } from './mermaid-patterns'
 import type { Artifact, Message } from '../components/ClaudeWorkspaceChat/types'
 
@@ -139,9 +140,12 @@ export function artifactToNotebookMarkdown(artifact: Artifact): string {
  * footnotes with APA references (the notebook renumbers them after its own on insert),
  * instead of dead escaped `\[P1\]` text.
  */
-export function messageToNotebookMarkdown(message: Pick<Message, 'content' | 'artifacts'> & Partial<Pick<Message, 'citations'>>): string {
+export function messageToNotebookMarkdown(
+    message: Pick<Message, 'content' | 'artifacts'> & Partial<Pick<Message, 'citations'>>,
+    style: CitationStyle = 'apa'
+): string {
     const blocks = (message.artifacts || []).map(artifactToNotebookMarkdown).filter(Boolean)
-    const prose = citationMarkersToFootnotes(String(message.content || '').trim(), message.citations)
+    const prose = citationMarkersToFootnotes(String(message.content || '').trim(), message.citations, style)
     const skipProse =
         !prose ||
         /^Opened \*\*".+"\*\* in the preview workspace\.$/i.test(prose) ||
