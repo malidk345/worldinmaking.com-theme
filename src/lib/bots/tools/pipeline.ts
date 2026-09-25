@@ -354,6 +354,17 @@ export type CompletionRound =
 
 export type AgentPhase = 'decision' | 'tools' | 'synthesis' | 'complete' | 'failed'
 
+/** Why the pipeline stopped on a failed provider round (host logging + answer recovery). */
+export type RoundFailure = {
+    /** Provider error detail as returned by the completion adapter (not user content). */
+    detail: string
+    status?: number
+    /** Tool results already exist in state.messages when this round failed. */
+    afterTools: boolean
+    /** The failed round had already streamed public tokens to the client. */
+    streamedPublic: boolean
+}
+
 export type NodeEvent = {
     name: AgentNodeName
     status: 'started' | 'completed'
@@ -398,6 +409,9 @@ export interface AgentState {
     interrupt?: HumanTurn
     checkpoint?: AgentCheckpoint
     error?: string
+    roundFailure?: RoundFailure
+    /** Synthesis had to substitute the generic placeholder because the answer round was empty. */
+    answerMissing: boolean
 }
 
 export interface AgentPipelineParams {
@@ -444,6 +458,11 @@ export interface AgentPipelineResult {
     agentMode?: AgentMode
     interrupt?: HumanTurn
     checkpoint?: AgentCheckpoint
+    /** Final loop transcript (tool results included) so the host can retry answer synthesis. */
+    messages?: ChatMessage[]
+    roundFailure?: RoundFailure
+    /** True when `text` is the generic "operations completed" placeholder, not a model answer. */
+    answerMissing?: boolean
 }
 
 /**
@@ -676,6 +695,12 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
         closeThought(params, thoughtId)
         emitNode(params, 'root', 'completed', cycle)
         state.error = round.detail
+        state.roundFailure = {
+            detail: round.detail,
+            status: round.status,
+            afterTools: hasNewToolResults || state.messages.some((message) => message.role === 'tool'),
+            streamedPublic: streamedPublicLength > 0,
+        }
         state.phase = 'failed'
         return
     }
@@ -1522,6 +1547,7 @@ function runSynthesisNode(state: AgentState, params: AgentPipelineParams): void 
             state.publicText = ''
         } else if (state.usedTools) {
             state.publicText = 'Requested operations and tool actions completed successfully.'
+            state.answerMissing = true
         }
     }
 
@@ -1564,6 +1590,7 @@ export async function runAgentNodePipeline(params: AgentPipelineParams): Promise
         maxSteps,
         provider: params.provider,
         agentMode: parseAgentMode(params.agentMode),
+        answerMissing: false,
     }
 
     while (state.phase !== 'complete' && state.phase !== 'failed') {
@@ -1606,5 +1633,8 @@ export async function runAgentNodePipeline(params: AgentPipelineParams): Promise
         interrupt: state.interrupt,
         checkpoint: state.checkpoint,
         agentMode: state.agentMode,
+        messages: state.messages,
+        roundFailure: state.roundFailure,
+        answerMissing: state.answerMissing,
     }
 }
