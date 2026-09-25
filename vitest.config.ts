@@ -2,6 +2,8 @@ import { defineConfig } from 'vitest/config'
 import path from 'path'
 
 export default defineConfig({
+  // tsconfig uses "jsx": "preserve" for Next; vitest needs JSX compiled to run .tsx component tests.
+  oxc: { jsx: { runtime: 'automatic' } },
   test: {
     globals: true,
     environment: 'jsdom',

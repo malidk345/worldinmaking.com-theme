@@ -104,12 +104,28 @@ export interface Artifact {
   toolCallId?: string
 }
 
+export type WebCitationKind = 'paper' | 'encyclopedia' | 'web'
+
+/**
+ * A source shown in the Sources panel. Academic fields are optional so
+ * citations stored before they existed (chat_messages.citations jsonb) still render.
+ */
 export interface WebCitation {
   id: number
   title: string
   url: string
   snippet: string
   source?: string
+  kind?: WebCitationKind
+  authors?: string[]
+  year?: number
+  venue?: string
+  citationCount?: number
+  doi?: string
+  oaUrl?: string
+  pdfUrl?: string
+  /** false = cited in the answer but not verifiable against this turn's sources. */
+  verified?: boolean
 }
 
 export interface FileAttachment {

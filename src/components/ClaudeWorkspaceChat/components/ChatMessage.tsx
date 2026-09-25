@@ -22,6 +22,7 @@ import { getNotebook } from '../../../notebook-app/scenes/notebooks/notebookStor
 import { resolveDiffApplySpanText, diffApplyButtonLabel, type DiffApplyUiStatus } from '../../../lib/chat/diff-apply';
 import { dispatchNotebookOsEvent, isNotebookOsListenerAlive } from '../../../lib/notebook-os-dispatch';
 import { notebookWindowPath } from '../../../lib/window-path';
+import { linkifyCitationMarkers, parseCitationHref } from '../../../lib/ai/citation-markers';
 import { useAppActions } from '../../../context/App';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -59,7 +60,8 @@ interface ChatMessageProps {
   modelOptions: ModelOption[];
   targetChatId: string;
   onOpenArtifact?: (art: Artifact, origin?: DOMRect) => void;
-  onOpenSources?: (citations: Message['citations'], origin?: DOMRect) => void;
+  /** `activeId` selects a source first (inline numbered citation marker click). */
+  onOpenSources?: (citations: Message['citations'], origin?: DOMRect, activeId?: number) => void;
   onEditPrompt?: (content: string, messageId: string) => void;
   onRetry?: (messageId: string) => void;
   onFeedback?: (messageId: string, liked: boolean | null) => void;
@@ -612,7 +614,16 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const isLiveAnswer = !isUser && !!message.isStreaming;
   const usedModel = modelOptions.find((option) => option.id === message.modelUsed) || modelOptions[0];
   const textToProcess = normalizeAudioMarkdown(displayedText);
-  const markdownText = isLiveAnswer ? ensureClosedCodeFences(textToProcess) : textToProcess;
+  const baseMarkdownText = isLiveAnswer ? ensureClosedCodeFences(textToProcess) : textToProcess;
+  // [P3] / [3] markers → small buttons opening that source (ids = chat.ts citation ids).
+  const citationIdsKey = (message.citations || []).map((c) => c.id).join(',');
+  const markdownText = React.useMemo(
+    () =>
+      message.citations?.length
+        ? linkifyCitationMarkers(baseMarkdownText, message.citations.map((c) => c.id))
+        : baseMarkdownText,
+    [baseMarkdownText, citationIdsKey]
+  );
 
   const handleCopy = async () => {
     const textToCopy = String(displayedText || message.content || '');
@@ -744,6 +755,35 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                     ),
                     a({ href, children, ...props }: any) {
                       const hrefStr = typeof href === 'string' ? href : '';
+                      const cite = parseCitationHref(hrefStr);
+                      if (cite) {
+                        const source = cite.known ? message.citations?.find((c) => c.id === cite.id) : undefined;
+                        if (!source) {
+                          return (
+                            <span
+                              className="mx-0.5 inline-flex items-center rounded border border-dashed border-primary/40 px-1 align-[1px] text-[10.5px] leading-4 text-secondary font-sans"
+                              title="Not found in this answer's sources"
+                              data-citation-marker="unknown"
+                            >
+                              {cite.id}
+                            </span>
+                          );
+                        }
+                        return (
+                          <button
+                            type="button"
+                            onClick={(event) =>
+                              onOpenSources?.(message.citations, event.currentTarget.getBoundingClientRect(), cite.id)
+                            }
+                            className="mx-0.5 inline-flex items-center rounded border border-primary/25 bg-accent/50 px-1 align-[1px] text-[10.5px] font-medium leading-4 text-primary font-sans hover:bg-accent cursor-pointer transition-colors"
+                            title={source.title}
+                            aria-label={`Source ${cite.id}: ${source.title}`}
+                            data-citation-marker={cite.id}
+                          >
+                            {cite.id}
+                          </button>
+                        );
+                      }
                       const textContent = React.Children.toArray(children)
                         .map((c: any) => (typeof c === 'string' ? c : ''))
                         .join('');
