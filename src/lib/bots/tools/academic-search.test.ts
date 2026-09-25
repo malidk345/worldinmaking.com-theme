@@ -68,8 +68,9 @@ describe('search_academic_corpus tool & academic-search', () => {
             ]
             const bib = formatApaBibliography(papers)
             expect(bib).toContain('### References')
-            expect(bib).toContain('Gilbert Ryle (1949). The Concept of Mind. *Hutchinson*. https://doi.org/10.4324/9780203875858')
-            expect(bib).toContain('Willard Van Orman Quine (1960). Word and Object. *MIT Press*.')
+            // APA 7 author inversion ("Van" here is a middle name, not a particle).
+            expect(bib).toContain('Ryle, G. (1949). The Concept of Mind. *Hutchinson*. https://doi.org/10.4324/9780203875858')
+            expect(bib).toContain('Quine, W. V. O. (1960). Word and Object. *MIT Press*.')
         })
     })
 

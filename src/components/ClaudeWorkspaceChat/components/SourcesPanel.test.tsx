@@ -116,6 +116,34 @@ describe('SourcesPanel', () => {
     expect(listText).toContain('Unverified')
   })
 
+  it('never nests a link inside a button; the row link still opens the source and the row still selects', () => {
+    render(<SourcesPanel citations={[paper, entry, unverified]} onClose={() => undefined} />)
+    expect(container.querySelectorAll('button a, a button').length).toBe(0)
+    const rows = Array.from(container.querySelectorAll('ul > li'))
+    expect(rows).toHaveLength(3)
+    const link = rows[1].querySelector('a[aria-label="Open source"]') as HTMLAnchorElement
+    expect(link.href).toBe('https://plato.stanford.edu/entries/heidegger/')
+    expect(link.parentElement?.tagName).toBe('LI')
+    const select = rows[1].querySelector('button') as HTMLButtonElement
+    act(() => select.click())
+    expect((container.querySelector('[data-testid="source-detail"]') as HTMLElement).textContent).toContain('SEP entry excerpt.')
+    expect(rows[1].className).toContain('bg-accent')
+    expect(select.getAttribute('aria-current')).toBe('true')
+  })
+
+  it('shows a Retracted tag (same tag style) on the card and in the list', () => {
+    const retracted: WebCitation = { ...paper, id: 4, title: 'RETRACTED: Ileal-lymphoid-nodular hyperplasia', retracted: true, pdfUrl: undefined }
+    render(<SourcesPanel citations={[retracted, paper]} onClose={() => undefined} />)
+    const detail = container.querySelector('[data-testid="source-detail"]') as HTMLElement
+    const tag = Array.from(detail.querySelectorAll('span')).find((el) => el.textContent === 'Retracted') as HTMLElement
+    expect(tag).toBeTruthy()
+    const oaTagClass = 'inline-flex items-center rounded border border-primary px-1.5 py-px text-[10.5px] leading-4 text-secondary'
+    expect(tag.className).toBe(oaTagClass)
+    const rows = Array.from(container.querySelectorAll('ul > li'))
+    expect(rows[0].textContent).toContain('Retracted')
+    expect(rows[1].textContent).not.toContain('Retracted')
+  })
+
   it('keeps the legacy website layout for old stored citations', () => {
     render(<SourcesPanel citations={[legacyWeb]} onClose={() => undefined} />)
     expect(container.textContent).toContain('1 website')

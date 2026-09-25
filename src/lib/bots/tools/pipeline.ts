@@ -8,7 +8,7 @@
  */
 
 import type { AiCitation } from '../../ai/contracts'
-import { renumberToolCitations } from '../academic-citations'
+import { ACADEMIC_MARKER_TOOLS, mergeToolCitations } from '../academic-citations'
 import type { ArtifactDocument } from '../../artifacts/kinds'
 import { countModel3DRenderable, model3dGeometryDigest, parseModel3DSpecStrict } from '../../ai/visual-artifacts'
 import { createActivityClock, type AgentActivity } from '../agent/activity'
@@ -40,6 +40,9 @@ const TASK_READ_TOOLS = new Set([
     'get_workspace',
     'list_notebooks',
     'search_academic_corpus',
+    // Safe in sub-agents now that nested citations share the turn-global numbering.
+    'related_papers',
+    'find_quotes',
     'verified_corpus_search',
     'run_code_sandbox',
 ])
@@ -887,7 +890,9 @@ async function runTaskSubagent(
                 toolName: nestedName,
                 arguments: nested.argumentsJson.slice(0, 800),
             })
-            const executed = await executeToolCall(nested, params.env, params.host, 'ask', params.signal)
+            const executed = await executeToolCall(nested, params.env, params.host, 'ask', params.signal, {
+                citations: state.citations,
+            })
             return { nested, nestedName, allowed: true as const, executed }
         })
         const nestedRows = await Promise.all(nestedJobs)
@@ -900,11 +905,17 @@ async function runTaskSubagent(
                 })
                 continue
             }
-            const nestedExec = row.executed
             const nestedName = row.nestedName
             const nested = row.nested
+            let nestedExec = row.executed
             if (nestedName === 'web_search') state.usedWebSearch = true
-            if (nestedExec.citations?.length) state.citations.push(...nestedExec.citations)
+            if (nestedExec.citations?.length || ACADEMIC_MARKER_TOOLS.has(nestedName)) {
+                // Same global numbering as top-level tools: the sub-agent (and its report)
+                // sees [P#] / [Source N] labels that match the cards the user gets.
+                const merged = mergeToolCitations(nestedName, nestedExec.result, nestedExec.citations, state.citations)
+                nestedExec = { ...nestedExec, result: merged.result, citations: merged.citations.length ? merged.citations : undefined }
+                state.citations.push(...merged.citations)
+            }
             params.onTool?.({
                 id: nested.id,
                 name: nestedName,
@@ -1199,12 +1210,14 @@ async function runOneToolCall(
             state.artifacts.push(incoming)
         }
     }
-    if (executed.citations?.length) {
-        // Global numbering: chat.ts assigns id = index in state.citations + 1, so shift this
-        // tool's local ids (1..n) and the [P#] / [Source N] labels the model sees to match.
-        const renumbered = renumberToolCitations(name, executed.result, executed.citations, state.citations.length)
-        executed = { ...executed, result: renumbered.result, citations: renumbered.citations }
-        state.citations.push(...(renumbered.citations || []))
+    if (executed.citations?.length || ACADEMIC_MARKER_TOOLS.has(name)) {
+        // Global numbering: chat.ts assigns id = index in state.citations + 1. Map this tool's
+        // local ids (1..n) to global ids — reusing the id of a source already cited this turn
+        // (cached / repeated search → no duplicate card) — and rewrite the [P#] / [Source N]
+        // labels the model sees. Academic tools ALWAYS run so `[P@n]` never reaches the model.
+        const merged = mergeToolCitations(name, executed.result, executed.citations, state.citations)
+        executed = { ...executed, result: merged.result, citations: merged.citations.length ? merged.citations : undefined }
+        state.citations.push(...merged.citations)
     }
     if (executed.action) {
         state.actions.push(executed.action)

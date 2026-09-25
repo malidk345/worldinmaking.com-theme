@@ -2,14 +2,20 @@
  * Inline numbered citation markers shared by the server (citation verification)
  * and the chat UI (clickable markers). Client-safe: no Node / server imports.
  *
- * Recognised markers: [P3], [3], [P1, P4], [1; 2], [Source 2]. Skipped: code
- * spans / fences, footnotes ([^1]), markdown links ([1](url)), reference
- * definitions ([1]: url) and reference links (text][1]).
+ * Recognised markers: [P3], [3], [P1, P4], [1; 2], [Source 2] and — defensively —
+ * the tool-internal `[P@3]` form. Skipped: code spans (any backtick run) /
+ * fences, footnotes ([^1]), markdown links ([1](url), [[1]](url)), reference
+ * definitions ([1]: url), reference links (text][1]) and plain numeric
+ * indexes glued to an identifier / call (arr[5], f(x)[2]).
  */
 
 /** A run of one or more adjacent markers, e.g. `[P1][P3]` or `[2, 5]`. */
-const MARKER_RE = /(?:\[(?:Source\s+)?P?\d{1,3}(?:\s*[,;]\s*(?:Source\s+)?P?\d{1,3})*\])+/g
+const MARKER_RE = /(?:\[(?:Source\s+)?(?:P@?)?\d{1,3}(?:\s*[,;]\s*(?:Source\s+)?(?:P@?)?\d{1,3})*\])+/g
+/** A run made only of plain numeric markers (`[5]`, `[1, 2]`) — the form code indexing shares. */
+const PLAIN_NUMERIC_RE = /^(?:\[\d{1,3}(?:\s*[,;]\s*\d{1,3})*\])+$/
 const ID_RE = /\d{1,3}/g
+/** Char that ends an identifier / call (`arr`, `x1`, `_`, `)`). */
+const IDENTIFIER_END_RE = new RegExp('[\\p{L}\\p{N}_)]', 'u')
 
 export const CITE_HREF_PREFIX = '#cite-'
 export const CITE_UNKNOWN_HREF_PREFIX = '#cite-unknown-'
@@ -20,7 +26,8 @@ type Segment = { code: boolean; text: string }
 export function splitCodeSegments(markdown: string): Segment[] {
     const out: Segment[] = []
     const text = String(markdown || '')
-    const re = /```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)|`[^`\n]*`/g
+    // Fences, then inline code with any backtick run length (`x`, ``a ` b``) on one line.
+    const re = /```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)|(`+)(?:(?!\1)[^\n])+?\1/g
     let last = 0
     let m: RegExpExecArray | null
     while ((m = re.exec(text))) {
@@ -37,6 +44,11 @@ function isCitationContext(text: string, index: number, length: number): boolean
     const after = text[index + length] || ''
     if (before === ']' || before === '\\' || before === '!') return false
     if (after === '(' || after === ':') return false
+    // `[[1]](url)` — the marker is the text of a markdown link.
+    if (before === '[' && after === ']') return false
+    // `arr[5]`, `matrix[1][2]`, `f(x)[0]` — indexing, not a citation. `[P3]` / `[Source 2]`
+    // are unambiguous and still count when glued to a word.
+    if (IDENTIFIER_END_RE.test(before) && PLAIN_NUMERIC_RE.test(text.slice(index, index + length))) return false
     return true
 }
 

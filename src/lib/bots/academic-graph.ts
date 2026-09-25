@@ -40,6 +40,8 @@ import {
     crossrefItemToPaper,
     formatPaperLine,
     mergeAcademicPapers,
+    applyRetractionPolicy,
+    queryWantsRetracted,
     normalizeTitleKey,
     openAlexWorkToPaper,
     queryTokenSets,
@@ -248,7 +250,7 @@ function openAlexAuth(keys: AcademicApiKeys, params: URLSearchParams): void {
 }
 
 const OPENALEX_SELECT =
-    'id,doi,title,publication_year,cited_by_count,primary_location,best_oa_location,authorships,open_access,abstract_inverted_index,type,language'
+    'id,doi,title,publication_year,cited_by_count,primary_location,best_oa_location,authorships,open_access,abstract_inverted_index,type,language,is_retracted'
 
 async function openAlexSingle(id: string, keys: AcademicApiKeys, signal: AbortSignal | undefined, withLinks = false): Promise<OpenAlexWork> {
     const params = new URLSearchParams()
@@ -368,7 +370,7 @@ async function crossrefByDois(dois: string[], keys: AcademicApiKeys, signal?: Ab
     params.set('rows', String(dois.length))
     params.set(
         'select',
-        'DOI,URL,title,author,issued,published-print,published-online,container-title,is-referenced-by-count,abstract,subject,link,type,license'
+        'DOI,URL,title,author,issued,published-print,published-online,container-title,is-referenced-by-count,abstract,subject,link,type,license,update-to,updated-by'
     )
     params.set('mailto', keys.contactEmail)
     const res = await fetchAcademic(`https://api.crossref.org/works?${params.toString()}`, { headers: headersFor(keys) }, GRAPH_TIMEOUT_MS, signal)
@@ -851,7 +853,11 @@ export async function findRelatedPapers(ref: PaperRef, options: RelatedPapersOpt
 
     // ---- Merge, drop the seed, rank
     const seedMatch = { doi: ids.doi, openAlexId: ids.openAlexId, s2Id: ids.s2Id, titleKey: seed ? normalizeTitleKey(seed.title) : undefined }
-    const merged = mergeAcademicPapers(collected).filter((p) => !isSameWork(p, seedMatch))
+    // Retracted works / retraction notices are not related-work evidence (kept, last, only when `focus` asks for them).
+    const merged = applyRetractionPolicy(
+        mergeAcademicPapers(collected).filter((p) => !isSameWork(p, seedMatch)),
+        { wantsRetracted: queryWantsRetracted(focus) }
+    )
     const ranked = rankRelatedPapers(dropUnrelatedSimilar(merged, seed, focus), sortBy, focus)
     const selected = direction === 'all' && sortBy === 'relevance' ? balanceByRelation(ranked, limit) : ranked.slice(0, limit)
 
