@@ -56,6 +56,7 @@ import {
   clearNotebookChatBind,
   readNotebookChatBind,
   readNotebookSelection,
+  peekStickyNotebookSelection,
   syncNotebookChatBindForIdentity,
   withNotebookBind,
 } from '../../lib/notebook-chat-bind';
@@ -95,6 +96,7 @@ import { writeForumDraft } from 'lib/wim-os-action-drafts';
 import { findAskAiWindow, findNotebookWindow } from '../../lib/open-ask-ai-window';
 import { extractNotebookId, notebookWindowPath, windowPathMatches } from '../../lib/window-path';
 import { dispatchNotebookOsEvent } from '../../lib/notebook-os-dispatch';
+import { formatApaReference } from '../../lib/ai/citation-format';
 import {
   adoptGuestChatsIntoAccount,
   canSyncChatsToRemote,
@@ -419,6 +421,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [activeSources, setActiveSources] = useState<WebCitation[] | null>(null);
   const [isSourcesOpen, setIsSourcesOpen] = useState(false);
   const [sourcesOrigin, setSourcesOrigin] = useState<ArtifactOrigin | null>(null);
+  const [sourcesActiveId, setSourcesActiveId] = useState<number | null>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
 
   const captureOrigin = (rect?: DOMRect | null): ArtifactOrigin => {
@@ -448,10 +451,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setActiveSources(null)
   }
 
-  const openSources = (citations: WebCitation[] | undefined, origin?: DOMRect | null) => {
+  const openSources = (citations: WebCitation[] | undefined, origin?: DOMRect | null, activeId?: number) => {
     if (!citations || citations.length === 0) return
     setIsArtifactsOpen(false)
     setIsArtifactExpanded(false)
+    setSourcesActiveId(typeof activeId === 'number' ? activeId : null)
     setActiveSources(citations)
     setIsSourcesOpen(true)
     setSourcesOrigin(captureOrigin(origin))
@@ -3333,6 +3337,34 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     insertIntoNotebookRef.current(messageToNotebookMarkdown(message))
   }, [])
 
+  // Sources panel "Add to notebook": APA reference as a footnote on the selected notebook
+  // text (existing wimNotebookAddFootnote path); without a selection, append it instead.
+  const activeNotebookIdRef = useRef<string | undefined>(undefined)
+  activeNotebookIdRef.current = activeNotebookInfo?.id
+  const handleAddCitationToNotebook = useCallback(async (citation: WebCitation): Promise<boolean> => {
+    const reference = formatApaReference(citation)
+    const notebookId = activeNotebookIdRef.current
+    const selection = readNotebookSelection() || peekStickyNotebookSelection()
+    let ok: boolean
+    if (notebookId && selection) {
+      ok = await dispatchNotebookOsEvent(
+        'wimNotebookAddFootnote',
+        { notebookId, text: reference, spanText: selection },
+        {
+          notebookId,
+          path: notebookWindowPath(notebookId),
+          open: () => {
+            if (addWindow) addWindow({ path: notebookWindowPath(notebookId) })
+          },
+        }
+      )
+    } else {
+      ok = await insertIntoNotebookRef.current(reference, notebookId)
+    }
+    if (!ok) addToast({ description: 'Could not reach the notebook', duration: 2400 })
+    return ok
+  }, [addWindow, addToast])
+
   const handleOpenByokFromMessage = useCallback(() => {
     setSidebarOpen(true)
   }, [])
@@ -3513,6 +3545,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         <SourcesPanel
           citations={activeSources}
           origin={sourcesOrigin}
+          initialActiveId={sourcesActiveId}
+          onAddToNotebook={handleAddCitationToNotebook}
           onClose={closeSources}
         />
       )}

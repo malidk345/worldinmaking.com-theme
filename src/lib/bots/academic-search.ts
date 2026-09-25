@@ -1,9 +1,13 @@
 /**
  * Live Academic Corpus Search for WorldInMaking AI.
  *
- * Fans out to OpenAlex, Crossref, Semantic Scholar, arXiv, PubMed Central and
- * Europe PMC, merges duplicates, ranks, and resolves open-access PDFs via
- * Unpaywall. Every source reports a status (ok / failed / skipped + reason) so
+ * Fans out to OpenAlex, Crossref, Semantic Scholar, arXiv, PubMed Central,
+ * Europe PMC, TR Dizin, CORE and DOAJ (plus SEP / IEP encyclopedia lookup for
+ * philosophy), merges duplicates, fuses per-source ranks (reciprocal rank
+ * fusion + a minimum relevance threshold), and resolves open-access PDFs via
+ * Unpaywall. Turkish `queryOriginal` is sent to TR Dizin / Crossref / OpenAlex
+ * (language:tr), English `query` to the rest. Results are shared across users
+ * via the Cloudflare Cache API when available. Every source reports a status (ok / failed / skipped + reason) so
  * the model can tell "search was unavailable" apart from "no literature".
  *
  * Optional API keys (read at request time from the Cloudflare Pages / process
@@ -16,8 +20,65 @@
  */
 
 import { searchPhilosophicalCorpus } from './tools/philosophical-corpus'
-import { envFrom, getRuntimeEnv, type EnvStore } from './runtime-env'
+import type { EnvStore } from './runtime-env'
 import { searchFetchSignal } from './web-search'
+import {
+    AcademicSourceError,
+    NON_LETTER_DIGIT_RE,
+    NON_LETTER_DIGIT_SPLIT_RE,
+    QUERY_JUNK_RE,
+    TOKEN_JUNK_RE,
+    __resetCooldownsForTests,
+    abortError,
+    assertAcademicNotAborted,
+    cleanDoi,
+    clipText,
+    createSerialQueue,
+    decodeEntities,
+    doiUrl,
+    fetchAcademic,
+    foldText,
+    isPdfLike,
+    looksTurkish,
+    mapWithConcurrency,
+    pickOaPdfUrl,
+    readJson,
+    readText,
+    resolveAcademicApiKeys,
+    stripTags,
+    truncateAtWord,
+    userAgent,
+    type AcademicApiKeys,
+    type AcademicSourceReason,
+} from './academic-common'
+import { coreQueue, doajQueue, queryCore, queryDoaj, queryTrDizin } from './academic-sources-extra'
+import {
+    ENCYCLOPEDIA_NAMES,
+    filterRelevantEntries,
+    searchIep,
+    searchSep,
+    type EncyclopediaEntry,
+} from './academic-encyclopedia'
+import {
+    ACADEMIC_DOI_MISS_TTL_S,
+    ACADEMIC_DOI_TTL_S,
+    ACADEMIC_PARTIAL_TTL_S,
+    ACADEMIC_SEARCH_TTL_S,
+    academicCacheGet,
+    academicCachePut,
+} from './academic-cache'
+
+export {
+    AcademicSourceError,
+    DEFAULT_ACADEMIC_CONTACT_EMAIL,
+    cleanDoi,
+    foldText,
+    looksTurkish,
+    resolveAcademicApiKeys,
+    retryDelayFromHeader,
+} from './academic-common'
+export type { AcademicApiKeys, AcademicSourceReason } from './academic-common'
+export type { EncyclopediaEntry } from './academic-encyclopedia'
 
 export type AcademicSourceLabel =
     | 'OpenAlex'
@@ -26,6 +87,9 @@ export type AcademicSourceLabel =
     | 'Semantic Scholar'
     | 'PMC / PubMed'
     | 'Europe PMC'
+    | 'TR Dizin'
+    | 'CORE'
+    | 'DOAJ'
     | 'Philosophical Canon'
     | 'Web Search'
 
@@ -52,6 +116,10 @@ export interface AcademicPaper {
     /** Every source that returned this work (after duplicate merge). */
     sources?: AcademicSourceLabel[]
     score?: number
+    /** 1-based rank per result list (e.g. `openalex`, `openalex:tr`) — input to rank fusion. */
+    ranks?: Record<string, number>
+    /** Query-term coverage 0..1 (max over English / original phrasing). */
+    relevance?: number
 }
 
 export type AcademicWorkType = 'article' | 'book' | 'book-chapter' | 'review' | 'preprint' | 'dissertation'
@@ -74,22 +142,26 @@ export interface AcademicSearchOptions {
     /** ISO 639-1 code, e.g. 'tr', 'en'. */
     language?: string
     type?: AcademicWorkType
+    /** User's original-language phrasing (e.g. Turkish) — sent to TR Dizin / Crossref / OpenAlex(lang). */
+    queryOriginal?: string
+    /** Skip the shared Cache API lookup/store. */
+    noCache?: boolean
     /** Request env (Cloudflare bindings). Falls back to getRuntimeEnv(). */
     env?: EnvStore
 }
 
-export type AcademicSourceId = 'openalex' | 'crossref' | 'semantic_scholar' | 'arxiv' | 'pubmed' | 'europepmc'
-
-export type AcademicSourceReason =
-    | 'rate_limited'
-    | 'timeout'
-    | 'http_error'
-    | 'network_error'
-    | 'parse_error'
-    | 'queue_busy'
-    | 'error'
-    | 'skipped_by_field'
-    | 'skipped_by_filter'
+export type AcademicSourceId =
+    | 'openalex'
+    | 'crossref'
+    | 'semantic_scholar'
+    | 'arxiv'
+    | 'pubmed'
+    | 'europepmc'
+    | 'trdizin'
+    | 'core'
+    | 'doaj'
+    | 'sep'
+    | 'iep'
 
 export interface AcademicSourceStatus {
     source: AcademicSourceId
@@ -100,6 +172,8 @@ export interface AcademicSourceStatus {
     ms: number
     /** Whether an API key was sent (never the key itself). */
     keyed?: boolean
+    /** Query variant language when a source ran on the original (e.g. Turkish) phrasing. */
+    lang?: string
 }
 
 export interface AcademicSearchResult {
@@ -119,6 +193,14 @@ export interface AcademicSearchResult {
     notice?: string
     /** How `field` and filters were applied (for the payload header). */
     fieldFilter?: string
+    /** Encyclopedia entries (SEP / IEP) — reference works, NOT papers. */
+    encyclopedia?: EncyclopediaEntry[]
+    /** Papers dropped by the minimum relevance threshold. */
+    droppedWeak?: number
+    /** Served from the shared cache. */
+    cached?: boolean
+    /** Original-language phrasing used for the Turkish fan-out. */
+    queryOriginal?: string
 }
 
 const SEARCH_TIMEOUT_MS = 12_000
@@ -126,240 +208,24 @@ const S2_TIMEOUT_MS = 6_000
 const UNPAYWALL_TIMEOUT_MS = 4_000
 const UNPAYWALL_CONCURRENCY = 4
 const UNPAYWALL_MAX_LOOKUPS = 10
-const RETRY_AFTER_MAX_MS = 3_000
-const DEFAULT_RETRY_BACKOFF_MS = 700
-/** Leave at least this much of the source budget for the retried request. */
-const RETRY_MIN_REMAINING_MS = 1_500
-export const DEFAULT_ACADEMIC_CONTACT_EMAIL = 'dursunkayamustafa@gmail.com'
 const ABSTRACT_KEEP_CHARS = 600
-
-// Unicode property regexes are built via RegExp() because the repo's TS target
-// rejects the `u` literal flag; runtime (V8 / Workers) supports them.
-const COMBINING_MARKS_RE = new RegExp('\\p{M}+', 'gu')
-const NON_LETTER_DIGIT_RE = new RegExp('[^\\p{L}\\p{N}]+', 'gu')
-const NON_LETTER_DIGIT_SPLIT_RE = new RegExp('[^\\p{L}\\p{N}]+', 'u')
-const QUERY_JUNK_RE = new RegExp('[^\\p{L}\\p{N}\\s-]', 'gu')
-const TOKEN_JUNK_RE = new RegExp('[^\\p{L}\\p{N}-]', 'gu')
+const ENCYCLOPEDIA_LIMIT = 2
 
 // ---------------------------------------------------------------------------
-// Keys / env
+// Rate-limit queues (module-level)
 // ---------------------------------------------------------------------------
 
-export interface AcademicApiKeys {
-    openAlexKey?: string
-    semanticScholarKey?: string
-    ncbiKey?: string
-    contactEmail: string
+/** arXiv asks for ≤ 1 request / 3 s. */
+const arxivQueue = createSerialQueue(3_000)
+
+/** Test hook: reset queues / cool-downs; `minIntervalMs` applies to arXiv, `extraMs` to CORE + DOAJ. */
+export function __resetAcademicSearchStateForTests(minIntervalMs = 3_000, extraMs = 0): void {
+    arxivQueue.reset(minIntervalMs)
+    coreQueue.reset(extraMs)
+    doajQueue.reset(extraMs)
+    __resetCooldownsForTests()
 }
 
-/** Reads optional academic API keys from the request env. Values are never logged. */
-export function resolveAcademicApiKeys(env?: EnvStore): AcademicApiKeys {
-    let store: EnvStore = {}
-    try {
-        store = env ?? getRuntimeEnv()
-    } catch {
-        store = env ?? {}
-    }
-    const email = envFrom(store, 'ACADEMIC_CONTACT_EMAIL')
-    return {
-        openAlexKey: envFrom(store, 'OPENALEX_API_KEY') || undefined,
-        semanticScholarKey: envFrom(store, 'SEMANTIC_SCHOLAR_API_KEY') || undefined,
-        ncbiKey: envFrom(store, 'NCBI_API_KEY') || undefined,
-        contactEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : DEFAULT_ACADEMIC_CONTACT_EMAIL,
-    }
-}
-
-function userAgent(email: string): string {
-    return `WorldInMaking/1.0 (https://worldinmaking.com; mailto:${email})`
-}
-
-// ---------------------------------------------------------------------------
-// Abort / failure plumbing
-// ---------------------------------------------------------------------------
-
-function abortError(): DOMException {
-    return new DOMException('The operation was aborted.', 'AbortError')
-}
-
-function assertAcademicNotAborted(signal?: AbortSignal): void {
-    if (signal?.aborted) throw abortError()
-}
-
-/** A provider-level failure (never a client Stop). */
-export class AcademicSourceError extends Error {
-    reason: AcademicSourceReason
-    httpStatus?: number
-    constructor(reason: AcademicSourceReason, httpStatus?: number) {
-        super(httpStatus ? `${reason} (HTTP ${httpStatus})` : reason)
-        this.name = 'AcademicSourceError'
-        this.reason = reason
-        this.httpStatus = httpStatus
-    }
-}
-
-function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-    return new Promise((resolve, reject) => {
-        if (signal?.aborted) {
-            reject(abortError())
-            return
-        }
-        const onAbort = () => {
-            clearTimeout(timer)
-            reject(abortError())
-        }
-        const timer = setTimeout(() => {
-            signal?.removeEventListener('abort', onAbort)
-            resolve()
-        }, Math.max(0, ms))
-        signal?.addEventListener('abort', onAbort, { once: true })
-    })
-}
-
-/**
- * Retry-After → delay in ms. Missing header → default backoff.
- * Returns null when the server asks for more than RETRY_AFTER_MAX_MS (do not retry).
- */
-export function retryDelayFromHeader(value: string | null | undefined, now = Date.now()): number | null {
-    if (value == null || String(value).trim() === '') return DEFAULT_RETRY_BACKOFF_MS
-    const raw = String(value).trim()
-    let ms: number
-    if (/^\d+(\.\d+)?$/.test(raw)) {
-        ms = Math.round(parseFloat(raw) * 1000)
-    } else {
-        const at = Date.parse(raw)
-        if (!Number.isFinite(at)) return DEFAULT_RETRY_BACKOFF_MS
-        ms = at - now
-    }
-    if (ms > RETRY_AFTER_MAX_MS) return null
-    return Math.max(ms, 250)
-}
-
-function readHeader(res: Response, name: string): string | null {
-    try {
-        return typeof res.headers?.get === 'function' ? res.headers.get(name) : null
-    } catch {
-        return null
-    }
-}
-
-function isTimeoutError(err: unknown, signal?: AbortSignal): boolean {
-    const name = err && typeof err === 'object' ? (err as { name?: unknown }).name : undefined
-    return name === 'TimeoutError' || (name === 'AbortError' && !signal?.aborted)
-}
-
-/**
- * fetch with the source timeout, one retry on 429/5xx (short backoff, honours
- * Retry-After ≤ 3 s), and typed failures. Client Stop rethrows AbortError.
- */
-async function fetchAcademic(url: string, init: RequestInit, timeoutMs: number, signal?: AbortSignal): Promise<Response> {
-    const deadline = Date.now() + timeoutMs
-    for (let attempt = 0; attempt < 2; attempt++) {
-        assertAcademicNotAborted(signal)
-        const remaining = deadline - Date.now()
-        if (remaining <= 0) throw new AcademicSourceError('timeout')
-        let res: Response
-        try {
-            res = await fetch(url, { ...init, signal: searchFetchSignal(remaining, signal) })
-        } catch (err) {
-            if (signal?.aborted) throw abortError()
-            if (isTimeoutError(err, signal)) throw new AcademicSourceError('timeout')
-            throw new AcademicSourceError('network_error')
-        }
-        if (res.ok) return res
-        const status = typeof res.status === 'number' ? res.status : 0
-        const retryable = status === 429 || status >= 500
-        const reason: AcademicSourceReason = status === 429 ? 'rate_limited' : 'http_error'
-        if (!retryable || attempt === 1) throw new AcademicSourceError(reason, status || undefined)
-        const wait = retryDelayFromHeader(readHeader(res, 'retry-after'))
-        if (wait === null || Date.now() + wait + RETRY_MIN_REMAINING_MS > deadline) {
-            throw new AcademicSourceError(reason, status || undefined)
-        }
-        try {
-            await res.body?.cancel()
-        } catch {
-            /* ignore */
-        }
-        await sleep(wait, signal)
-    }
-    throw new AcademicSourceError('error')
-}
-
-async function readJson<T>(res: Response): Promise<T> {
-    try {
-        return (await res.json()) as T
-    } catch {
-        throw new AcademicSourceError('parse_error')
-    }
-}
-
-async function readText(res: Response): Promise<string> {
-    try {
-        return await res.text()
-    } catch {
-        throw new AcademicSourceError('parse_error')
-    }
-}
-
-// ---------------------------------------------------------------------------
-// arXiv: module-level serial queue (arXiv asks for ≤ 1 request / 3 s)
-// ---------------------------------------------------------------------------
-
-let arxivMinIntervalMs = 3_000
-let arxivQueue: Promise<unknown> = Promise.resolve()
-let arxivLastStartedAt = 0
-
-/** Test hook: reset arXiv queue state and optionally override the spacing. */
-export function __resetAcademicSearchStateForTests(minIntervalMs = 3_000): void {
-    arxivMinIntervalMs = minIntervalMs
-    arxivQueue = Promise.resolve()
-    arxivLastStartedAt = 0
-}
-
-type QueueOutcome<T> = { skipped: true } | { value: T }
-
-/** Serialises arXiv requests module-wide; gives up (queue_busy) if our slot is more than maxWaitMs away. */
-function enqueueArxiv<T>(task: () => Promise<T>, maxWaitMs: number, signal?: AbortSignal): Promise<T> {
-    let cancelled = false
-    let started = false
-    let timer: ReturnType<typeof setTimeout> | undefined
-    const turn: Promise<QueueOutcome<T>> = arxivQueue.then(async () => {
-        if (cancelled || signal?.aborted) return { skipped: true as const }
-        const wait = arxivLastStartedAt + arxivMinIntervalMs - Date.now()
-        if (wait > 0) {
-            try {
-                await sleep(wait, signal)
-            } catch {
-                return { skipped: true as const }
-            }
-        }
-        if (cancelled || signal?.aborted) return { skipped: true as const }
-        started = true
-        if (timer) clearTimeout(timer)
-        arxivLastStartedAt = Date.now()
-        return { value: await task() }
-    })
-    arxivQueue = turn.catch(() => undefined)
-    return new Promise<T>((resolve, reject) => {
-        timer = setTimeout(() => {
-            if (!started) {
-                cancelled = true
-                reject(new AcademicSourceError('queue_busy'))
-            }
-        }, Math.max(0, maxWaitMs))
-        turn.then(
-            (out) => {
-                if (timer) clearTimeout(timer)
-                if ('value' in out) resolve(out.value)
-                else if (signal?.aborted) reject(abortError())
-                else reject(new AcademicSourceError('queue_busy'))
-            },
-            (err) => {
-                if (timer) clearTimeout(timer)
-                reject(err)
-            }
-        )
-    })
-}
 
 // ---------------------------------------------------------------------------
 // Field profiles & routing
@@ -417,14 +283,6 @@ const FIELD_PROFILES: FieldProfileEntry[] = [
     { key: 'environmental-science', label: 'Environmental Science', domain: 'stem', openAlex: { fields: [23] }, s2: ['Environmental Science'], aliases: ['environmental science', 'environment', 'cevre', 'climate', 'iklim', 'climate change', 'iklim degisikligi'] },
 ]
 
-/** Lowercase, strip diacritics (NFKD), map Turkish dotless ı → i. */
-export function foldText(value: string): string {
-    return String(value || '')
-        .normalize('NFKD')
-        .replace(COMBINING_MARKS_RE, '')
-        .replace(/ı/g, 'i')
-        .toLowerCase()
-}
 
 function toProfile(entry: FieldProfileEntry): FieldProfile {
     return { key: entry.key, label: entry.label, domain: entry.domain, openAlex: entry.openAlex, s2: entry.s2, arxiv: entry.arxiv }
@@ -461,6 +319,11 @@ export interface SourceRoutingPlan {
     run: Record<AcademicSourceId, boolean>
     skipReason: Partial<Record<AcademicSourceId, AcademicSourceReason>>
     profile?: FieldProfile
+    /** Turkish phrasing to fan out (TR Dizin / Crossref / OpenAlex language:tr), when present. */
+    turkishText?: string
+    /** Humanities-ish query/field (drives DOAJ / CORE / encyclopedias). */
+    humanities?: boolean
+    philosophy?: boolean
 }
 
 function normalizeLanguage(language?: string): string | undefined {
@@ -468,19 +331,52 @@ function normalizeLanguage(language?: string): string | undefined {
     return /^[a-z]{2}$/.test(code) ? code : undefined
 }
 
+const TURKISH_STUDIES_RE =
+    /\b(osmanli\w*|ottoman\w*|turkiye\w*|turkey|turkish|turk|turkler\w*|anadolu\w*|anatolia\w*|cumhuriyet\w*|ataturk\w*|kemalis\w*|tanzimat|mesrutiyet\w*|selcuklu\w*|seljuk\w*|istanbul|ankara|kurt\w*|kurdish|alevi\w*|bektasi\w*|divan edebiyati)\b/i
+
+const HUMANITIES_RE =
+    /\b(philosoph\w*|felsef\w*|ethic\w*|etik|ahlak\w*|virtue|erdem\w*|metaphysic\w*|metafizik|ontolog\w*|ontoloji|epistemolog\w*|phenomenolog\w*|fenomenoloji|existential\w*|aesthetic\w*|estetik|hermeneutic\w*|history|historical|tarih\w*|literature|literary|edebiyat\w*|poetry|siir|novel|roman|theolog\w*|religio\w*|ilahiyat|din|islam\w*|christian\w*|marx\w*|alienation|yabancilasma\w*|hegel\w*|kant\w*|heidegger\w*|nietzsche\w*|aristotle\w*|aristoteles|plato\w*|platon|socrat\w*|sokrates|spinoza|descartes|hume|locke|rousseau|foucault|derrida|husserl|wittgenstein|sartre|arendt|adorno|habermas|benjamin|levinas|deleuze|gestell|dasein|being|varlik|modernit\w*|modernles\w*|culture|kultur\w*|art|sanat|music|muzik|mytholog\w*|classics|antiquity|medieval|renaissance|enlightenment|aydinlanma|sociology|sosyoloji|anthropolog\w*|antropoloji)\b/i
+
+const PHILOSOPHY_RE =
+    /\b(philosoph\w*|felsef\w*|ethic\w*|etik|ahlak\w*|virtue|erdem\w*|metaphysic\w*|metafizik|ontolog\w*|ontoloji|epistemolog\w*|phenomenolog\w*|fenomenoloji|existential\w*|varolus\w*|aesthetic\w*|estetik|hermeneutic\w*|marx\w*|alienation|yabancilasma\w*|hegel\w*|kant\w*|heidegger\w*|nietzsche\w*|aristotle\w*|aristoteles|plato\w*|platon|socrat\w*|sokrates|spinoza|descartes|hume|locke|rousseau|foucault|derrida|husserl|wittgenstein|sartre|arendt|adorno|habermas|levinas|deleuze|kierkegaard|leibniz|gestell|dasein|stoic\w*|epicur\w*|utilitarian\w*|deontolog\w*|consequential\w*|free will|consciousness|bilinc|mind|zihin)\b/i
+
+export function looksHumanities(text: string): boolean {
+    return HUMANITIES_RE.test(foldText(text))
+}
+
+export function looksPhilosophy(text: string): boolean {
+    return PHILOSOPHY_RE.test(foldText(text))
+}
+
+export function looksTurkishStudies(text: string): boolean {
+    return TURKISH_STUDIES_RE.test(foldText(text))
+}
+
 /**
  * Decides which sources run. PubMed/Europe PMC only for biomedical field/query;
  * arXiv only for STEM-ish fields/queries (and not for book/dissertation/review
  * types or non-English language filters). Open-access-only never skips arXiv.
+ * TR Dizin: Turkish query/original, language tr or Turkish-studies topic.
+ * DOAJ / CORE: humanities (field or query) or open-access-only.
+ * SEP / IEP: philosophy field or query.
  */
 export function planAcademicSources(query: string, options?: AcademicSearchOptions): SourceRoutingPlan {
     const profile = resolveFieldProfile(options?.field)
-    const hint = `${query} ${options?.field || ''}`
+    const original = String(options?.queryOriginal || '').trim()
+    const hint = `${query} ${original} ${options?.field || ''}`
     const biomedical = profile?.domain === 'biomedical' || looksBiomedical(hint)
     const stem = Boolean(profile?.arxiv) || looksStem(hint)
     const lang = normalizeLanguage(options?.language)
     const type = options?.type
     const nonPreprintType = type === 'book' || type === 'book-chapter' || type === 'dissertation' || type === 'review'
+    const turkishStudies = looksTurkishStudies(hint)
+    const humanities =
+        profile?.domain === 'humanities' || (!profile && !stem && !biomedical && (looksHumanities(hint) || turkishStudies))
+    const philosophyField = profile?.key === 'philosophy' || profile?.key === 'history-philosophy-science' || profile?.key === 'religion'
+    const philosophy = philosophyField || (!biomedical && looksPhilosophy(hint))
+    const originalTurkish = original && original.toLowerCase() !== query.toLowerCase() && looksTurkish(original)
+    const queryTurkish = looksTurkish(query)
+    const turkishText = originalTurkish ? original : queryTurkish ? query : lang === 'tr' ? original || query : undefined
 
     const run: Record<AcademicSourceId, boolean> = {
         openalex: true,
@@ -489,27 +385,43 @@ export function planAcademicSources(query: string, options?: AcademicSearchOptio
         arxiv: true,
         pubmed: true,
         europepmc: true,
+        trdizin: true,
+        core: true,
+        doaj: true,
+        sep: true,
+        iep: true,
     }
     const skipReason: SourceRoutingPlan['skipReason'] = {}
+    const skip = (id: AcademicSourceId, reason: AcademicSourceReason) => {
+        run[id] = false
+        skipReason[id] = reason
+    }
     if (!biomedical) {
-        run.pubmed = false
-        run.europepmc = false
-        skipReason.pubmed = 'skipped_by_field'
-        skipReason.europepmc = 'skipped_by_field'
+        skip('pubmed', 'skipped_by_field')
+        skip('europepmc', 'skipped_by_field')
     } else if (type === 'book' || type === 'book-chapter' || type === 'dissertation') {
-        run.pubmed = false
-        run.europepmc = false
-        skipReason.pubmed = 'skipped_by_filter'
-        skipReason.europepmc = 'skipped_by_filter'
+        skip('pubmed', 'skipped_by_filter')
+        skip('europepmc', 'skipped_by_filter')
     }
     if (!stem) {
-        run.arxiv = false
-        skipReason.arxiv = 'skipped_by_field'
+        skip('arxiv', 'skipped_by_field')
     } else if (nonPreprintType || (lang && lang !== 'en')) {
-        run.arxiv = false
-        skipReason.arxiv = 'skipped_by_filter'
+        skip('arxiv', 'skipped_by_filter')
     }
-    return { run, skipReason, profile }
+    if (!(turkishText || lang === 'tr' || turkishStudies)) {
+        skip('trdizin', 'skipped_by_field')
+    } else if (lang && lang !== 'tr' && !turkishStudies) {
+        skip('trdizin', 'skipped_by_filter')
+    }
+    const oaWanted = Boolean(options?.openAccessOnly)
+    for (const id of ['doaj', 'core'] as const) {
+        if (!(humanities || oaWanted)) skip(id, 'skipped_by_field')
+        else if (type === 'book' || type === 'book-chapter') skip(id, 'skipped_by_filter')
+    }
+    for (const id of ['sep', 'iep'] as const) {
+        if (!philosophy) skip(id, 'skipped_by_field')
+    }
+    return { run, skipReason, profile, turkishText: turkishText || undefined, humanities, philosophy }
 }
 
 const LANGUAGE_NAMES: Record<string, { pubmed: string; epmc: string }> = {
@@ -547,60 +459,6 @@ export function reconstructAbstract(invertedIndex?: Record<string, number[]> | n
     return full.length > maxChars ? `${full.slice(0, maxChars)}…` : full
 }
 
-function decodeEntities(value: string): string {
-    return value
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;|&apos;|&#x27;/g, "'")
-        .replace(/&amp;/g, '&')
-}
-
-function stripTags(value: string): string {
-    return decodeEntities(String(value || '').replace(/<[^>]*>/g, ' '))
-        .replace(/\s+/g, ' ')
-        .trim()
-}
-
-function clipText(value: string | undefined, max: number): string | undefined {
-    if (!value) return undefined
-    const text = value.replace(/\s+/g, ' ').trim()
-    if (!text) return undefined
-    return text.length > max ? `${text.slice(0, max)}…` : text
-}
-
-/** Bare lowercase DOI ("10.x/y") from a DOI or doi.org URL; '' when not a DOI. */
-export function cleanDoi(value?: string): string {
-    const raw = String(value || '').trim()
-    if (!raw) return ''
-    const stripped = raw.replace(/^https?:\/\/(dx\.)?doi\.org\//i, '').replace(/^doi:\s*/i, '').trim()
-    return /^10\.\d{4,9}\/\S+$/.test(stripped) ? stripped.toLowerCase() : ''
-}
-
-function doiUrl(value?: string): string | undefined {
-    const doi = cleanDoi(value)
-    return doi ? `https://doi.org/${doi}` : undefined
-}
-
-function isPdfLike(url: string): boolean {
-    return /\.pdf(\?|$)/i.test(url) || /arxiv\.org\/pdf|pmc\.ncbi|europepmc\.org\/articles|\/pdf\/?$/i.test(url)
-}
-
-function pickOaPdfUrl(...candidates: Array<string | undefined | null>): string | undefined {
-    const urls = candidates.filter((url): url is string => typeof url === 'string' && url.startsWith('http'))
-    return urls.find(isPdfLike) || urls[0]
-}
-
-async function mapWithConcurrency<T>(items: T[], concurrency: number, fn: (item: T) => Promise<void>): Promise<void> {
-    let next = 0
-    const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-        while (next < items.length) {
-            const item = items[next++]
-            await fn(item)
-        }
-    })
-    await Promise.all(workers)
-}
 
 // ---------------------------------------------------------------------------
 // Formatting
@@ -611,8 +469,13 @@ function googleScholarUrl(title: string): string {
 }
 
 /** Markdown listing with DOI, open-access PDF (Unpaywall / OA location) and Google Scholar links. */
-export function formatAcademicResults(papers: AcademicPaper[]): string {
-    if (!papers || papers.length === 0) return 'No academic papers found matching the query.'
+export function formatAcademicResults(papers: AcademicPaper[], encyclopedia: EncyclopediaEntry[] = []): string {
+    const encBlock = encyclopedia.length
+        ? `\n\n**Encyclopedia entries (reference works, not papers)**\n${encyclopedia
+              .map((e) => `- ${ENCYCLOPEDIA_NAMES[e.source]}: [${e.title}](${e.url})${e.excerpt ? ` — ${e.excerpt}` : ''}`)
+              .join('\n')}`
+        : ''
+    if (!papers || papers.length === 0) return `No academic papers found matching the query.${encBlock}`
 
     return papers
         .map((p, idx) => {
@@ -639,7 +502,7 @@ export function formatAcademicResults(papers: AcademicPaper[]): string {
             if (p.abstract) item += `\n   - **Abstract:** ${p.abstract}`
             return item
         })
-        .join('\n\n')
+        .join('\n\n') + encBlock
 }
 
 /** Formats papers into standard APA bibliography format suitable for WIM notebooks */
@@ -661,14 +524,6 @@ function formatAuthorsShort(authors: string[]): string {
     if (!authors || authors.length === 0) return 'Unknown author'
     const shown = authors.slice(0, 3).join('; ')
     return authors.length > 3 ? `${shown} et al.` : shown
-}
-
-function truncateAtWord(text: string, max: number): string {
-    const clean = String(text || '').replace(/\s+/g, ' ').trim()
-    if (clean.length <= max) return clean
-    const cut = clean.slice(0, max)
-    const lastSpace = cut.lastIndexOf(' ')
-    return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.]+$/, '')}…`
 }
 
 /** One compact line: `[P1] Authors (Year). Title. Venue. DOI. cites:N. OA:url|yes|no. src:… Abstract: …` */
@@ -694,14 +549,27 @@ export function formatPaperLine(p: AcademicPaper, index: number, abstractChars: 
 function formatStatusLine(sources: AcademicSourceStatus[]): string {
     return sources
         .map((s) => {
-            if (s.status === 'ok') return `${s.source} ok(${s.count})`
-            return `${s.source} ${s.status}(${s.reason || 'error'}${s.httpStatus ? ` ${s.httpStatus}` : ''})`
+            const id = s.lang ? `${s.source}[${s.lang}]` : s.source
+            if (s.status === 'ok') return `${id} ok(${s.count})`
+            return `${id} ${s.status}(${s.reason || 'error'}${s.httpStatus ? ` ${s.httpStatus}` : ''})`
         })
         .join(' · ')
 }
 
 export const ACADEMIC_CITE_INSTRUCTION =
     'Cite only these papers, by their [P#] id, using exactly the metadata shown (authors, year, title, venue, DOI). Never invent papers, authors, years, DOIs or page numbers.'
+
+export const ENCYCLOPEDIA_NOTE =
+    'Items marked ENCYCLOPEDIA are reference-work entries (SEP / IEP), not papers: cite them by [P#] as encyclopedia entries, never as journal articles, and do not quote beyond the excerpt shown.'
+
+/** `[P7] ENCYCLOPEDIA (Stanford Encyclopedia of Philosophy) "Title" — Authors. url. Excerpt: …` */
+export function formatEncyclopediaLine(e: EncyclopediaEntry, index: number, excerptChars: number): string {
+    const parts: string[] = [`[P${index + 1}] ENCYCLOPEDIA (${ENCYCLOPEDIA_NAMES[e.source]}) "${truncateAtWord(e.title, 160)}"`]
+    if (e.authors?.length) parts.push(`— ${truncateAtWord(e.authors.join('; '), 100)}.`)
+    parts.push(`${e.url.slice(0, 200)}.`)
+    if (excerptChars > 0 && e.excerpt) parts.push(`Excerpt: ${truncateAtWord(e.excerpt, Math.min(excerptChars, 300))}`)
+    return parts.join(' ')
+}
 
 /**
  * Compact, size-bounded payload for the model. Never cuts mid-line: shortens
@@ -710,25 +578,36 @@ export const ACADEMIC_CITE_INSTRUCTION =
 export function formatAcademicPayloadForModel(result: AcademicSearchResult, maxChars = 4_000): string {
     const header: string[] = []
     const n = result.papers.length
+    const enc = result.encyclopedia || []
+    const encLabel = enc.length ? ` + ${enc.length} encyclopedia entr${enc.length === 1 ? 'y' : 'ies'}` : ''
     header.push(
-        `ACADEMIC SEARCH "${truncateAtWord(result.query || '', 160)}" — ${n} paper${n === 1 ? '' : 's'}${result.fieldFilter ? ` (${truncateAtWord(result.fieldFilter, 200)})` : ''}`
+        `ACADEMIC SEARCH "${truncateAtWord(result.query || '', 160)}"${result.queryOriginal ? ` / "${truncateAtWord(result.queryOriginal, 120)}"` : ''} — ${n} paper${n === 1 ? '' : 's'}${encLabel}${result.fieldFilter ? ` (${truncateAtWord(result.fieldFilter, 200)})` : ''}`
     )
     if (result.sources && result.sources.length > 0) header.push(`Sources: ${formatStatusLine(result.sources)}`)
     if (result.notice) header.push(`NOTE: ${truncateAtWord(result.notice, 600)}`)
-    header.push(n > 0 ? ACADEMIC_CITE_INSTRUCTION : 'No papers were returned by the sources that responded.')
+    header.push(n + enc.length > 0 ? ACADEMIC_CITE_INSTRUCTION : 'No papers were returned by the sources that responded.')
+    if (enc.length) header.push(ENCYCLOPEDIA_NOTE)
 
     const head = header.join('\n')
     if (head.length >= maxChars) return truncateAtWord(head, maxChars - 1)
-    if (n === 0) return head
+    if (n + enc.length === 0) return head
 
+    const encLines = (chars: number) => enc.map((e, i) => formatEncyclopediaLine(e, n + i, chars))
     for (const abstractChars of [300, 220, 150, 90, 0]) {
-        const text = `${head}\n${result.papers.map((p, i) => formatPaperLine(p, i, abstractChars)).join('\n')}`
+        const lines = [...result.papers.map((p, i) => formatPaperLine(p, i, abstractChars)), ...encLines(Math.min(abstractChars, 200))]
+        const text = `${head}\n${lines.join('\n')}`
         if (text.length <= maxChars) return text
     }
-    const lines = result.papers.map((p, i) => formatPaperLine(p, i, 0))
-    for (let keep = lines.length - 1; keep >= 1; keep--) {
-        const omitted = lines.length - keep
-        const text = `${head}\n${lines.slice(0, keep).join('\n')}\n(${omitted} lower-ranked paper${omitted === 1 ? '' : 's'} omitted for length)`
+    // Encyclopedia lines keep their numbers (they follow the papers), so drop them first.
+    const paperLines = result.papers.map((p, i) => formatPaperLine(p, i, 0))
+    const withoutEnc = `${head}\n${paperLines.join('\n')}`
+    if (n > 0 && withoutEnc.length <= maxChars) {
+        const note = `\n(${enc.length} encyclopedia entr${enc.length === 1 ? 'y' : 'ies'} omitted for length)`
+        return enc.length && withoutEnc.length + note.length <= maxChars ? withoutEnc + note : withoutEnc
+    }
+    for (let keep = paperLines.length - 1; keep >= 1; keep--) {
+        const omitted = paperLines.length - keep
+        const text = `${head}\n${paperLines.slice(0, keep).join('\n')}\n(${omitted} lower-ranked paper${omitted === 1 ? '' : 's'} omitted for length)`
         if (text.length <= maxChars) return text
     }
     return head
@@ -741,6 +620,7 @@ export function formatAcademicPayloadForModel(result: AcademicSearchResult, maxC
 const STOP_WORDS = new Set([
     'the', 'and', 'for', 'with', 'from', 'that', 'this', 'into', 'over', 'under',
     'bir', 've', 'ile', 'icin', 'için', 'olan', 'nedir', 'nasil', 'nasıl',
+    'uzerine', 'hakkinda', 'paper', 'papers', 'research', 'academic', 'article', 'makale', 'study', 'studies',
 ])
 
 export function tokenizeAcademicQuery(query: string): string[] {
@@ -782,13 +662,87 @@ export function scoreAcademicPaper(query: string, paper: AcademicPaper, fieldLab
     return score
 }
 
+/** Reciprocal-rank-fusion constant (Cormack et al.; 60 is the usual default). */
+export const RRF_K = 60
+/** Minimum share of query terms a paper must contain (title / abstract / topics / authors). */
+export const MIN_RELEVANCE = 0.5
+
+function foldedTokens(query: string): string[] {
+    return Array.from(new Set(tokenizeAcademicQuery(foldText(query)).filter((t) => !STOP_WORDS.has(t))))
+}
+
+/** Token sets for relevance: English `query` and (optionally) the original-language phrasing. */
+export function queryTokenSets(query: string, queryOriginal?: string): string[][] {
+    const sets = [foldedTokens(query)]
+    if (queryOriginal && queryOriginal.trim() && queryOriginal.trim() !== query.trim()) sets.push(foldedTokens(queryOriginal))
+    return sets.filter((set) => set.length > 0)
+}
+
+function tokenIn(text: string, token: string): boolean {
+    if (text.includes(token)) return true
+    // Light stemming for inflected forms (Turkish suffixes, English plurals): drop 2 chars on long tokens.
+    return token.length >= 7 && text.includes(token.slice(0, token.length - 2))
+}
+
+/** Query-term coverage 0..1 (best of the token sets) and title coverage. */
+export function relevanceCoverage(paper: AcademicPaper, sets: string[][]): { coverage: number; titleCoverage: number } {
+    if (sets.length === 0) return { coverage: 1, titleCoverage: 1 }
+    const title = foldText(paper.title || '')
+    const body = foldText(
+        `${paper.title || ''} ${paper.abstract || ''} ${(paper.topics || []).join(' ')} ${(paper.authors || []).join(' ')}`
+    )
+    let best = { coverage: 0, titleCoverage: 0 }
+    for (const set of sets) {
+        const coverage = set.filter((t) => tokenIn(body, t)).length / set.length
+        const titleCoverage = set.filter((t) => tokenIn(title, t)).length / set.length
+        if (coverage > best.coverage || (coverage === best.coverage && titleCoverage > best.titleCoverage)) {
+            best = { coverage, titleCoverage }
+        }
+    }
+    return best
+}
+
+/** Single-term queries need the term; longer queries need ≥ MIN_RELEVANCE of the terms. */
+export function passesRelevanceThreshold(paper: AcademicPaper, sets: string[][]): boolean {
+    if (sets.length === 0) return true
+    const { coverage } = relevanceCoverage(paper, sets)
+    const shortest = Math.min(...sets.map((set) => set.length))
+    return shortest <= 1 ? coverage >= 1 : coverage >= MIN_RELEVANCE
+}
+
+/**
+ * Fused score = Σ 100/(RRF_K + rank) over every result list that returned the
+ * paper + query-term relevance + modest citation / OA / DOI bonuses.
+ * One extra source agreeing (+~1.5) outweighs a highly cited paper (≤ +1.2).
+ */
+export function fusedAcademicScore(paper: AcademicPaper, sets: string[][], fieldLabel?: string): number {
+    let rrf = 0
+    for (const rank of Object.values(paper.ranks || {})) {
+        if (typeof rank === 'number' && rank > 0) rrf += 100 / (RRF_K + rank)
+    }
+    const { coverage, titleCoverage } = relevanceCoverage(paper, sets)
+    let score = rrf + coverage * 4 + titleCoverage * 2
+    score += Math.min(Math.log10((paper.citationCount || 0) + 1) * 0.3, 1.2)
+    if (paper.pdfUrl || paper.isOpenAccess) score += 0.3
+    if (cleanDoi(paper.doi)) score += 0.1
+    if (fieldLabel && (paper.topics || []).some((t) => t.toLowerCase().includes(fieldLabel.toLowerCase()))) score += 0.3
+    if (paper.source === 'Web Search') score -= 3
+    return Math.round(score * 1000) / 1000
+}
+
 export function rankAcademicPapers(
     query: string,
     papers: AcademicPaper[],
     sortBy: AcademicSearchOptions['sortBy'] = 'relevance',
-    fieldLabel?: string
+    fieldLabel?: string,
+    queryOriginal?: string
 ): AcademicPaper[] {
-    const scored = papers.map((paper) => ({ ...paper, score: scoreAcademicPaper(query, paper, fieldLabel) }))
+    const sets = queryTokenSets(query, queryOriginal)
+    const scored = papers.map((paper) => ({
+        ...paper,
+        score: fusedAcademicScore(paper, sets, fieldLabel),
+        relevance: relevanceCoverage(paper, sets).coverage,
+    }))
     scored.sort((a, b) => {
         if (sortBy === 'citations' && b.citationCount !== a.citationCount) return b.citationCount - a.citationCount
         if (sortBy === 'recent' && (b.year || 0) !== (a.year || 0)) return (b.year || 0) - (a.year || 0)
@@ -821,6 +775,11 @@ function mergeInto(base: AcademicPaper, other: AcademicPaper): void {
     if (!base.language && other.language) base.language = other.language
     if (!base.type && other.type) base.type = other.type
     if (other.isOpenAccess) base.isOpenAccess = true
+    if (other.ranks) {
+        const ranks = { ...(base.ranks || {}) }
+        for (const [key, rank] of Object.entries(other.ranks)) ranks[key] = Math.min(ranks[key] ?? rank, rank)
+        base.ranks = ranks
+    }
     base.sources = Array.from(new Set([...(base.sources || [base.source]), ...(other.sources || [other.source])]))
 }
 
@@ -839,6 +798,7 @@ export function mergeAcademicPapers(papers: AcademicPaper[]): AcademicPaper[] {
             ...raw,
             authors: [...(raw.authors || [])],
             sources: raw.sources ? [...raw.sources] : [raw.source],
+            ranks: raw.ranks ? { ...raw.ranks } : undefined,
         }
         const doi = cleanDoi(paper.doi)
         const titleKey = normalizeTitleKey(paper.title)
@@ -1181,7 +1141,7 @@ export function buildArxivUrl(ctx: AcademicSourceContext): string {
 
 async function queryArXiv(ctx: AcademicSourceContext): Promise<AcademicPaper[]> {
     const startedAt = Date.now()
-    return enqueueArxiv(
+    return arxivQueue.run(
         async () => {
             const remaining = SEARCH_TIMEOUT_MS - (Date.now() - startedAt)
             const res = await fetchAcademic(
@@ -1389,28 +1349,41 @@ async function queryEuropePmc(ctx: AcademicSourceContext): Promise<AcademicPaper
 }
 
 /** Open-access location via Unpaywall for a DOI (undefined when closed / failed). */
-async function resolveOaPdfViaUnpaywall(doi: string, email: string, signal?: AbortSignal): Promise<string | undefined> {
+async function resolveOaPdfViaUnpaywall(doi: string, email: string, signal?: AbortSignal, useCache = true): Promise<string | undefined> {
     assertAcademicNotAborted(signal)
     const bare = cleanDoi(doi)
     if (!bare) return undefined
+    if (useCache) {
+        const hit = await academicCacheGet<{ url: string | null }>('unpaywall', { doi: bare })
+        if (hit) return hit.url || undefined
+    }
+    const found = await fetchUnpaywall(bare, email, signal)
+    if (useCache && found.definitive) {
+        await academicCachePut('unpaywall', { doi: bare }, { url: found.url || null }, ACADEMIC_DOI_TTL_S)
+    }
+    return found.url
+}
+
+async function fetchUnpaywall(bare: string, email: string, signal?: AbortSignal): Promise<{ url?: string; definitive: boolean }> {
     try {
         const url = `https://api.unpaywall.org/v2/${encodeURIComponent(bare)}?email=${encodeURIComponent(email)}`
         const res = await fetch(url, {
             headers: { 'User-Agent': userAgent(email) },
             signal: searchFetchSignal(UNPAYWALL_TIMEOUT_MS, signal),
         })
-        if (!res.ok) return undefined
+        // 404 = Unpaywall does not know the DOI (definitive); other errors are transient.
+        if (!res.ok) return { definitive: res.status === 404 }
         const data = (await res.json()) as {
             is_oa?: boolean
             best_oa_location?: { url_for_pdf?: string; url?: string }
         }
         if (data?.is_oa && data.best_oa_location) {
-            return data.best_oa_location.url_for_pdf || data.best_oa_location.url || undefined
+            return { url: data.best_oa_location.url_for_pdf || data.best_oa_location.url || undefined, definitive: true }
         }
-        return undefined
+        return { definitive: true }
     } catch (err) {
         if (signal?.aborted) throw err instanceof Error ? err : abortError()
-        return undefined
+        return { definitive: false }
     }
 }
 
@@ -1422,20 +1395,22 @@ async function runSource(
     id: AcademicSourceId,
     fn: () => Promise<AcademicPaper[]>,
     keyed: boolean | undefined,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    lang?: string
 ): Promise<{ status: AcademicSourceStatus; papers: AcademicPaper[] }> {
     const t0 = Date.now()
     try {
         const papers = await fn()
-        return { status: { source: id, status: 'ok', count: papers.length, ms: Date.now() - t0, keyed }, papers }
+        const status: AcademicSourceStatus = { source: id, status: 'ok', count: papers.length, ms: Date.now() - t0, keyed }
+        if (lang) status.lang = lang
+        return { status, papers }
     } catch (err) {
         if (signal?.aborted) throw err instanceof Error ? err : abortError()
         const reason: AcademicSourceReason = err instanceof AcademicSourceError ? err.reason : 'error'
         const httpStatus = err instanceof AcademicSourceError ? err.httpStatus : undefined
-        return {
-            status: { source: id, status: 'failed', reason, httpStatus, count: 0, ms: Date.now() - t0, keyed },
-            papers: [],
-        }
+        const status: AcademicSourceStatus = { source: id, status: 'failed', reason, httpStatus, count: 0, ms: Date.now() - t0, keyed }
+        if (lang) status.lang = lang
+        return { status, papers: [] }
     }
 }
 
@@ -1468,7 +1443,91 @@ function describeFilters(options: AcademicSearchOptions, profile?: FieldProfile)
     return parts.length ? parts.join('; ') : undefined
 }
 
-const SOURCE_ORDER: AcademicSourceId[] = ['openalex', 'crossref', 'semantic_scholar', 'europepmc', 'pubmed', 'arxiv']
+const SOURCE_ORDER: AcademicSourceId[] = [
+    'openalex',
+    'crossref',
+    'semantic_scholar',
+    'europepmc',
+    'pubmed',
+    'arxiv',
+    'trdizin',
+    'doaj',
+    'core',
+]
+
+type SourceJob = {
+    id: AcademicSourceId
+    /** Rank-list key for fusion (e.g. `openalex:tr`). */
+    listKey: string
+    lang?: string
+    run?: () => Promise<AcademicPaper[]>
+    skipReason?: AcademicSourceReason
+    keyed?: boolean
+}
+
+function withRanks(papers: AcademicPaper[], listKey: string): AcademicPaper[] {
+    return papers.map((p, i) => ({ ...p, ranks: { ...(p.ranks || {}), [listKey]: i + 1 } }))
+}
+
+function searchCacheParts(query: string, opts: AcademicSearchOptions, limit: number): Record<string, unknown> {
+    return {
+        q: query,
+        qo: opts.queryOriginal,
+        field: opts.field,
+        yf: opts.yearFrom,
+        yt: opts.yearTo,
+        sort: opts.sortBy,
+        oa: opts.openAccessOnly,
+        lang: opts.language,
+        type: opts.type,
+        limit,
+    }
+}
+
+async function runEncyclopedias(
+    plan: SourceRoutingPlan,
+    query: string,
+    email: string,
+    signal?: AbortSignal
+): Promise<{ statuses: AcademicSourceStatus[]; entries: EncyclopediaEntry[] }> {
+    const jobs: Array<{ id: 'sep' | 'iep'; fn: () => Promise<EncyclopediaEntry[]> }> = [
+        { id: 'sep', fn: () => searchSep(query, ENCYCLOPEDIA_LIMIT + 2, email, signal) },
+        { id: 'iep', fn: () => searchIep(query, ENCYCLOPEDIA_LIMIT + 1, email, signal) },
+    ]
+    const statuses: AcademicSourceStatus[] = []
+    const entries: EncyclopediaEntry[] = []
+    const results = await Promise.all(
+        jobs.map(async (job) => {
+            if (!plan.run[job.id]) {
+                return { status: { source: job.id, status: 'skipped' as const, reason: plan.skipReason[job.id], count: 0, ms: 0 }, entries: [] }
+            }
+            const t0 = Date.now()
+            try {
+                const found = filterRelevantEntries(query, await job.fn()).slice(0, ENCYCLOPEDIA_LIMIT)
+                return { status: { source: job.id, status: 'ok' as const, count: found.length, ms: Date.now() - t0 }, entries: found }
+            } catch (err) {
+                if (signal?.aborted) throw err instanceof Error ? err : abortError()
+                const reason: AcademicSourceReason = err instanceof AcademicSourceError ? err.reason : 'error'
+                const httpStatus = err instanceof AcademicSourceError ? err.httpStatus : undefined
+                return {
+                    status: { source: job.id, status: 'failed' as const, reason, httpStatus, count: 0, ms: Date.now() - t0 },
+                    entries: [],
+                }
+            }
+        })
+    )
+    const seen = new Set<string>()
+    for (const r of results) {
+        statuses.push(r.status)
+        for (const e of r.entries) {
+            const key = e.url.replace(/\/+$/, '')
+            if (seen.has(key)) continue
+            seen.add(key)
+            entries.push(e)
+        }
+    }
+    return { statuses, entries }
+}
 
 /**
  * Searches the academic corpus across peer-reviewed repositories with advanced filters.
@@ -1496,36 +1555,88 @@ export async function searchAcademicCorpus(
     const opts: AcademicSearchOptions = { ...(options || {}) }
     opts.language = normalizeLanguage(opts.language)
     if (opts.type && !ACADEMIC_WORK_TYPES.includes(opts.type)) opts.type = undefined
+    const queryOriginal = String(opts.queryOriginal || '').replace(/\s+/g, ' ').trim().slice(0, 300)
+    opts.queryOriginal = queryOriginal && queryOriginal.toLowerCase() !== cleanQuery.toLowerCase() ? queryOriginal : undefined
     const limit = Math.min(Math.max(opts.limit || 5, 1), 10)
     const sortBy = opts.sortBy || 'relevance'
+    const useCache = !opts.noCache
+
+    const cacheParts = searchCacheParts(cleanQuery, { ...opts, sortBy }, limit)
+    if (useCache) {
+        const hit = await academicCacheGet<AcademicSearchResult>('search', cacheParts)
+        assertAcademicNotAborted(signal)
+        if (hit && Array.isArray(hit.papers)) {
+            console.info('[academic] cache hit', { total: hit.papers.length })
+            return { ...hit, cached: true }
+        }
+    }
+
     const keys = resolveAcademicApiKeys(opts.env)
     const plan = planAcademicSources(cleanQuery, opts)
     const ctx: AcademicSourceContext = { query: cleanQuery, options: { ...opts, sortBy }, limit, keys, profile: plan.profile, signal }
+    const trText = plan.turkishText
+    // A separate Turkish pass for OpenAlex / Crossref only when the English query differs.
+    const bilingual = Boolean(trText && trText.toLowerCase() !== cleanQuery.toLowerCase())
+    const trCtx: AcademicSourceContext = { ...ctx, query: trText || cleanQuery }
 
-    const runners: Record<AcademicSourceId, () => Promise<AcademicPaper[]>> = {
-        openalex: () => queryOpenAlex(ctx),
-        crossref: () => queryCrossref(ctx),
-        semantic_scholar: () => querySemanticScholar({ ...ctx, limit: Math.min(limit, 5) }),
-        europepmc: () => queryEuropePmc({ ...ctx, limit: Math.min(limit, 3) }),
-        pubmed: () => queryNcbiPmc({ ...ctx, limit: Math.min(limit, 3) }),
-        arxiv: () => queryArXiv({ ...ctx, limit: Math.min(limit, 3) }),
+    const jobs: SourceJob[] = []
+    const add = (id: AcademicSourceId, run: () => Promise<AcademicPaper[]>, extra: Partial<SourceJob> = {}) => {
+        if (plan.run[id]) jobs.push({ id, listKey: extra.lang ? `${id}:${extra.lang}` : id, run, ...extra })
+        else if (!extra.lang) jobs.push({ id, listKey: id, skipReason: plan.skipReason[id] })
     }
-    const keyedFor: Partial<Record<AcademicSourceId, boolean>> = {
-        openalex: Boolean(keys.openAlexKey),
-        semantic_scholar: Boolean(keys.semanticScholarKey),
-        pubmed: Boolean(keys.ncbiKey),
+    for (const id of SOURCE_ORDER) {
+        switch (id) {
+            case 'openalex':
+                add(id, () => queryOpenAlex(ctx), { keyed: Boolean(keys.openAlexKey) })
+                if (bilingual && !opts.language) {
+                    add(id, () => queryOpenAlex({ ...trCtx, options: { ...trCtx.options, language: 'tr' }, limit: Math.min(limit, 5) }), {
+                        lang: 'tr',
+                        keyed: Boolean(keys.openAlexKey),
+                    })
+                }
+                break
+            case 'crossref':
+                add(id, () => queryCrossref(ctx))
+                if (bilingual) add(id, () => queryCrossref({ ...trCtx, limit: Math.min(limit, 5) }), { lang: 'tr' })
+                break
+            case 'semantic_scholar':
+                add(id, () => querySemanticScholar({ ...ctx, limit: Math.min(limit, 5) }), { keyed: Boolean(keys.semanticScholarKey) })
+                break
+            case 'europepmc':
+                add(id, () => queryEuropePmc({ ...ctx, limit: Math.min(limit, 3) }))
+                break
+            case 'pubmed':
+                add(id, () => queryNcbiPmc({ ...ctx, limit: Math.min(limit, 3) }), { keyed: Boolean(keys.ncbiKey) })
+                break
+            case 'arxiv':
+                add(id, () => queryArXiv({ ...ctx, limit: Math.min(limit, 3) }))
+                break
+            case 'trdizin':
+                add(id, () => queryTrDizin({ ...ctx, limit: Math.min(limit, 5) }, trText || cleanQuery))
+                break
+            case 'doaj':
+                add(id, () => queryDoaj({ ...ctx, limit: Math.min(limit, 5) }, cleanQuery))
+                break
+            case 'core':
+                add(id, () => queryCore({ ...ctx, limit: Math.min(limit, 5) }, cleanQuery))
+                break
+        }
     }
 
-    const settled = await Promise.allSettled(
-        SOURCE_ORDER.map((id) =>
-            plan.run[id]
-                ? runSource(id, runners[id], keyedFor[id], signal)
-                : Promise.resolve({
-                      status: { source: id, status: 'skipped' as const, reason: plan.skipReason[id], count: 0, ms: 0 },
-                      papers: [] as AcademicPaper[],
-                  })
-        )
-    )
+    const encyclopediaQuery = cleanQuery
+    const [settled, enc] = await Promise.all([
+        Promise.allSettled(
+            jobs.map((job) =>
+                job.run
+                    ? runSource(job.id, job.run, job.keyed, signal, job.lang)
+                    : Promise.resolve({
+                          status: { source: job.id, status: 'skipped' as const, reason: job.skipReason, count: 0, ms: 0 },
+                          papers: [] as AcademicPaper[],
+                      })
+            )
+        ),
+        runEncyclopedias(plan, encyclopediaQuery, keys.contactEmail, signal),
+    ])
 
     // Fail closed on client Stop — do not return partial papers as a successful hit.
     assertAcademicNotAborted(signal)
@@ -1533,33 +1644,44 @@ export async function searchAcademicCorpus(
     const statuses: AcademicSourceStatus[] = []
     const collected: AcademicPaper[] = []
     settled.forEach((entry, i) => {
+        const job = jobs[i]
         if (entry.status === 'fulfilled') {
             statuses.push(entry.value.status)
-            collected.push(...entry.value.papers)
+            collected.push(...withRanks(entry.value.papers, job.listKey))
         } else {
-            statuses.push({ source: SOURCE_ORDER[i], status: 'failed', reason: 'error', count: 0, ms: 0 })
+            const status: AcademicSourceStatus = { source: job.id, status: 'failed', reason: 'error', count: 0, ms: 0 }
+            if (job.lang) status.lang = job.lang
+            statuses.push(status)
         }
     })
+    statuses.push(...enc.statuses)
 
-    const attempted = statuses.filter((s) => s.status !== 'skipped')
+    // Encyclopedias are supplementary: they never make a search "ok" on their own
+    // and their failure never marks scholarly coverage as degraded.
+    const attempted = statuses.filter((s) => s.status !== 'skipped' && s.source !== 'sep' && s.source !== 'iep')
     const failed = attempted.filter((s) => s.status === 'failed')
     const allSourcesFailed = attempted.length > 0 && failed.length === attempted.length
 
-    let ranked = rankAcademicPapers(cleanQuery, applyPostFilters(mergeAcademicPapers(collected), opts), sortBy, plan.profile?.label)
+    const sets = queryTokenSets(cleanQuery, opts.queryOriginal)
+    const fieldLabel = plan.profile?.label
+    let ranked = rankAcademicPapers(cleanQuery, applyPostFilters(mergeAcademicPapers(collected), opts), sortBy, fieldLabel, opts.queryOriginal)
+    const beforeThreshold = ranked.length
+    ranked = ranked.filter((p) => passesRelevanceThreshold(p, sets))
+    const droppedWeak = beforeThreshold - ranked.length
 
-    // Open-access resolution via Unpaywall — parallel, bounded.
+    // Open-access resolution via Unpaywall — parallel, bounded, cached ~30 days.
     const oaPool = ranked.slice(0, opts.openAccessOnly ? limit * 2 : limit)
     const missingPdf = oaPool.filter((p) => !p.pdfUrl && cleanDoi(p.doi)).slice(0, UNPAYWALL_MAX_LOOKUPS)
     if (missingPdf.length > 0) {
         await mapWithConcurrency(missingPdf, UNPAYWALL_CONCURRENCY, async (p) => {
-            const resolved = await resolveOaPdfViaUnpaywall(p.doi as string, keys.contactEmail, signal)
+            const resolved = await resolveOaPdfViaUnpaywall(p.doi as string, keys.contactEmail, signal, useCache)
             if (resolved) {
                 p.pdfUrl = resolved
                 p.isOpenAccess = true
             }
         })
         assertAcademicNotAborted(signal)
-        ranked = rankAcademicPapers(cleanQuery, ranked, sortBy, plan.profile?.label)
+        ranked = rankAcademicPapers(cleanQuery, ranked, sortBy, fieldLabel, opts.queryOriginal)
     }
     if (opts.openAccessOnly) ranked = ranked.filter((p) => Boolean(p.pdfUrl) || p.isOpenAccess === true)
 
@@ -1587,31 +1709,43 @@ export async function searchAcademicCorpus(
         }
     }
 
-    const finalPapers = ranked.slice(0, limit)
+    // Per-list ranks are internal to fusion; keep the payload / cache lean.
+    const finalPapers = ranked.slice(0, limit).map((p) => {
+        const copy: AcademicPaper = { ...p }
+        delete copy.ranks
+        return copy
+    })
     assertAcademicNotAborted(signal)
 
-    const failedList = failed.map((s) => `${s.source}: ${s.reason || 'error'}`).join(', ')
-    let notice: string | undefined
+    const failedList = failed.map((s) => `${s.source}${s.lang ? `[${s.lang}]` : ''}: ${s.reason || 'error'}`).join(', ')
+    const notes: string[] = []
     if (allSourcesFailed) {
-        notice =
+        notes.push(
             `Academic search unavailable — every scholarly source failed (${failedList}). ` +
-            'This is NOT evidence that no literature exists: tell the user the academic search was temporarily unavailable' +
-            (finalPapers.length > 0 ? '; the items below are fallback results, not a literature search.' : '.')
+                'This is NOT evidence that no literature exists: tell the user the academic search was temporarily unavailable' +
+                (finalPapers.length > 0 ? '; the items below are fallback results, not a literature search.' : '.')
+        )
     } else if (failed.length > 0) {
-        notice = `Partial coverage (${failedList}); results come only from the sources that responded.`
+        notes.push(`Partial coverage (${failedList}); results come only from the sources that responded.`)
     }
+    if (droppedWeak > 0) notes.push(`${droppedWeak} weak match${droppedWeak === 1 ? '' : 'es'} below the relevance threshold dropped.`)
+    const notice = notes.length ? notes.join(' ') : undefined
 
     console.info('[academic] sources', {
-        statuses: statuses.map((s) => `${s.source}:${s.status}${s.reason ? `:${s.reason}` : ''}:${s.count}${s.keyed ? ':key' : ''}`),
+        statuses: statuses.map(
+            (s) => `${s.source}${s.lang ? `[${s.lang}]` : ''}:${s.status}${s.reason ? `:${s.reason}` : ''}:${s.count}${s.keyed ? ':key' : ''}`
+        ),
         total: finalPapers.length,
+        encyclopedia: enc.entries.length,
+        droppedWeak,
     })
 
-    return {
+    const result: AcademicSearchResult = {
         ok: !allSourcesFailed,
         query: cleanQuery,
         total: finalPapers.length,
         papers: finalPapers,
-        formatted: formatAcademicResults(finalPapers),
+        formatted: formatAcademicResults(finalPapers, enc.entries),
         bibliography: formatApaBibliography(finalPapers),
         error: allSourcesFailed ? notice : undefined,
         degraded: failed.length > 0,
@@ -1619,5 +1753,82 @@ export async function searchAcademicCorpus(
         sources: statuses,
         notice,
         fieldFilter: describeFilters(opts, plan.profile),
+        encyclopedia: enc.entries.length ? enc.entries : undefined,
+        droppedWeak: droppedWeak || undefined,
+        queryOriginal: opts.queryOriginal,
     }
+
+    // Shared cache: full coverage ~3 days, partial coverage 30 min, total failure never.
+    if (useCache && !allSourcesFailed && (finalPapers.length > 0 || enc.entries.length > 0)) {
+        await academicCachePut('search', cacheParts, result, failed.length > 0 ? ACADEMIC_PARTIAL_TTL_S : ACADEMIC_SEARCH_TTL_S)
+    }
+    return result
+}
+
+// ---------------------------------------------------------------------------
+// DOI verification (Crossref /works/{doi}) — used by deterministic citation checks
+// ---------------------------------------------------------------------------
+
+export interface DoiLookup {
+    doi: string
+    found: boolean
+    title?: string
+    authors?: string[]
+    year?: number
+    venue?: string
+    /** Lookup failed for transient reasons (network / 5xx / 429) — unknown, not "fake". */
+    transient?: boolean
+}
+
+/** Crossref `/works/{doi}` lookup, cached ~30 days (misses: 1 day). Never throws except on client abort. */
+export async function lookupDoiViaCrossref(
+    doi: string,
+    options: { env?: EnvStore; signal?: AbortSignal; timeoutMs?: number; noCache?: boolean } = {}
+): Promise<DoiLookup> {
+    const bare = cleanDoi(doi)
+    if (!bare) return { doi: String(doi || ''), found: false }
+    const useCache = !options.noCache
+    if (useCache) {
+        const hit = await academicCacheGet<DoiLookup>('crossref-doi', { doi: bare })
+        if (hit && typeof hit.found === 'boolean') return hit
+    }
+    const keys = resolveAcademicApiKeys(options.env)
+    let out: DoiLookup
+    try {
+        const res = await fetchAcademic(
+            `https://api.crossref.org/works/${encodeURIComponent(bare)}?mailto=${encodeURIComponent(keys.contactEmail)}`,
+            { headers: { 'User-Agent': userAgent(keys.contactEmail), Accept: 'application/json' } },
+            options.timeoutMs ?? 4_000,
+            options.signal,
+            { noRetry: true }
+        )
+        const data = await readJson<{
+            message?: {
+                title?: string[]
+                author?: Array<{ given?: string; family?: string; name?: string }>
+                issued?: { 'date-parts'?: number[][] }
+                'container-title'?: string[]
+            }
+        }>(res)
+        const m = data?.message
+        out = {
+            doi: bare,
+            found: true,
+            title: m?.title?.[0] ? stripTags(m.title[0]) : undefined,
+            authors: (m?.author || [])
+                .map((a) => a.name || [a.given, a.family].filter(Boolean).join(' '))
+                .filter(Boolean)
+                .slice(0, 4),
+            year: m?.issued?.['date-parts']?.[0]?.[0],
+            venue: m?.['container-title']?.[0] || undefined,
+        }
+    } catch (err) {
+        if (options.signal?.aborted) throw err instanceof Error ? err : abortError()
+        const status = err instanceof AcademicSourceError ? err.httpStatus : undefined
+        out = status === 404 ? { doi: bare, found: false } : { doi: bare, found: false, transient: true }
+    }
+    if (useCache && !out.transient) {
+        await academicCachePut('crossref-doi', { doi: bare }, out, out.found ? ACADEMIC_DOI_TTL_S : ACADEMIC_DOI_MISS_TTL_S)
+    }
+    return out
 }

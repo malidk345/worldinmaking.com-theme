@@ -127,7 +127,8 @@ describe('search_academic_corpus tool & academic-search', () => {
             expect(result.result).not.toContain('### References')
             expect(result.citations).toBeDefined()
             expect(result.citations?.[0].id).toBe(1)
-            expect(result.citations?.[0].title).toContain('Gilbert Ryle')
+            expect(result.citations?.[0].title).toBe('The Concept of Mind')
+            expect(result.citations?.[0]).toMatchObject({ kind: 'paper', authors: ['Gilbert Ryle'], year: 1949, doi: '10.4324/9780203875858' })
             expect(result.citations?.[0].url).toBe('https://doi.org/10.4324/9780203875858')
         })
 
@@ -207,7 +208,8 @@ describe('search_academic_corpus tool & academic-search', () => {
             expect(first.title).toBeDefined()
             expect(result.formatted).toContain(first.title)
             expect(result.bibliography).toContain('References')
-            expect(result.sources?.length).toBe(6)
+            // 9 paper sources + SEP / IEP (a Turkish pass would add openalex[tr] / crossref[tr]).
+            expect(result.sources?.length).toBeGreaterThanOrEqual(11)
         }, 20000)
 
         it('queries recent literature with publication date filter and sorting', async () => {

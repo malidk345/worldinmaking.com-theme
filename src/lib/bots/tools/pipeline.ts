@@ -8,6 +8,7 @@
  */
 
 import type { AiCitation } from '../../ai/contracts'
+import { renumberToolCitations } from '../academic-citations'
 import type { ArtifactDocument } from '../../artifacts/kinds'
 import { countModel3DRenderable, model3dGeometryDigest, parseModel3DSpecStrict } from '../../ai/visual-artifacts'
 import { createActivityClock, type AgentActivity } from '../agent/activity'
@@ -1013,7 +1014,8 @@ export function researchToolCacheKey(call: ToolCall): string | null {
             const oa = asCacheToken(parsed.open_access_only ?? parsed.openAccessOnly)
             const lang = asCacheToken(parsed.language ?? parsed.lang)
             const type = asCacheToken(parsed.type ?? parsed.work_type)
-            return `search_academic_corpus:${q}|f=${field}|s=${sort}|yf=${yf}|yt=${yt}|lim=${lim}|oa=${oa}|lang=${lang}|t=${type}`
+            const qo = asCacheQuery(parsed.query_original ?? parsed.original_query ?? parsed.query_tr ?? parsed.queryOriginal)
+            return `search_academic_corpus:${q}|qo=${qo}|f=${field}|s=${sort}|yf=${yf}|yt=${yt}|lim=${lim}|oa=${oa}|lang=${lang}|t=${type}`
         }
         // verified_corpus_search
         const q = asCacheQuery(parsed.query ?? parsed.search ?? parsed.q)
@@ -1149,7 +1151,11 @@ async function runOneToolCall(
         }
     }
     if (executed.citations?.length) {
-        state.citations.push(...executed.citations)
+        // Global numbering: chat.ts assigns id = index in state.citations + 1, so shift this
+        // tool's local ids (1..n) and the [P#] / [Source N] labels the model sees to match.
+        const renumbered = renumberToolCitations(name, executed.result, executed.citations, state.citations.length)
+        executed = { ...executed, result: renumbered.result, citations: renumbered.citations }
+        state.citations.push(...(renumbered.citations || []))
     }
     if (executed.action) {
         state.actions.push(executed.action)
