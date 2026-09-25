@@ -621,6 +621,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 checkpoint: input.checkpoint,
                 resumeAction: input.resumeAction,
                 resumePayload: input.resumePayload,
+                languageSample: input.question,
             })
         let loop = await runLoop({ holdUntilCitations: liveWeb })
         // Model decides first. If it skipped live search, host runs Tavily and the model writes again.
@@ -759,6 +760,8 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             citations: loop.citations.length,
             hostCitations: hostCitations.length,
             error: loop.error,
+            ...(loop.fallback ? { fallback: loop.fallback } : {}),
+            ...(loop.recoveredAnswer ? { recoveredAnswer: true } : {}),
         })
 
         const citations = loop.citations.length > 0 ? loop.citations : hostCitations
@@ -773,8 +776,10 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             input.onAnalysisSummary?.(thinking)
             // Interrupt-only / no public reply: QG is not applicable — omit the flag
             // (do not fake 'skipped', which the client reads as "reply shown ungated").
+            // Host fallback copy (honest "could not finish" / action confirmation) is not a
+            // model answer: never let the critic/persona rewrite it into prose.
             const gated: { reply: string; qualityGate?: QualityGateOutcome } =
-                loop.interrupt && !rawReply.trim()
+                (loop.interrupt && !rawReply.trim()) || loop.fallback
                     ? { reply: rawReply }
                     : await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
             recordAiTurn({
@@ -791,6 +796,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 qualityGate: gated.qualityGate,
                 interrupted: Boolean(loop.interrupt),
                 usedTools: loop.usedTools || hostCitations.length > 0,
+                ...(loop.fallback ? { errorCode: loop.fallback } : {}),
             })
             return {
                 success: true,
