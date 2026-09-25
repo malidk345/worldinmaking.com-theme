@@ -108,9 +108,18 @@ function AcademicActions({
     }
   }
 
+  // "Added" only after the notebook confirmed it (the handler resolves false on a nack,
+  // a duplicate or a timeout and shows its own message).
+  const [adding, setAdding] = useState(false)
   const addToNotebook = async () => {
-    if (!onAddToNotebook) return
-    const ok = await onAddToNotebook(citation)
+    if (!onAddToNotebook || adding) return
+    setAdding(true)
+    let ok: boolean | void = false
+    try {
+      ok = await onAddToNotebook(citation)
+    } finally {
+      setAdding(false)
+    }
     if (ok !== false) {
       setAdded(true)
       setTimeout(() => setAdded(false), 2000)
@@ -145,11 +154,12 @@ function AcademicActions({
         <button
           type="button"
           onClick={addToNotebook}
+          disabled={adding}
           className={actionClass}
           title="Add as a footnote on the selected notebook text, or append to the notebook"
         >
           {added ? <Check className="h-3 w-3" /> : <FileInput className="h-3 w-3" />}
-          {added ? 'Added' : 'Add to notebook'}
+          {added ? 'Added' : adding ? 'Adding…' : 'Add to notebook'}
         </button>
       ) : null}
     </div>

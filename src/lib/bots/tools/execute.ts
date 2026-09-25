@@ -27,6 +27,8 @@ import {
     executeCreateNotebook,
     executeGetWorkspace,
     executeInsertNotebookBlock,
+    NOTEBOOK_INSERT_HARD_MAX_CHARS,
+    NOTEBOOK_INSERT_MAX_CHARS,
     executeListNotebooks,
     executeManageWindows,
     executeOpenPath,
@@ -83,6 +85,8 @@ export type ToolExecution = {
 export type ToolExecutionContext = {
     /** Citations already emitted this turn (turn-global ids = [P#]). */
     citations?: AiCitation[]
+    /** Compact earlier-turn citations sent by the chat, so a follow-up's [P#] still resolves. */
+    priorCitations?: AiCitation[]
 }
 
 function clip(value: string, max: number): string {
@@ -641,7 +645,7 @@ async function executeRelatedPapers(
     context: ToolExecutionContext
 ): Promise<ExecutedWithSummary> {
     if (signal?.aborted) return clientAborted()
-    const parsed = parsePaperRef(asText(args.paper, 300), context.citations)
+    const parsed = parsePaperRef(asText(args.paper, 300), context.citations, context.priorCitations)
     if (!parsed.ok) return { ok: false, result: JSON.stringify({ ok: false, error: parsed.error }) }
     const rawDirection = asText(args.direction, 20).trim().toLowerCase()
     const directionAliases: Record<string, RelatedDirection> = { cited_by: 'citations', citing: 'citations', cites: 'references', refs: 'references', recommendations: 'similar', related: 'similar' }
@@ -689,7 +693,7 @@ async function executeFindQuotes(
     const paperArg = asText(args.paper, 300).trim()
     let ref: PaperRef | undefined
     if (paperArg) {
-        const parsed = parsePaperRef(paperArg, context.citations)
+        const parsed = parsePaperRef(paperArg, context.citations, context.priorCitations)
         if (!parsed.ok) return { ok: false, result: JSON.stringify({ ok: false, error: parsed.error }) }
         ref = parsed.ref
     }
@@ -726,7 +730,7 @@ async function executeAnnotatedBibliography(
     const entries = normalizeBibliographyEntries(args.entries)
     const title = asText(args.title, 120).trim() || undefined
     try {
-        const built = await buildAnnotatedBibliography(entries, context.citations, { title, env, signal })
+        const built = await buildAnnotatedBibliography(entries, context.citations, { title, env, signal, priorCitations: context.priorCitations })
         if (signal?.aborted) return clientAborted()
         if (!built.ok) {
             return { ok: false, result: JSON.stringify({ ok: false, error: built.error, rejected: built.rejected.length ? built.rejected : undefined }) }
@@ -739,11 +743,18 @@ async function executeAnnotatedBibliography(
         }
         let action: HostOsAction | undefined
         if (args.add_to_notebook === true) {
-            const inserted = executeInsertNotebookBlock(host, built.markdown, asText(args.notebook_id, 80) || undefined)
+            const inserted = executeInsertNotebookBlock(host, built.markdown, asText(args.notebook_id, 80) || undefined, {
+                maxChars: NOTEBOOK_INSERT_HARD_MAX_CHARS,
+            })
             if (inserted.ok && inserted.action) {
                 action = inserted.action
-                payload.added_to_notebook = true
-                payload.instruction = 'The bibliography was added to the notebook. Tell the user briefly; do not paste it again in the reply.'
+                // The action is a pending card: nothing is in the notebook until the user clicks it.
+                payload.added_to_notebook = false
+                payload.notebook_insert_offered = true
+                if (inserted.truncated) payload.notebook_insert_truncated = true
+                payload.instruction =
+                    'An "Insert into notebook" card with the bibliography was offered; it is NOT in the notebook until the user clicks the card. Tell the user briefly to click it to add the bibliography; do not claim it was added and do not paste it again in the reply.' +
+                    (inserted.truncated ? ' The bibliography was too long for one insert, so the last entries were left out; say so and offer to add the rest.' : '')
             } else {
                 let error = 'notebook insert failed'
                 try {
@@ -2124,7 +2135,7 @@ export async function executeToolCall(
         if (name === 'insert_notebook_block') {
             const executed = executeInsertNotebookBlock(
                 host,
-                asText(args.content, 8_000),
+                asText(args.content, NOTEBOOK_INSERT_MAX_CHARS + 1),
                 asText(args.notebook_id || args.notebookId, 80)
             )
             return {

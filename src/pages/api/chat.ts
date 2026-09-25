@@ -11,6 +11,7 @@
 export const runtime = 'edge'
 
 import { streamBotTurn } from 'lib/bots/orchestrate'
+import { formatPriorCitationsContext, parsePriorCitations } from 'lib/ai/prior-citations'
 import { checkRateLimitDurable, buildRateLimitHeaders } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, normalizeBotName, readJsonObject } from 'lib/bots/request-validation'
@@ -144,6 +145,8 @@ export default async function handler(req: Request) {
     if (!conversationId.ok) return jsonError(conversationId.error, 400)
 
     const host = parseHostSnapshot(body.workspace)
+    // Earlier-turn citations (compact, capped) so "tell me more about P3" / related_papers("P3") resolve.
+    const priorCitations = parsePriorCitations(body.priorCitations)
     const agentMode = parseAgentMode(body.agentMode)
     const checkpoint = parseAgentCheckpoint(body.checkpoint)
     const resumeAction = parseResumeAction(body.resumeAction)
@@ -413,6 +416,7 @@ export default async function handler(req: Request) {
                     attachmentContext.value
                         ? `User-uploaded files this turn (in the room; use them when they help the Query):\n"""${attachmentContext.value}"""`
                         : '',
+                    formatPriorCitationsContext(priorCitations),
                     webSearchContext,
                 ]
                     .filter(Boolean)
@@ -452,6 +456,7 @@ export default async function handler(req: Request) {
                         checkpoint: checkpoint && resumeAction ? checkpoint : undefined,
                         resumeAction,
                         resumePayload,
+                        priorCitations: priorCitations.length ? priorCitations : undefined,
                         abortSignal: turnAbort.signal,
                         onTool: (event) => send({ type: 'tool', tool: event }),
                         onNode: (event) => send({ type: 'node', node: event }),

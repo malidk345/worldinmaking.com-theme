@@ -701,7 +701,52 @@ function isAsciiAlphaNumeric(character: string | undefined): boolean {
 }
 
 export function serializeInlineNodes(nodes: NotebookInlineNode[]): string {
-    return nodes.map(serializeInlineNode).join('')
+    return relaxBracketEscapes(nodes.map(serializeInlineNode).join(''))
+}
+
+/**
+ * escapeInlineMarkdownText backslash-escapes every `[`/`]` so literal text can never turn
+ * into a link on re-parse. That also rewrote harmless brackets on every save
+ * (`> [!TIP]` → `> \[!TIP\]`, `[P1]` → `\[P1\]`), breaking callouts and plain-markdown
+ * readers. Drop those escapes only when the inline parser provably reads the relaxed text
+ * back to the same nodes; footnote-like (`[^`), wikilink-like (`[[`) and line-start
+ * task/definition shapes (`[ ] `, `[x] `, `[label]:`) always stay escaped.
+ */
+export function relaxBracketEscapes(escaped: string): string {
+    if (!escaped.includes('\\[') && !escaped.includes('\\]')) return escaped
+    let out = ''
+    let changed = false
+    for (let index = 0; index < escaped.length; index += 1) {
+        const character = escaped[index]
+        if (character !== '\\' || index + 1 >= escaped.length) {
+            out += character
+            continue
+        }
+        const next = escaped[index + 1]
+        if ((next === '[' || next === ']') && !mustKeepBracketEscape(escaped, index, out)) {
+            out += next
+            changed = true
+        } else {
+            out += character + next
+        }
+        index += 1
+    }
+    if (!changed) return escaped
+    const same = JSON.stringify(parseInlineMarkdown(out)) === JSON.stringify(parseInlineMarkdown(escaped))
+    return same ? out : escaped
+}
+
+function mustKeepBracketEscape(escaped: string, index: number, relaxedSoFar: string): boolean {
+    const next = escaped[index + 1]
+    const after = escaped.slice(index + 2)
+    if (next === '[') {
+        if (after.startsWith('^') || after.startsWith('[') || after.startsWith('\\[')) return true
+        const lineStart = /(^|\n)[ \t]*$/.test(relaxedSoFar)
+        if (lineStart && (/^[ xX]\\?\]/.test(after) || /^[^\n]*?\\?\]:/.test(after))) return true
+        return false
+    }
+    // `]` right after an unescaped `[` or before `(`/`[`/`:` could complete link-like syntax
+    return /^[([:]/.test(after) || relaxedSoFar.endsWith('[') || relaxedSoFar.endsWith(']')
 }
 
 export function htmlElementToInlineNodes(element: HTMLElement): NotebookInlineNode[] {

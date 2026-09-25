@@ -65,7 +65,7 @@ export function normalizeBibliographyEntries(raw: unknown): BibliographyEntryInp
 export async function buildAnnotatedBibliography(
     input: BibliographyEntryInput[],
     turnCitations: AiCitation[] | undefined,
-    options: { title?: string; env?: EnvStore; signal?: AbortSignal } = {}
+    options: { title?: string; env?: EnvStore; signal?: AbortSignal; priorCitations?: AiCitation[] } = {}
 ): Promise<BibliographyResult> {
     const rejected: BibliographyResult['rejected'] = []
     const resolved: Array<{ paper: string; reference: string; annotation: string; citationId?: number }> = []
@@ -75,7 +75,7 @@ export async function buildAnnotatedBibliography(
     }
     await Promise.all(
         input.map(async (entry, index) => {
-            const parsed = parsePaperRef(entry.paper, turnCitations)
+            const parsed = parsePaperRef(entry.paper, turnCitations, options.priorCitations)
             if (!parsed.ok) {
                 rejected.push({ paper: entry.paper, reason: parsed.error })
                 return

@@ -157,6 +157,25 @@ function idsFromUrl(url: string | undefined): Partial<PaperRef> {
     return out
 }
 
+/**
+ * [P#] from an earlier reply: resolve by its identifiers only (DOI / S2 / OpenAlex). It is
+ * not a source of this turn, so no existingId unless this turn already has the same DOI.
+ */
+function priorPaperRef(prior: AiCitation, raw: string, turnCitations?: AiCitation[]): { ok: true; ref: PaperRef } | { ok: false; error: string } {
+    if (prior.kind === 'web') return { ok: false, error: `[P${prior.id}] from an earlier reply is a web page, not a paper — pass a DOI instead` }
+    const { existingId: _existingId, citation: _citation, ...ids } = refFromCitation(prior, raw)
+    if (!ids.doi && !ids.s2Id && !ids.openAlexId) {
+        return { ok: false, error: `[P${prior.id}] from an earlier reply ("${prior.title.slice(0, 80)}") has no DOI — search for it again or pass its DOI` }
+    }
+    const ref: PaperRef = ids
+    const existing = ref.doi ? matchTurnCitation({ doi: ref.doi }, turnCitations) : undefined
+    if (existing) {
+        ref.existingId = existing.id
+        ref.citation = existing
+    }
+    return { ok: true, ref }
+}
+
 function refFromCitation(c: AiCitation, raw: string): PaperRef {
     const fromUrl = idsFromUrl(c.url)
     const fromOa = idsFromUrl(c.oaUrl)
@@ -177,14 +196,23 @@ function refFromCitation(c: AiCitation, raw: string): PaperRef {
  * Parses the `paper` argument of related_papers / find_quotes. `[P3]` / `P3`
  * resolve against this turn's citations (ids are turn-global).
  */
-export function parsePaperRef(input: string, turnCitations?: AiCitation[]): { ok: true; ref: PaperRef } | { ok: false; error: string } {
+export function parsePaperRef(
+    input: string,
+    turnCitations?: AiCitation[],
+    /** Earlier-turn sources the chat carried over (see prior-citations.ts); used only when this turn has no such [P#]. */
+    priorCitations?: AiCitation[]
+): { ok: true; ref: PaperRef } | { ok: false; error: string } {
     const raw = String(input || '').trim().slice(0, 300)
     if (!raw) return { ok: false, error: 'paper is required: a DOI, a [P#] from this turn, a Semantic Scholar id, or an OpenAlex id (W…)' }
     const marker = raw.match(/^\[?\s*P\s*@?(\d{1,3})\s*\]?$/i)
     if (marker) {
         const id = Number(marker[1])
         const c = (turnCitations || []).find((x) => x.id === id)
-        if (!c) return { ok: false, error: `[P${id}] is not a source in this turn — pass its DOI instead` }
+        if (!c) {
+            const prior = (priorCitations || []).find((x) => x.id === id)
+            if (prior) return priorPaperRef(prior, raw, turnCitations)
+            return { ok: false, error: `[P${id}] is not a source in this turn — pass its DOI instead` }
+        }
         if (c.kind !== 'paper' && c.kind !== 'encyclopedia') return { ok: false, error: `[P${id}] is a web page, not a paper — pass a DOI instead` }
         return { ok: true, ref: refFromCitation(c, raw) }
     }

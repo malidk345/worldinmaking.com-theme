@@ -571,12 +571,33 @@ export function executeCreateNotebook(title: string, content?: string): {
     }
 }
 
+/** Default cap for one insert_notebook_block payload (matches rewrite_notebook_document). */
+export const NOTEBOOK_INSERT_MAX_CHARS = 20_000
+/** Hard ceiling callers may request (e.g. a 25-entry annotated bibliography). */
+export const NOTEBOOK_INSERT_HARD_MAX_CHARS = 40_000
+
+/**
+ * Clips markdown at a block boundary (blank line) instead of mid-sentence so a
+ * long insert never ends with half a reference. Reports whether anything was cut.
+ */
+export function clipNotebookInsert(content: string, max = NOTEBOOK_INSERT_MAX_CHARS): { body: string; truncated: boolean } {
+    const text = String(content || '').trim()
+    const limit = Math.max(1, Math.min(max, NOTEBOOK_INSERT_HARD_MAX_CHARS))
+    if (text.length <= limit) return { body: text, truncated: false }
+    const cut = text.slice(0, limit)
+    const para = cut.lastIndexOf('\n\n')
+    const line = cut.lastIndexOf('\n')
+    const at = para > limit * 0.5 ? para : line > limit * 0.5 ? line : limit
+    return { body: cut.slice(0, at).trimEnd(), truncated: true }
+}
+
 export function executeInsertNotebookBlock(
     host: HostSnapshot | undefined,
     content: string,
-    notebookId?: string
-): { ok: boolean; result: string; action?: HostOsAction } {
-    const body = clip(content.trim(), 8_000)
+    notebookId?: string,
+    options: { maxChars?: number } = {}
+): { ok: boolean; result: string; action?: HostOsAction; truncated?: boolean } {
+    const { body, truncated } = clipNotebookInsert(content, options.maxChars ?? NOTEBOOK_INSERT_MAX_CHARS)
     if (!body) return { ok: false, result: JSON.stringify({ ok: false, error: 'content required' }) }
     const target = resolveNotebookWriteTarget(
         host,
@@ -588,7 +609,13 @@ export function executeInsertNotebookBlock(
     }
     return {
         ok: true,
-        result: JSON.stringify({ ok: true, notebookId: target.id, title: target.title }),
+        truncated,
+        result: JSON.stringify({
+            ok: true,
+            notebookId: target.id,
+            title: target.title,
+            ...(truncated ? { truncated: true, kept_chars: body.length } : {}),
+        }),
         action: {
             type: 'insert_notebook_block',
             title: `Insert into ${target.title}`,

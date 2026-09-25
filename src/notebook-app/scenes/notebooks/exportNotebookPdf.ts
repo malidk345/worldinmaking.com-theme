@@ -534,7 +534,30 @@ class PdfWriter {
     }
 }
 
-async function writeNotebookPdf(title: string, markdown: string, filename: string): Promise<void> {
+/**
+ * Footnote definitions in document order, labelled with the same id the body shows as
+ * `[id]` (print uses an <ol>; ids are sequential after the editor renumbers).
+ */
+export function notebookFootnoteEntries(footnotes: Record<string, string> | undefined): { label: string; text: string }[] {
+    if (!footnotes) return []
+    return Object.entries(footnotes)
+        .map(([label, text]) => ({ label, text: String(text || '').trim() }))
+        .filter((entry) => entry.text)
+}
+
+/** Mirrors buildPrintArticle's FOOTNOTES section: rule, small bold heading, muted small entries. */
+function writePdfFootnotes(writer: PdfWriter, footnotes: Record<string, string> | undefined): void {
+    const entries = notebookFootnoteEntries(footnotes)
+    if (!entries.length) return
+    writer.gap(2)
+    writer.divider()
+    writer.textBlock('Footnotes', { size: 9.5, weight: 'bold', color: '#333333', after: 2 })
+    for (const entry of entries) {
+        writer.textBlock(`${entry.label}. ${entry.text}`, { size: 8.5, color: '#555555', indent: 2, after: 1.4 })
+    }
+}
+
+export async function writeNotebookPdf(title: string, markdown: string, filename: string): Promise<void> {
     const [{ default: jsPDF }] = await Promise.all([import('jspdf')])
     const fonts = await loadUnicodeFont()
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true })
@@ -642,7 +665,9 @@ async function writeNotebookPdf(title: string, markdown: string, filename: strin
         if (node.type === 'component') await writeComponent(node)
     }
 
-    if (!doc.nodes.length) {
+    writePdfFootnotes(writer, doc.footnotes)
+
+    if (!doc.nodes.length && !notebookFootnoteEntries(doc.footnotes).length) {
         writer.textBlock('This notebook is empty.', { size: 11, color: '#666666' })
     }
 
