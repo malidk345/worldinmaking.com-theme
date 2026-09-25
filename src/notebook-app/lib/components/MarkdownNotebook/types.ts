@@ -205,6 +205,8 @@ export type NotebookComponentDefinition = {
     EditComponent?: (props: NotebookComponentRenderProps) => JSX.Element
     exclusiveEditPanel?: boolean
     hideModeActions?: boolean
+    /** The block draws its own frame. Skip the outer component shell so publish does not nest boxes. */
+    bare?: boolean
     /** Show the filters toggle in view mode too, when the host opts in via `allowViewModeFilters`
      * (read-only canvases like customer profiles, where filters are the only way to configure a node). */
     viewModeFilters?: boolean

@@ -24,6 +24,8 @@ export const SLASH_REGISTRY_TAGS = [
     'Callout',
     'Toggle',
     'DatabaseTable',
+    'Columns',
+    'Sketch',
     'Divider',
     'Embed',
     'Latex',

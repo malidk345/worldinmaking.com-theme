@@ -6,7 +6,7 @@ import { Popover } from 'components/RadixUI/Popover'
 import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
 import { Fieldset } from 'components/OSFieldset'
 import type { NotebookPresencePerson } from './notebookPresence'
-import type { NotebookChromeSettings, NotebookAutosaveMs } from './notebookChromeSettings'
+import type { NotebookChromeSettings, NotebookAutosaveMs, NotebookPaper } from './notebookChromeSettings'
 import type { NotebookSearchHit, NotebookCommentItem } from './notebookSidebarModel'
 import { jumpToNotebookHit } from './notebookSidebarModel'
 import {
@@ -45,6 +45,21 @@ export function NotebookSettingsPanel({
                         options={[
                             { label: 'Fixed', value: 'compact' },
                             { label: 'Full', value: 'full' },
+                        ]}
+                    />
+                    <ToggleGroup
+                        title="Paper"
+                        size="sm"
+                        value={settings.paper || 'plain'}
+                        onValueChange={(value) => {
+                            if (value === 'plain' || value === 'warm' || value === 'ink') {
+                                onChange({ paper: value satisfies NotebookPaper })
+                            }
+                        }}
+                        options={[
+                            { label: 'Plain', value: 'plain' },
+                            { label: 'Warm', value: 'warm' },
+                            { label: 'Ink', value: 'ink' },
                         ]}
                     />
                 </div>

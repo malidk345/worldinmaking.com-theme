@@ -1,11 +1,13 @@
 export type NotebookFontSize = 'sm' | 'md' | 'lg'
 export type NotebookAutosaveMs = 800 | 1100 | 2500
+export type NotebookPaper = 'plain' | 'warm' | 'ink'
 
 export type NotebookChromeSettings = {
     wide: boolean
     fontSize: NotebookFontSize
     autosaveMs: NotebookAutosaveMs
     spellcheck: boolean
+    paper: NotebookPaper
 }
 
 const STORAGE_KEY = 'wim_notebook_chrome_v1'
@@ -15,6 +17,7 @@ const DEFAULTS: NotebookChromeSettings = {
     fontSize: 'md',
     autosaveMs: 1100,
     spellcheck: true,
+    paper: 'plain',
 }
 
 function parseAutosave(value: unknown): NotebookAutosaveMs {
@@ -25,6 +28,11 @@ function parseAutosave(value: unknown): NotebookAutosaveMs {
 function parseFont(value: unknown): NotebookFontSize {
     if (value === 'sm' || value === 'md' || value === 'lg') return value
     return DEFAULTS.fontSize
+}
+
+function parsePaper(value: unknown): NotebookPaper {
+    if (value === 'warm' || value === 'ink' || value === 'plain') return value
+    return DEFAULTS.paper
 }
 
 export function readNotebookChromeSettings(): NotebookChromeSettings {
@@ -38,6 +46,7 @@ export function readNotebookChromeSettings(): NotebookChromeSettings {
             fontSize: parseFont(parsed.fontSize),
             autosaveMs: parseAutosave(parsed.autosaveMs),
             spellcheck: parsed.spellcheck !== false,
+            paper: parsePaper(parsed.paper),
         }
     } catch {
         return DEFAULTS

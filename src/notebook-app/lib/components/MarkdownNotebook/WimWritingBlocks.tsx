@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 
 import {
     IconCollapse,
@@ -109,6 +109,116 @@ export function ToggleBlock({ node, updateProps, mode }: NotebookComponentRender
                 ) : (
                     <p className="MarkdownNotebook__toggle-body">{body}</p>
                 )
+            ) : null}
+        </div>
+    )
+}
+
+export function ColumnsBlock({ node, updateProps, mode }: NotebookComponentRenderProps): JSX.Element {
+    const left = parseStringProp(node.props.left)
+    const right = parseStringProp(node.props.right)
+    const editable = mode === 'edit'
+    return (
+        <div className="MarkdownNotebook__columns" data-attr="notebook-columns">
+            {(['left', 'right'] as const).map((side) => {
+                const value = side === 'left' ? left : right
+                return editable ? (
+                    <textarea
+                        key={side}
+                        value={value}
+                        rows={4}
+                        placeholder={side === 'left' ? 'Left' : 'Right'}
+                        onChange={(event) => updateProps({ [side]: event.target.value })}
+                        className="MarkdownNotebook__column notebook-native-field"
+                    />
+                ) : (
+                    <p key={side} className="MarkdownNotebook__column">
+                        {value}
+                    </p>
+                )
+            })}
+        </div>
+    )
+}
+
+type SketchPoint = [number, number]
+type SketchStroke = SketchPoint[]
+
+function readStrokes(raw: string): SketchStroke[] {
+    try {
+        const parsed = JSON.parse(raw) as unknown
+        if (!Array.isArray(parsed)) return []
+        return parsed
+            .filter((stroke): stroke is SketchPoint[] => Array.isArray(stroke))
+            .map((stroke) =>
+                stroke.filter(
+                    (point): point is SketchPoint =>
+                        Array.isArray(point) && point.length === 2 && point.every((n) => typeof n === 'number')
+                )
+            )
+            .filter((stroke) => stroke.length > 1)
+            .slice(-80)
+    } catch {
+        return []
+    }
+}
+
+export function SketchBlock({ node, updateProps, mode }: NotebookComponentRenderProps): JSX.Element {
+    const strokes = readStrokes(parseStringProp(node.props.strokes))
+    const editable = mode === 'edit'
+    const boardRef = useRef<HTMLDivElement | null>(null)
+    const drawing = useRef<SketchStroke | null>(null)
+
+    const pointFromEvent = (event: React.PointerEvent): SketchPoint | null => {
+        const board = boardRef.current
+        if (!board) return null
+        const rect = board.getBoundingClientRect()
+        if (!rect.width || !rect.height) return null
+        const x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
+        const y = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height))
+        return [Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000]
+    }
+
+    const commit = (next: SketchStroke[]): void => {
+        updateProps({ strokes: JSON.stringify(next.slice(-80)) })
+    }
+
+    const toPath = (stroke: SketchStroke): string =>
+        stroke.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point[0] * 100} ${point[1] * 100}`).join(' ')
+
+    return (
+        <div className="MarkdownNotebook__sketch" data-attr="notebook-sketch">
+            <div
+                ref={boardRef}
+                className="MarkdownNotebook__sketch-board"
+                onPointerDown={(event) => {
+                    if (!editable) return
+                    const point = pointFromEvent(event)
+                    if (!point) return
+                    drawing.current = [point]
+                    event.currentTarget.setPointerCapture(event.pointerId)
+                }}
+                onPointerMove={(event) => {
+                    if (!drawing.current) return
+                    const point = pointFromEvent(event)
+                    if (!point) return
+                    drawing.current.push(point)
+                    commit([...strokes, drawing.current])
+                }}
+                onPointerUp={() => {
+                    drawing.current = null
+                }}
+            >
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+                    {strokes.map((stroke, index) => (
+                        <path key={index} d={toPath(stroke)} />
+                    ))}
+                </svg>
+            </div>
+            {editable ? (
+                <button type="button" className="MarkdownNotebook__sketch-clear" onClick={() => commit([])}>
+                    Clear
+                </button>
             ) : null}
         </div>
     )

@@ -1406,6 +1406,7 @@ export function App() {
       data-host-theme={hostTheme}
       data-notebook-lock="true"
       data-notebook-font={chrome.fontSize}
+      data-notebook-paper={chrome.paper}
     >
       {/* ===== Main Content Area matching PostHog Notebook SceneContent ===== */}
       {/* pb so last lines aren't clipped under window edge when scrolling */}

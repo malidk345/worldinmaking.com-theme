@@ -128,9 +128,9 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                         ) : null}
                     </div>
                 </div>
-                    <article className="NotebookPublicView__article prose prose-sm dark:prose-invert max-w-none font-normal">
+                    <article className="NotebookPublicView__article max-w-none font-normal">
                     <h1 className="text-2xl font-bold m-0 mb-2">{displayTitle}</h1>
-                    {subtitle ? <p className="text-secondary !mt-0 !mb-3">{subtitle}</p> : null}
+                    {subtitle ? <p className="text-secondary m-0 mb-3">{subtitle}</p> : null}
                     {coverUrl ? (
                         <div className="mb-3">
                             <ZoomImage>
@@ -142,7 +142,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                         <React.Suspense
                             fallback={<p className="m-0 text-sm text-muted animate-pulse">Loading page…</p>}
                         >
-                            <div className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} font-rounded prose prose-sm dark:prose-invert max-w-none font-normal`}>
+                            <div className={`${NOTEBOOK_PRODUCT_SCOPE_CLASS} not-prose font-normal`}>
                             <MarkdownNotebook
                                 value={bodyMarkdown}
                                 mode="view"
@@ -157,7 +157,7 @@ export function NotebookPublicView({ notebook, onBack, onOpenEditor }: NotebookP
                     )}
                     </article>
 
-                <div data-scheme="primary" className="bg-primary border-t border-primary pt-4 pb-8">
+                <div className="border-t border-primary mt-8 pt-4 pb-8">
                     <Questions
                         slug={notebookCommentSlug(notebook.short_id || notebook.id)}
                         subject={false}

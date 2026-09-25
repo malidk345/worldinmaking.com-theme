@@ -301,6 +301,7 @@ export function NotebookComponentShell({
     }
 
     const isBare = node.tagName === 'Image' || Boolean(definition?.bare)
+    const showChromeToolbar = !isBare && !(mode === 'view' && definition?.hideModeActions)
 
     return (
         <div
@@ -316,7 +317,7 @@ export function NotebookComponentShell({
             tabIndex={mode === 'edit' ? 0 : undefined}
             onKeyDown={handleKeyDown}
         >
-            {!isBare ? (
+            {showChromeToolbar ? (
                 <div
                     className="MarkdownNotebook__component-toolbar"
                     onPointerDownCapture={handleToolbarPointerDownCapture}
