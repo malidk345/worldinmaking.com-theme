@@ -8,9 +8,13 @@ import { fetchPublicUrl, isBlockedFetchUrl, assertPublicHostname } from './fetch
 import {
     searchAcademicCorpus,
     formatAcademicResults,
+    formatAcademicPayloadForModel,
     formatApaBibliography,
+    cleanDoi,
+    ACADEMIC_WORK_TYPES,
     type AcademicPaper,
     type AcademicSearchOptions,
+    type AcademicWorkType,
 } from '../academic-search'
 import { executeCodeSandbox } from './run-code-sandbox'
 import { executeReadDocument } from './read-document'
@@ -182,7 +186,7 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     finalize_plan: { text: 'summary', plan: 'summary', description: 'summary' },
     task: { prompt: 'goal', task: 'goal', instruction: 'goal', query: 'goal' },
     generate_image: { p: 'prompt', description: 'prompt', query: 'prompt', text: 'prompt', image_prompt: 'prompt' },
-    search_academic_corpus: { q: 'query', search: 'query', text: 'query', topic: 'query', subject: 'field', discipline: 'field' },
+    search_academic_corpus: { q: 'query', search: 'query', text: 'query', topic: 'query', subject: 'field', discipline: 'field', lang: 'language', work_type: 'type', until: 'year_to', year_until: 'year_to', since: 'year_from' },
     cross_examine_argument: {
         arg: 'argument',
         claim: 'argument',
@@ -504,20 +508,48 @@ async function executeGenerateImage(
     }
 }
 
+/** Accepts 2020 or "2020"; anything outside 1000–2100 is ignored. */
+function parseAcademicYear(value: unknown): number | undefined {
+    const n = typeof value === 'number' ? value : typeof value === 'string' && /^\s*\d{4}\s*$/.test(value) ? Number(value) : NaN
+    return Number.isInteger(n) && n >= 1000 && n <= 2100 ? n : undefined
+}
+
+/** Web hits → paper-shaped fallback. URLs stay in `url` (never `doi`); no fake authors. */
+function webHitsToPapers(hits: Array<{ title: string; url: string; snippet: string }>, limit: number): AcademicPaper[] {
+    return hits.slice(0, limit).map((h, i) => {
+        let host = ''
+        try {
+            host = new URL(h.url).hostname.replace(/^www\./, '')
+        } catch {
+            host = ''
+        }
+        const doi = cleanDoi(h.url)
+        return {
+            id: `web-${i + 1}-${Date.now()}`,
+            title: h.title,
+            authors: [],
+            venue: host || undefined,
+            citationCount: 0,
+            doi: doi ? `https://doi.org/${doi}` : undefined,
+            pdfUrl: /\.pdf(\?|$)/i.test(h.url) ? h.url : undefined,
+            url: h.url.startsWith('http') ? h.url : undefined,
+            abstract: h.snippet,
+            source: 'Web Search' as const,
+        }
+    })
+}
+
 async function executeAcademicSearch(
     query: string,
     options?: AcademicSearchOptions,
     env?: EnvStore,
     signal?: AbortSignal
 ): Promise<Omit<ToolExecution, 'callId' | 'name'>> {
+    const aborted = () => ({ ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) })
     try {
-        if (signal?.aborted) {
-            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
-        }
-        const result = await searchAcademicCorpus(query, options, signal)
-        if (signal?.aborted) {
-            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
-        }
+        if (signal?.aborted) return aborted()
+        const result = await searchAcademicCorpus(query, { ...options, env: env ?? options?.env }, signal)
+        if (signal?.aborted) return aborted()
 
         // Web search fallback if external academic APIs and canonical corpus returned 0 papers
         if (result.papers.length === 0 && env) {
@@ -525,38 +557,43 @@ async function executeAcademicSearch(
                 const limit = options?.limit || 5
                 const webHits = await searchWebSources(`${query} academic paper research`, env, signal)
                 if (webHits && webHits.length > 0) {
-                    const fallbackPapers: AcademicPaper[] = webHits.slice(0, limit).map((h, i) => ({
-                        id: `web-${i + 1}-${Date.now()}`,
-                        title: h.title,
-                        authors: [h.source || 'Web Source'],
-                        venue: h.source,
-                        citationCount: 0,
-                        doi: h.url.startsWith('http') ? h.url : undefined,
-                        pdfUrl: h.url.endsWith('.pdf') ? h.url : undefined,
-                        abstract: h.snippet,
-                        source: 'Web Search',
-                    }))
+                    const fallbackPapers = webHitsToPapers(webHits, limit)
                     result.papers = fallbackPapers
                     result.total = fallbackPapers.length
                     result.formatted = formatAcademicResults(fallbackPapers)
                     result.bibliography = formatApaBibliography(fallbackPapers)
+                    const webNote =
+                        'Scholarly databases returned nothing, so these are general web results (not verified scholarly records).'
+                    result.notice = result.notice ? `${result.notice} ${webNote}` : webNote
                 }
             } catch (err) {
-                if (
-                    signal?.aborted ||
-                    (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
-                ) {
-                    return {
-                        ok: false,
-                        result: JSON.stringify({ ok: false, error: 'client request aborted' }),
-                    }
+                if (signal?.aborted || (Boolean(signal) && err instanceof Error && err.name === 'AbortError')) {
+                    return aborted()
                 }
                 // Ignore non-abort web search fallback errors
             }
         }
 
+        // All scholarly sources failed and nothing to show: report unavailability, not "no literature".
+        if (result.allSourcesFailed && result.papers.length === 0) {
+            const sources: Record<string, string> = {}
+            for (const s of result.sources || []) {
+                sources[s.source] = s.status === 'ok' ? `ok(${s.count})` : `${s.status}:${s.reason || 'error'}`
+            }
+            return {
+                ok: false,
+                result: JSON.stringify({
+                    ok: false,
+                    degraded: true,
+                    error: result.notice || 'Academic search unavailable: all scholarly sources failed.',
+                    sources,
+                }),
+            }
+        }
+
+        // Citation objects for the UI (chat.ts citations event / SourcesPanel) — id N matches [PN].
         const citations: AiCitation[] = result.papers.map((p, idx) => {
-            let url = p.doi || p.pdfUrl || (p.id.startsWith('http') ? p.id : `https://doi.org/${p.id}`)
+            let url = p.doi || p.pdfUrl || p.url || (p.id.startsWith('http') ? p.id : `https://doi.org/${p.id}`)
             if (p.id.startsWith('canon-')) {
                 url = `https://scholar.google.com/scholar?q=${encodeURIComponent(p.title)}`
             }
@@ -571,25 +608,12 @@ async function executeAcademicSearch(
 
         return {
             ok: true,
-            result: clip(
-                JSON.stringify({
-                    ok: true,
-                    total: result.total,
-                    query: result.query,
-                    papers: result.papers,
-                    formatted: result.formatted,
-                    bibliography: result.bibliography,
-                }),
-                MAX_TOOL_RESULT
-            ),
+            result: formatAcademicPayloadForModel(result, MAX_TOOL_RESULT),
             citations: citations.length > 0 ? citations : undefined,
         }
     } catch (err: unknown) {
-        if (
-            signal?.aborted ||
-            (Boolean(signal) && err instanceof Error && err.name === 'AbortError')
-        ) {
-            return { ok: false, result: JSON.stringify({ ok: false, error: 'client request aborted' }) }
+        if (signal?.aborted || (Boolean(signal) && err instanceof Error && err.name === 'AbortError')) {
+            return aborted()
         }
         const message = err instanceof Error ? err.message : 'Academic search failed'
         return {
@@ -2110,13 +2134,19 @@ export async function executeToolCall(
             }
             const field = asText(args.field, 60).trim() || undefined
             const limit = typeof args.limit === 'number' ? Math.min(Math.max(1, args.limit), 10) : 5
-            const yearFrom = typeof args.year_from === 'number' ? args.year_from : undefined
-            const yearTo = typeof args.year_to === 'number' ? args.year_to : undefined
+            const yearFrom = parseAcademicYear(args.year_from)
+            const yearTo = parseAcademicYear(args.year_to)
             const sortBy =
                 typeof args.sort_by === 'string' && ['citations', 'recent', 'relevance'].includes(args.sort_by)
                     ? (args.sort_by as 'citations' | 'recent' | 'relevance')
                     : 'relevance'
             const openAccessOnly = typeof args.open_access_only === 'boolean' ? args.open_access_only : undefined
+            const rawLanguage = asText(args.language, 10).trim().toLowerCase()
+            const language = /^[a-z]{2}$/.test(rawLanguage) ? rawLanguage : undefined
+            const rawType = asText(args.type, 20).trim().toLowerCase()
+            const type = (ACADEMIC_WORK_TYPES as readonly string[]).includes(rawType)
+                ? (rawType as AcademicWorkType)
+                : undefined
             const executed = await executeAcademicSearch(
                 query,
                 {
@@ -2126,6 +2156,8 @@ export async function executeToolCall(
                     yearTo,
                     sortBy,
                     openAccessOnly,
+                    language,
+                    type,
                 },
                 env,
                 signal
