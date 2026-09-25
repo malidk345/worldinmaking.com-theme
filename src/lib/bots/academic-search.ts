@@ -21,6 +21,7 @@
 
 import { searchPhilosophicalCorpus } from './tools/philosophical-corpus'
 import type { EnvStore } from './runtime-env'
+import { APA_MAX_AUTHORS, apaAuthorList, apaSentence } from '../ai/citation-format'
 import { searchFetchSignal } from './web-search'
 import {
     AcademicSourceError,
@@ -121,6 +122,12 @@ export interface AcademicPaper {
     ranks?: Record<string, number>
     /** Query-term coverage 0..1 (max over English / original phrasing). */
     relevance?: number
+    /** Real author count when `authors` was capped to APA's first 19 + last (21+ authors). */
+    authorCount?: number
+    /** Retracted / withdrawn work (Crossref `updated-by`, OpenAlex `is_retracted`, PubMed type, title prefix). */
+    retracted?: boolean
+    /** The record IS a retraction notice (Crossref `update-to` retraction, "Retraction: …" title). */
+    retractionNotice?: boolean
 }
 
 export type AcademicWorkType = 'article' | 'book' | 'book-chapter' | 'review' | 'preprint' | 'dissertation'
@@ -211,6 +218,51 @@ const UNPAYWALL_CONCURRENCY = 4
 const UNPAYWALL_MAX_LOOKUPS = 10
 const ABSTRACT_KEEP_CHARS = 600
 const ENCYCLOPEDIA_LIMIT = 2
+
+/**
+ * APA 7 keeps up to 20 authors; with 21+ only the first 19 and the last are
+ * cited, so that is all we keep (plus the real count).
+ */
+export function capAuthors(names: string[]): { authors: string[]; authorCount?: number } {
+    const clean = names.map((n) => String(n || '').replace(/\s+/g, ' ').trim()).filter(Boolean)
+    if (clean.length <= APA_MAX_AUTHORS) return { authors: clean }
+    return { authors: [...clean.slice(0, APA_MAX_AUTHORS - 1), clean[clean.length - 1]], authorCount: clean.length }
+}
+
+/** Title of a retracted / withdrawn work ("RETRACTED: …", "RETRACTED ARTICLE: …", IEEE "Notice of Retraction …"). */
+const RETRACTED_TITLE_RE = /^\s*(?:\[?\s*(?:retracted|withdrawn)(?:\s+(?:article|paper|chapter))?\s*\]?\s*[:：.\-–—]|notice\s+of\s+retraction\b)/i
+/** Title of a retraction notice ("Retraction: …", "Retraction notice to …", "Retraction Note: …"). */
+const RETRACTION_NOTICE_TITLE_RE = /^\s*retraction(?:\s+(?:note|notice|statement))?\s*(?:[:：\-–—]|\b(?:to|for|of|on)\b)/i
+const RETRACTION_UPDATE_TYPES = new Set(['retraction', 'withdrawal', 'removal', 'retracted'])
+
+export function retractionFromTitle(title: string | undefined): { retracted?: boolean; retractionNotice?: boolean } {
+    const t = String(title || '')
+    if (RETRACTED_TITLE_RE.test(t)) return { retracted: true }
+    if (RETRACTION_NOTICE_TITLE_RE.test(t)) return { retractionNotice: true }
+    return {}
+}
+
+function isRetractionType(type: unknown): boolean {
+    return RETRACTION_UPDATE_TYPES.has(String(type || '').toLowerCase().replace(/[\s_-]+/g, ''))
+}
+
+/** Query explicitly about retractions → keep retracted works (demoted + tagged) instead of dropping them. */
+export function queryWantsRetracted(...texts: Array<string | undefined>): boolean {
+    return texts.some((t) => /\bretract|\bwithdrawn\b|geri\s*çek|geri\s*cek|\bretraction/i.test(String(t || '')))
+}
+
+/**
+ * Default: retracted works and retraction notices are dropped. When the user
+ * explicitly asks about retractions they stay but sort after everything else.
+ * `open_access_only` never returns retracted works.
+ */
+export function applyRetractionPolicy(papers: AcademicPaper[], opts: { wantsRetracted: boolean; openAccessOnly?: boolean }): AcademicPaper[] {
+    // Title prefixes catch sources without structured retraction data (CORE, DOAJ, TR Dizin, …).
+    const marked = papers.map((p) => (p.retracted || p.retractionNotice ? p : Object.assign(p, retractionFromTitle(p.title))))
+    const flagged = (p: AcademicPaper) => Boolean(p.retracted || p.retractionNotice)
+    if (!opts.wantsRetracted || opts.openAccessOnly) return marked.filter((p) => !flagged(p))
+    return [...marked.filter((p) => !flagged(p)), ...marked.filter(flagged)]
+}
 
 // ---------------------------------------------------------------------------
 // Rate-limit queues (module-level)
@@ -481,7 +533,8 @@ export function formatAcademicResults(papers: AcademicPaper[], encyclopedia: Enc
 
     return papers
         .map((p, idx) => {
-            const authorStr = p.authors.length > 0 ? p.authors.join(', ') : 'Unknown Author'
+            const authorStr =
+                p.authors.length > 0 ? (p.authors.length > 6 ? `${p.authors.slice(0, 6).join(', ')} et al.` : p.authors.join(', ')) : 'Unknown Author'
             const yearStr = p.year ? ` (${p.year})` : ''
             const venueStr = p.venue ? ` — *${p.venue}*` : ''
             const citeStr = p.citationCount > 0 ? ` [Cited by ${p.citationCount}]` : ''
@@ -512,11 +565,14 @@ export function formatApaBibliography(papers: AcademicPaper[]): string {
     if (!papers || papers.length === 0) return ''
 
     const lines = papers.map((p) => {
-        const authors = p.authors.length > 0 ? p.authors.join(', ') : 'Anonymous'
+        // APA 7: up to 20 authors with "&" before the last; organisations / particles kept.
+        const authors = apaAuthorList(p.authors, p.authorCount) || 'Anonymous'
         const year = p.year ? `(${p.year})` : '(n.d.)'
-        const venue = p.venue ? `*${p.venue}*.` : ''
+        const venueText = p.venue ? String(p.venue).trim().replace(/[.\s]+$/, '') : ''
+        const venue = venueText ? ` *${venueText}*${/[?!]$/.test(venueText) ? '' : '.'}` : ''
         const doi = p.doi ? ` ${p.doi}` : ''
-        return `${authors} ${year}. ${p.title}. ${venue}${doi}`
+        const flag = p.retracted ? ' [Retracted]' : ''
+        return `${authors} ${year}. ${apaSentence(p.title)}${venue}${doi}${flag}`
     })
 
     return `### References\n\n${lines.join('\n\n')}`
@@ -533,6 +589,8 @@ export function formatPaperLine(p: AcademicPaper, index: number, abstractChars: 
     const parts: string[] = []
     const year = p.year ? ` (${p.year})` : ' (n.d.)'
     parts.push(`[P${index + 1}] ${truncateAtWord(formatAuthorsShort(p.authors), 120)}${year}. ${truncateAtWord(p.title, 220)}.`)
+    if (p.retracted) parts.push('RETRACTED — do not cite as evidence.')
+    else if (p.retractionNotice) parts.push('RETRACTION NOTICE.')
     if (p.venue) parts.push(`${truncateAtWord(p.venue, 90)}.`)
     const doi = cleanDoi(p.doi)
     if (doi) parts.push(`https://doi.org/${doi.slice(0, 120)}.`)
@@ -639,7 +697,8 @@ export function scoreAcademicPaper(query: string, paper: AcademicPaper, fieldLab
     const title = (paper.title || '').toLowerCase()
     const titleWords = title.split(NON_LETTER_DIGIT_SPLIT_RE)
     const abstract = (paper.abstract || '').toLowerCase()
-    const authors = (paper.authors || []).join(' ').toLowerCase()
+    // First 4 authors only: longer APA author lists must not change ranking.
+    const authors = (paper.authors || []).slice(0, 4).join(' ').toLowerCase()
     const topics = (paper.topics || []).join(' ').toLowerCase()
     let score = 0
     for (const token of tokens) {
@@ -691,7 +750,7 @@ export function relevanceCoverage(paper: AcademicPaper, sets: string[][]): { cov
     if (sets.length === 0) return { coverage: 1, titleCoverage: 1 }
     const title = foldText(paper.title || '')
     const body = foldText(
-        `${paper.title || ''} ${paper.abstract || ''} ${(paper.topics || []).join(' ')} ${(paper.authors || []).join(' ')}`
+        `${paper.title || ''} ${paper.abstract || ''} ${(paper.topics || []).join(' ')} ${(paper.authors || []).slice(0, 4).join(' ')}`
     )
     let best = { coverage: 0, titleCoverage: 0 }
     for (const set of sets) {
@@ -765,7 +824,12 @@ export function normalizeTitleKey(title: string): string {
 
 function mergeInto(base: AcademicPaper, other: AcademicPaper): void {
     if ((!base.title || /^untitled/i.test(base.title)) && other.title) base.title = other.title
-    if (other.authors.length > base.authors.length) base.authors = other.authors
+    if ((other.authorCount || other.authors.length) > (base.authorCount || base.authors.length)) {
+        base.authors = other.authors
+        base.authorCount = other.authorCount
+    }
+    if (other.retracted) base.retracted = true
+    if (other.retractionNotice) base.retractionNotice = true
     if (!base.year && other.year) base.year = other.year
     if ((!base.venue || base.venue === 'arXiv Preprint') && other.venue) base.venue = other.venue
     base.citationCount = Math.max(base.citationCount || 0, other.citationCount || 0)
@@ -861,7 +925,7 @@ export function buildOpenAlexUrl(ctx: AcademicSourceContext): string {
     params.set('filter', filters.join(','))
     params.set(
         'select',
-        'id,title,publication_year,doi,cited_by_count,primary_location,best_oa_location,authorships,open_access,abstract_inverted_index,topics,language,type'
+        'id,title,publication_year,doi,cited_by_count,primary_location,best_oa_location,authorships,open_access,abstract_inverted_index,topics,language,type,is_retracted'
     )
     if (options.sortBy === 'citations') params.set('sort', 'cited_by_count:desc')
     else if (options.sortBy === 'recent') params.set('sort', 'publication_date:desc')
@@ -887,14 +951,16 @@ export interface OpenAlexWork {
     type?: string
     referenced_works?: string[]
     related_works?: string[]
+    is_retracted?: boolean
 }
 
 /** OpenAlex work → AcademicPaper (shared by search and the citation graph). */
 export function openAlexWorkToPaper(r: OpenAlexWork): AcademicPaper {
-    const authors = (r.authorships || [])
-        .map((a) => a.author?.display_name?.trim())
-        .filter((name): name is string => Boolean(name))
-        .slice(0, 4)
+    const { authors, authorCount } = capAuthors(
+        (r.authorships || []).map((a) => a.author?.display_name?.trim()).filter((name): name is string => Boolean(name))
+    )
+    const title = r.title?.trim() || 'Untitled Academic Paper'
+    const retraction = retractionFromTitle(title)
     const topicNames: string[] = []
     for (const t of r.topics || []) {
         if (t.display_name) topicNames.push(t.display_name.trim())
@@ -903,8 +969,11 @@ export function openAlexWorkToPaper(r: OpenAlexWork): AcademicPaper {
     const topics = Array.from(new Set(topicNames)).slice(0, 4)
     return {
         id: r.id || `openalex-${Math.random()}`,
-        title: r.title?.trim() || 'Untitled Academic Paper',
+        title,
         authors,
+        ...(authorCount ? { authorCount } : {}),
+        ...(r.is_retracted === true || retraction.retracted ? { retracted: true } : {}),
+        ...(retraction.retractionNotice ? { retractionNotice: true } : {}),
         year: r.publication_year,
         venue: r.primary_location?.source?.display_name?.trim() || undefined,
         citationCount: r.cited_by_count || 0,
@@ -967,7 +1036,7 @@ export function buildCrossrefUrl(ctx: AcademicSourceContext): string {
     if (!options.language) {
         params.set(
             'select',
-            'DOI,URL,title,author,issued,published-print,published-online,container-title,is-referenced-by-count,abstract,subject,link,type,license'
+            'DOI,URL,title,author,issued,published-print,published-online,container-title,is-referenced-by-count,abstract,subject,link,type,license,update-to,updated-by'
         )
     }
     params.set('mailto', ctx.keys.contactEmail)
@@ -991,18 +1060,30 @@ export interface CrossrefItem {
     language?: string
     type?: string
     license?: Array<{ URL?: string }>
+    /** Present on update NOTICES (retraction / correction) — points at the original. */
+    'update-to'?: Array<{ type?: string; DOI?: string }>
+    /** Present on ORIGINALS updated by a notice (incl. Retraction Watch data). */
+    'updated-by'?: Array<{ type?: string; DOI?: string; source?: string }>
+    relation?: Record<string, Array<{ 'id-type'?: string; id?: string }>>
+}
+
+/** Crossref retraction signals on one record. */
+export function crossrefRetraction(item: CrossrefItem, title?: string): { retracted?: boolean; retractionNotice?: boolean } {
+    const out = retractionFromTitle(title ?? item.title?.[0])
+    if ((item['updated-by'] || []).some((u) => isRetractionType(u?.type))) out.retracted = true
+    const relation = item.relation || {}
+    if (Object.keys(relation).some((k) => /is-retracted-by|retracted-by/i.test(k) && (relation[k] || []).length > 0)) out.retracted = true
+    if (!out.retracted && (item['update-to'] || []).some((u) => isRetractionType(u?.type))) out.retractionNotice = true
+    return out
 }
 
 /** Crossref work → AcademicPaper (shared by search and the citation graph). */
 export function crossrefItemToPaper(item: CrossrefItem): AcademicPaper {
     const rawTitle = Array.isArray(item.title) && item.title.length > 0 ? item.title[0] : 'Untitled Work'
-    const authors: string[] = []
-    if (Array.isArray(item.author)) {
-        for (const a of item.author.slice(0, 4)) {
-            const name = [a.given, a.family].filter(Boolean).join(' ') || a.name || ''
-            if (name.trim()) authors.push(name.trim())
-        }
-    }
+    const { authors, authorCount } = capAuthors(
+        (Array.isArray(item.author) ? item.author : []).map((a) => [a.given, a.family].filter(Boolean).join(' ') || a.name || '')
+    )
+    const retraction = crossrefRetraction(item, stripTags(rawTitle))
     const yearParts =
         item.issued?.['date-parts']?.[0] ||
         item['published-print']?.['date-parts']?.[0] ||
@@ -1025,6 +1106,9 @@ export function crossrefItemToPaper(item: CrossrefItem): AcademicPaper {
         id: item.DOI || `crossref-${Math.random()}`,
         title: stripTags(rawTitle),
         authors,
+        ...(authorCount ? { authorCount } : {}),
+        ...(retraction.retracted ? { retracted: true } : {}),
+        ...(retraction.retractionNotice ? { retractionNotice: true } : {}),
         year,
         venue,
         citationCount: typeof item['is-referenced-by-count'] === 'number' ? item['is-referenced-by-count'] : 0,
@@ -1090,17 +1174,18 @@ export interface S2Paper {
 
 /** Semantic Scholar paper → AcademicPaper (shared by search and the citation graph). */
 export function s2PaperToPaper(p: S2Paper): AcademicPaper {
-    const authors = (p.authors || [])
-        .map((a) => a.name?.trim())
-        .filter((n): n is string => Boolean(n))
-        .slice(0, 4)
+    const { authors, authorCount } = capAuthors((p.authors || []).map((a) => a.name?.trim()).filter((n): n is string => Boolean(n)))
+    const title = p.title?.trim() || 'Untitled Paper'
+    const retraction = retractionFromTitle(title)
     const pdfUrl =
         (p.openAccessPdf?.url && p.openAccessPdf.url.startsWith('http') ? p.openAccessPdf.url : undefined) ||
         (p.externalIds?.ArXiv ? `https://arxiv.org/pdf/${p.externalIds.ArXiv}.pdf` : undefined)
     return {
         id: p.paperId || `s2-${Math.random()}`,
-        title: p.title?.trim() || 'Untitled Paper',
+        title,
         authors,
+        ...(authorCount ? { authorCount } : {}),
+        ...retraction,
         year: p.year,
         venue: p.venue?.trim() || undefined,
         citationCount: p.citationCount || 0,
@@ -1171,9 +1256,9 @@ async function queryArXiv(ctx: AcademicSourceContext): Promise<AcademicPaper[]> 
                 const publishedMatch = entry.match(/<published>([\s\S]*?)<\/published>/)
                 const idMatch = entry.match(/<id>([\s\S]*?)<\/id>/)
                 const doiMatch = entry.match(/<arxiv:doi[^>]*>([\s\S]*?)<\/arxiv:doi>/)
-                const authors = Array.from(entry.matchAll(/<author>\s*<name>([\s\S]*?)<\/name>/g))
-                    .map((m) => decodeEntities(m[1].trim()))
-                    .slice(0, 4)
+                const { authors, authorCount } = capAuthors(
+                    Array.from(entry.matchAll(/<author>\s*<name>([\s\S]*?)<\/name>/g)).map((m) => decodeEntities(m[1].trim()))
+                )
                 const rawTitle = titleMatch ? stripTags(titleMatch[1]) : ''
                 const rawSummary = summaryMatch ? stripTags(summaryMatch[1]) : ''
                 const rawId = idMatch ? idMatch[1].trim() : ''
@@ -1183,6 +1268,8 @@ async function queryArXiv(ctx: AcademicSourceContext): Promise<AcademicPaper[]> 
                     id: rawId || `arxiv-${Math.random()}`,
                     title: rawTitle,
                     authors,
+                    ...(authorCount ? { authorCount } : {}),
+                    ...retractionFromTitle(rawTitle),
                     year: Number.isFinite(year) ? year : undefined,
                     venue: 'arXiv Preprint',
                     citationCount: 0,
@@ -1256,12 +1343,14 @@ async function queryNcbiPmc(ctx: AcademicSourceContext): Promise<AcademicPaper[]
     for (const uid of idList) {
         const item = summaryData.result[uid]
         if (!item || !item.title) continue
-        const authors: string[] = []
-        if (Array.isArray(item.authors)) {
-            for (const a of item.authors.slice(0, 4)) {
-                if (a?.name) authors.push(String(a.name).trim())
-            }
-        }
+        const { authors, authorCount } = capAuthors(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            Array.isArray(item.authors) ? item.authors.map((a: any) => (a?.name ? String(a.name) : '')) : []
+        )
+        const pubTypes: string[] = Array.isArray(item.pubtype) ? item.pubtype.map((t: unknown) => String(t).toLowerCase()) : []
+        const retraction = retractionFromTitle(String(item.title))
+        if (pubTypes.includes('retracted publication')) retraction.retracted = true
+        else if (pubTypes.includes('retraction of publication')) retraction.retractionNotice = true
         let year: number | undefined
         if (item.pubdate) {
             const yearMatch = String(item.pubdate).match(/\b(19|20)\d{2}\b/)
@@ -1277,6 +1366,8 @@ async function queryNcbiPmc(ctx: AcademicSourceContext): Promise<AcademicPaper[]
             id: `pmc-${uid}`,
             title: stripTags(String(item.title)),
             authors,
+            ...(authorCount ? { authorCount } : {}),
+            ...retraction,
             year,
             venue: item.source ? String(item.source).trim() : 'PubMed Central',
             citationCount: 0,
@@ -1328,6 +1419,7 @@ async function queryEuropePmc(ctx: AcademicSourceContext): Promise<AcademicPaper
                 citedByCount?: number
                 abstractText?: string
                 isOpenAccess?: string
+                pubTypeList?: { pubType?: string[] | string }
             }>
         }
     }>(res)
@@ -1335,16 +1427,24 @@ async function queryEuropePmc(ctx: AcademicSourceContext): Promise<AcademicPaper
     if (!Array.isArray(rows)) throw new AcademicSourceError('parse_error')
     return rows.slice(0, ctx.limit).map((row) => {
         const pmcid = row.pmcid ? String(row.pmcid).replace(/^PMC/i, '') : ''
-        const authors = String(row.authorString || '')
-            .split(',')
-            .map((name) => name.trim().replace(/\.$/, ''))
-            .filter(Boolean)
-            .slice(0, 4)
+        const { authors, authorCount } = capAuthors(
+            String(row.authorString || '')
+                .split(',')
+                .map((name) => name.trim().replace(/\.$/, ''))
+                .filter((name) => name && !/^et al$/i.test(name))
+        )
+        const rawPubTypes = row.pubTypeList?.pubType
+        const pubTypes = (Array.isArray(rawPubTypes) ? rawPubTypes : rawPubTypes ? [rawPubTypes] : []).map((t) => String(t).toLowerCase())
+        const retraction = retractionFromTitle(String(row.title || ''))
+        if (pubTypes.includes('retracted publication')) retraction.retracted = true
+        else if (pubTypes.includes('retraction of publication')) retraction.retractionNotice = true
         const year = row.pubYear ? parseInt(row.pubYear, 10) : undefined
         return {
             id: row.id || `epmc-${pmcid || row.doi || Math.random()}`,
             title: stripTags(String(row.title || 'Untitled')).replace(/\.$/, ''),
             authors,
+            ...(authorCount ? { authorCount } : {}),
+            ...retraction,
             year: Number.isFinite(year) ? year : undefined,
             venue: row.journalTitle?.trim() || undefined,
             citationCount: typeof row.citedByCount === 'number' ? row.citedByCount : 0,
@@ -1491,6 +1591,8 @@ function searchCacheParts(query: string, opts: AcademicSearchOptions, limit: num
         lang: opts.language,
         type: opts.type,
         limit,
+        // v2: retraction policy + APA author lists (older cached results lack both).
+        v: 2,
     }
 }
 
@@ -1539,11 +1641,151 @@ async function runEncyclopedias(
     return { statuses, entries }
 }
 
+// ---------------------------------------------------------------------------
+// DOI-shaped queries: resolve the exact work first
+// ---------------------------------------------------------------------------
+
+const QUERY_DOI_RE = /\b10\.\d{4,9}\/[^\s"'<>]+/i
+/** Words that carry no topic besides "look this DOI up". */
+const DOI_QUERY_NOISE = new Set([
+    'doi', 'find', 'show', 'get', 'look', 'lookup', 'search', 'work', 'about', 'details', 'metadata', 'cite', 'citation',
+    'bul', 'göster', 'goster', 'hakkında', 'hakkinda', 'makaleyi', 'kaynak', 'künye', 'kunye', 'https', 'http', 'org',
+])
+
+/** First DOI in a free-text query ("… 10.1038/nature12373 …", "https://doi.org/…", "doi:…"), lowercased. */
+export function extractQueryDoi(text?: string): string {
+    const m = String(text || '').match(QUERY_DOI_RE)
+    if (!m) return ''
+    // Trailing sentence punctuation / closing brackets are not part of the DOI (balanced parens are).
+    let raw = m[0].replace(/[.,;:!?'"\]}>]+$/, '')
+    while (raw.endsWith(')') && (raw.match(/\(/g) || []).length < (raw.match(/\)/g) || []).length) raw = raw.slice(0, -1)
+    return cleanDoi(raw)
+}
+
+/** Query text with the DOI (and its `doi:` / doi.org prefix) removed. */
+export function stripQueryDoi(text: string): string {
+    return String(text || '')
+        .replace(/(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:\s*)?10\.\d{4,9}\/[^\s"'<>]+/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+}
+
+function hasTopicBesidesDoi(text: string): boolean {
+    return tokenizeAcademicQuery(text).filter((t) => !DOI_QUERY_NOISE.has(t) && !/^\d+$/.test(t)).length >= 2
+}
+
+/** Exact work for a DOI: Crossref record (+ Unpaywall OA link). Transient failures → `transient`. */
+export async function resolveDoiPaper(
+    doi: string,
+    options: { env?: EnvStore; signal?: AbortSignal; noCache?: boolean } = {}
+): Promise<{ paper?: AcademicPaper; transient?: boolean }> {
+    const found = await lookupDoiViaCrossref(doi, { env: options.env, signal: options.signal, noCache: options.noCache, timeoutMs: 6_000 })
+    if (!found.found) return { transient: found.transient }
+    const paper: AcademicPaper = found.paper
+        ? { ...found.paper, authors: [...found.paper.authors] }
+        : {
+              id: found.doi,
+              title: found.title || `DOI ${found.doi}`,
+              authors: found.authors || [],
+              year: found.year,
+              venue: found.venue,
+              citationCount: 0,
+              doi: `https://doi.org/${found.doi}`,
+              source: 'Crossref',
+              ...(found.authorCount ? { authorCount: found.authorCount } : {}),
+              ...(found.retracted ? { retracted: true } : {}),
+          }
+    if (!paper.pdfUrl) {
+        const keys = resolveAcademicApiKeys(options.env)
+        const oa = await resolveOaPdfViaUnpaywall(found.doi, keys.contactEmail, options.signal, !options.noCache)
+        if (oa) {
+            paper.pdfUrl = oa
+            paper.isOpenAccess = true
+        }
+    }
+    paper.sources = ['Crossref']
+    return { paper }
+}
+
+function doiStatus(count: number, ms: number, transient?: boolean): AcademicSourceStatus {
+    return transient
+        ? { source: 'crossref', status: 'failed', reason: 'error', count: 0, ms, lang: 'doi' }
+        : { source: 'crossref', status: 'ok', count, ms, lang: 'doi' }
+}
+
 /**
  * Searches the academic corpus across peer-reviewed repositories with advanced filters.
+ * A DOI in the query (or in the user's original phrasing) is resolved directly via
+ * Crossref and that exact work is listed first ([P1]); a DOI-only query returns just
+ * that work instead of unrelated keyword hits.
  * Throws AbortError on client Stop; provider failures are reported per source.
  */
 export async function searchAcademicCorpus(
+    query: string,
+    options?: AcademicSearchOptions,
+    signal?: AbortSignal
+): Promise<AcademicSearchResult> {
+    const cleanQuery = String(query || '').trim()
+    const doi = extractQueryDoi(cleanQuery) || extractQueryDoi(options?.queryOriginal)
+    if (!doi) return searchAcademicCorpusCore(cleanQuery, options, signal)
+    assertAcademicNotAborted(signal)
+
+    const opts: AcademicSearchOptions = { ...(options || {}) }
+    const limit = Math.min(Math.max(opts.limit || 5, 1), 10)
+    const residual = stripQueryDoi(cleanQuery)
+    const residualOriginal = opts.queryOriginal ? stripQueryDoi(opts.queryOriginal) : undefined
+    const t0 = Date.now()
+    const [resolved, base] = await Promise.all([
+        resolveDoiPaper(doi, { env: opts.env, signal, noCache: opts.noCache }),
+        hasTopicBesidesDoi(residual)
+            ? searchAcademicCorpusCore(residual, { ...opts, queryOriginal: residualOriginal || undefined }, signal)
+            : Promise.resolve(undefined),
+    ])
+    assertAcademicNotAborted(signal)
+    const status = doiStatus(resolved.paper ? 1 : 0, Date.now() - t0, resolved.transient)
+
+    // DOI unknown to Crossref (or Crossref down): fall back to the keyword search, and say so.
+    if (!resolved.paper) {
+        const note = resolved.transient
+            ? `Crossref was unavailable, so DOI ${doi} could not be resolved directly.`
+            : `DOI ${doi} was not found in Crossref — it may be mistyped; do not cite it.`
+        const fallback = base || (residual ? await searchAcademicCorpusCore(residual, { ...opts, queryOriginal: residualOriginal || undefined }, signal) : undefined)
+        if (!fallback) {
+            return { ok: Boolean(!resolved.transient), query: cleanQuery, total: 0, papers: [], formatted: note, error: resolved.transient ? note : undefined, sources: [status], notice: note, degraded: resolved.transient }
+        }
+        return { ...fallback, query: cleanQuery, notice: fallback.notice ? `${note} ${fallback.notice}` : note, sources: [status, ...(fallback.sources || [])] }
+    }
+
+    const exact = resolved.paper
+    // Explicit DOI: keep the work even when retracted (tagged) — except under open_access_only.
+    const oaExcluded = opts.openAccessOnly && (exact.retracted || exact.retractionNotice || !(exact.pdfUrl || exact.isOpenAccess))
+    const rest = base?.papers || []
+    const merged = oaExcluded ? rest : mergeAcademicPapers([exact, ...rest])
+    const papers = merged.slice(0, limit)
+    const notes: string[] = []
+    if (oaExcluded) notes.push(`DOI ${doi} resolved via Crossref but excluded by open_access_only${exact.retracted ? ' (retracted)' : ''}.`)
+    else notes.push(`DOI ${doi} resolved directly via Crossref — listed first as [P1].${exact.retracted ? ' This work is RETRACTED.' : ''}`)
+    if (base?.notice) notes.push(base.notice)
+    const encyclopedia = base?.encyclopedia
+    return {
+        ok: true,
+        query: cleanQuery,
+        total: papers.length,
+        papers,
+        formatted: formatAcademicResults(papers, encyclopedia || []),
+        bibliography: formatApaBibliography(papers),
+        degraded: base?.degraded,
+        sources: [status, ...(base?.sources || [])],
+        notice: notes.join(' '),
+        fieldFilter: base?.fieldFilter ?? describeFilters(opts),
+        encyclopedia,
+        droppedWeak: base?.droppedWeak,
+        cached: base?.cached,
+        queryOriginal: base?.queryOriginal,
+    }
+}
+
+async function searchAcademicCorpusCore(
     query: string,
     options?: AcademicSearchOptions,
     signal?: AbortSignal
@@ -1678,6 +1920,12 @@ export async function searchAcademicCorpus(
     const beforeThreshold = ranked.length
     ranked = ranked.filter((p) => passesRelevanceThreshold(p, sets))
     const droppedWeak = beforeThreshold - ranked.length
+    // Retracted works / retraction notices: dropped by default (always under open_access_only);
+    // kept but demoted when the query is explicitly about retractions.
+    const retractionPolicy = { wantsRetracted: queryWantsRetracted(cleanQuery, opts.queryOriginal), openAccessOnly: opts.openAccessOnly }
+    const beforeRetraction = ranked.length
+    ranked = applyRetractionPolicy(ranked, retractionPolicy)
+    const droppedRetracted = beforeRetraction - ranked.length
 
     // Open-access resolution via Unpaywall — parallel, bounded, cached ~30 days.
     const oaPool = ranked.slice(0, opts.openAccessOnly ? limit * 2 : limit)
@@ -1694,6 +1942,7 @@ export async function searchAcademicCorpus(
         ranked = rankAcademicPapers(cleanQuery, ranked, sortBy, fieldLabel, opts.queryOriginal)
     }
     if (opts.openAccessOnly) ranked = ranked.filter((p) => Boolean(p.pdfUrl) || p.isOpenAccess === true)
+    ranked = applyRetractionPolicy(ranked, retractionPolicy)
 
     // Fallback to verified philosophical canon if scholarly APIs returned zero results.
     if (ranked.length === 0) {
@@ -1739,6 +1988,8 @@ export async function searchAcademicCorpus(
         notes.push(`Partial coverage (${failedList}); results come only from the sources that responded.`)
     }
     if (droppedWeak > 0) notes.push(`${droppedWeak} weak match${droppedWeak === 1 ? '' : 'es'} below the relevance threshold dropped.`)
+    if (droppedRetracted > 0) notes.push(`${droppedRetracted} retracted work${droppedRetracted === 1 ? '' : 's'} / retraction notice${droppedRetracted === 1 ? '' : 's'} excluded.`)
+    else if (retractionPolicy.wantsRetracted && ranked.some((p) => p.retracted)) notes.push('Retracted works are kept (query asks about retractions) but listed last and marked RETRACTED.')
     const notice = notes.length ? notes.join(' ') : undefined
 
     console.info('[academic] sources', {
@@ -1786,6 +2037,12 @@ export interface DoiLookup {
     authors?: string[]
     year?: number
     venue?: string
+    /** Real author count when `authors` was capped (21+). */
+    authorCount?: number
+    /** Crossref reports a retraction (updated-by / title prefix). */
+    retracted?: boolean
+    /** Full record as an AcademicPaper (absent in lookups cached before v2). */
+    paper?: AcademicPaper
     /** Lookup failed for transient reasons (network / 5xx / 429) — unknown, not "fake". */
     transient?: boolean
 }
@@ -1812,25 +2069,21 @@ export async function lookupDoiViaCrossref(
             options.signal,
             { noRetry: true }
         )
-        const data = await readJson<{
-            message?: {
-                title?: string[]
-                author?: Array<{ given?: string; family?: string; name?: string }>
-                issued?: { 'date-parts'?: number[][] }
-                'container-title'?: string[]
-            }
-        }>(res)
+        const data = await readJson<{ message?: CrossrefItem }>(res)
         const m = data?.message
+        const { authors, authorCount } = capAuthors((m?.author || []).map((a) => a.name || [a.given, a.family].filter(Boolean).join(' ')))
+        const paper = m && m.title?.[0] ? crossrefItemToPaper({ ...m, DOI: m.DOI || bare }) : undefined
+        if (paper && !paper.doi) paper.doi = `https://doi.org/${bare}`
         out = {
             doi: bare,
             found: true,
             title: m?.title?.[0] ? stripTags(m.title[0]) : undefined,
-            authors: (m?.author || [])
-                .map((a) => a.name || [a.given, a.family].filter(Boolean).join(' '))
-                .filter(Boolean)
-                .slice(0, 4),
+            authors,
+            ...(authorCount ? { authorCount } : {}),
+            ...(paper?.retracted ? { retracted: true } : {}),
             year: m?.issued?.['date-parts']?.[0]?.[0],
             venue: m?.['container-title']?.[0] || undefined,
+            ...(paper ? { paper } : {}),
         }
     } catch (err) {
         if (options.signal?.aborted) throw err instanceof Error ? err : abortError()

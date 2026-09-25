@@ -32,7 +32,10 @@ export function academicResultsToCitations(papers: AcademicPaper[], encyclopedia
             snippet: p.abstract ? clip(p.abstract, 200) : clip(p.title, 120),
             source: p.venue || p.source,
         }
-        if (p.authors?.length) citation.authors = p.authors.slice(0, 6)
+        // Full APA list (≤ 20, or first 19 + last with the real count) so "Copy APA" is complete.
+        if (p.authors?.length) citation.authors = p.authors.slice(0, 20)
+        if (p.authorCount && p.authorCount > (citation.authors?.length || 0)) citation.authorCount = p.authorCount
+        if (p.retracted) citation.retracted = true
         if (p.year) citation.year = p.year
         if (p.venue) citation.venue = p.venue
         if (p.citationCount > 0) citation.citationCount = p.citationCount
@@ -74,6 +77,7 @@ export function existingMarker(id: number): string {
 }
 
 /**
+ * Legacy pure shift (no dedupe) — the pipeline now uses `mergeToolCitations`.
  * Shifts a tool's local citation ids (1..n) by `offset` and rewrites the labels
  * the model sees so they match: `[P3]` for the academic tools and
  * `[Source 3 - …]` for web_search. Other tools only get their ids shifted.
@@ -96,6 +100,96 @@ export function renumberToolCitations(
         text = text.replace(/\[Source (\d{1,3}) - /g, (_m, n: string) => `[Source ${Number(n) + offset} - `)
     }
     return { result: finalize(text), citations: shifted }
+}
+
+/** Comparable URL: no scheme / `www.` / hash / trailing slash; host lowercased. */
+export function normalizeCitationUrl(url: string | undefined): string {
+    const raw = String(url || '').trim()
+    if (!raw) return ''
+    try {
+        const u = new URL(raw)
+        const path = u.pathname.replace(/\/+$/, '')
+        return `${u.hostname.toLowerCase().replace(/^www\./, '')}${path}${u.search}`
+    } catch {
+        return raw.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/#.*$/, '').replace(/\/+$/, '').toLowerCase()
+    }
+}
+
+const isAcademicKind = (c: Pick<AiCitation, 'kind'>) => c.kind === 'paper' || c.kind === 'encyclopedia'
+
+/** Existing turn citation that is the same source as `incoming` (academic: DOI / title / URL; web: URL). */
+function findSameCitation(incoming: AiCitation, pool: AiCitation[]): AiCitation | undefined {
+    if (isAcademicKind(incoming)) {
+        const hit = matchTurnCitation(incoming, pool)
+        if (hit) return hit
+        const url = normalizeCitationUrl(incoming.url)
+        const incomingDoi = cleanDoi(incoming.doi) || cleanDoi(incoming.url)
+        if (!url) return undefined
+        return pool.find((c) => {
+            if (!isAcademicKind(c) || c.verified === false) return false
+            const cDoi = cleanDoi(c.doi) || cleanDoi(c.url)
+            if (incomingDoi && cDoi && cDoi !== incomingDoi) return false
+            return normalizeCitationUrl(c.url) === url
+        })
+    }
+    if (incoming.kind === 'web') {
+        const url = normalizeCitationUrl(incoming.url)
+        return url ? pool.find((c) => c.kind === 'web' && normalizeCitationUrl(c.url) === url) : undefined
+    }
+    return undefined
+}
+
+export interface MergedToolCitations {
+    /** Tool result with labels rewritten to turn-global ids (never contains `[P@n]` for academic tools). */
+    result: string
+    /** Only the citations that are NEW this turn (ids continue after `turnCitations.length`). */
+    citations: AiCitation[]
+    /** Local tool id → turn-global id. */
+    idMap: Map<number, number>
+}
+
+/**
+ * Merges one tool execution into the turn's citation list (0 LLM tokens):
+ *   - a local citation that is the same source as an existing turn citation
+ *     reuses that id (no duplicate card: repeated / cached searches, SEP entry
+ *     returned by two searches, sub-agent results);
+ *   - other local citations get the next contiguous global ids (chat.ts assigns
+ *     id = index + 1, so the returned list must be appended as-is);
+ *   - academic payload labels `[Pk]` → `[P<global>]`, `[P@n]` → `[Pn]` ALWAYS
+ *     (also when the tool returned no citations), web `[Source k - ` likewise.
+ */
+export function mergeToolCitations(
+    toolName: string,
+    result: string,
+    citations: AiCitation[] | undefined,
+    turnCitations: AiCitation[]
+): MergedToolCitations {
+    const academic = ACADEMIC_MARKER_TOOLS.has(toolName)
+    const dedupe = academic || toolName === 'web_search'
+    const offset = turnCitations.length
+    const idMap = new Map<number, number>()
+    const fresh: AiCitation[] = []
+    for (const c of citations || []) {
+        const same = dedupe ? findSameCitation(c, [...turnCitations, ...fresh]) : undefined
+        if (same) {
+            idMap.set(c.id, same.id)
+            continue
+        }
+        const id = offset + fresh.length + 1
+        idMap.set(c.id, id)
+        fresh.push({ ...c, id })
+    }
+    let text = String(result ?? '')
+    if (academic) {
+        text = text.replace(/\[P(@?)(\d{1,3})\]/g, (_m, at: string, n: string) => {
+            const k = Number(n)
+            if (at) return `[P${k}]`
+            return `[P${idMap.get(k) ?? k + offset}]`
+        })
+    } else if (toolName === 'web_search') {
+        text = text.replace(/\[Source (\d{1,3}) - /g, (_m, n: string) => `[Source ${idMap.get(Number(n)) ?? Number(n) + offset} - `)
+    }
+    return { result: text, citations: fresh, idMap }
 }
 
 function citationTitleKey(title: string): string {
@@ -241,6 +335,8 @@ export async function verifyAnswerCitations(
                     ...(r.authors?.length ? { authors: r.authors } : {}),
                     ...(r.year ? { year: r.year } : {}),
                     ...(r.venue ? { venue: r.venue } : {}),
+                    ...(r.authorCount ? { authorCount: r.authorCount } : {}),
+                    ...(r.retracted ? { retracted: true } : {}),
                     doi: r.doi,
                     verified: true,
                 })
@@ -268,4 +364,51 @@ export async function verifyAnswerCitations(
     if (unknownMarkers.length) verification.unknownMarkers = unknownMarkers.slice(0, 20)
     const changed = cited.size > 0 || next.length !== citations.length || unknownMarkers.length > 0
     return { citations: next, verification, changed }
+}
+
+/**
+ * Runs `task` with its own AbortSignal (linked to `parent`) and gives up after
+ * `ms`: resolves `undefined` AND aborts the signal, so in-flight work (e.g.
+ * Crossref DOI lookups in the post-answer check) stops instead of running on
+ * after the budget. Rejects only when `task` rejects before the deadline.
+ */
+export function runWithAbortBudget<T>(task: (signal: AbortSignal) => Promise<T>, ms: number, parent?: AbortSignal): Promise<T | undefined> {
+    const controller = new AbortController()
+    const onParentAbort = () => controller.abort()
+    if (parent?.aborted) controller.abort()
+    else parent?.addEventListener('abort', onParentAbort, { once: true })
+    return new Promise<T | undefined>((resolve, reject) => {
+        let settled = false
+        const finish = () => {
+            settled = true
+            clearTimeout(timer)
+            parent?.removeEventListener('abort', onParentAbort)
+        }
+        const timer = setTimeout(() => {
+            if (settled) return
+            finish()
+            controller.abort()
+            resolve(undefined)
+        }, ms)
+        let running: Promise<T>
+        try {
+            running = task(controller.signal)
+        } catch (err) {
+            finish()
+            reject(err)
+            return
+        }
+        running.then(
+            (value) => {
+                if (settled) return
+                finish()
+                resolve(value)
+            },
+            (err) => {
+                if (settled) return
+                finish()
+                reject(err)
+            }
+        )
+    })
 }

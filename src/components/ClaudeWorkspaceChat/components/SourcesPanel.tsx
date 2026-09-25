@@ -51,6 +51,13 @@ const tagClass = 'inline-flex items-center rounded border border-primary px-1.5 
 function CitationTags({ citation }: { citation: WebCitation }) {
   const oa = Boolean(citation.pdfUrl || citation.oaUrl) && citation.kind === 'paper'
   const tags: React.ReactNode[] = []
+  if (citation.retracted) {
+    tags.push(
+      <span key="retracted" className={tagClass} title="This work has been retracted — do not rely on its findings">
+        Retracted
+      </span>
+    )
+  }
   if (citation.kind === 'encyclopedia') tags.push(<span key="enc" className={tagClass}>Encyclopedia entry</span>)
   if (oa) tags.push(<span key="oa" className={tagClass} title="Open access">Open access</span>)
   if (typeof citation.citationCount === 'number' && citation.citationCount > 0) {
@@ -282,14 +289,20 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({
               const meta = itemAcademic ? citationMetaLine(citation) : ''
               const oa = citation.kind === 'paper' && Boolean(citation.pdfUrl || citation.oaUrl)
               return (
-                <li key={citation.id} data-source-id={citation.id}>
+                // Row = select button + sibling external link (no <a> nested in <button>);
+                // the row background / hover lives on the <li> so the look is unchanged.
+                <li
+                  key={citation.id}
+                  data-source-id={citation.id}
+                  className={`flex w-full items-center gap-2.5 pr-4 transition-colors ${
+                    selected ? 'bg-accent text-primary' : 'hover:bg-accent text-primary'
+                  }`}
+                >
                   <button
                     type="button"
                     onClick={() => setActiveId(citation.id)}
                     aria-current={selected ? 'true' : undefined}
-                    className={`flex w-full items-center gap-2.5 px-4 py-2 text-left cursor-pointer transition-colors ${
-                      selected ? 'bg-accent text-primary' : 'hover:bg-accent text-primary'
-                    }`}
+                    className="flex min-w-0 flex-1 items-center gap-2.5 py-2 pl-4 text-left cursor-pointer"
                   >
                     {itemAcademic ? (
                       <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-primary text-[10px] text-secondary">
@@ -302,25 +315,30 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({
                       <span className="block truncate text-[13px] text-primary">{citation.title}</span>
                       <span className="block truncate text-[11px] text-secondary">
                         {itemAcademic
-                          ? [citation.kind === 'encyclopedia' ? 'Encyclopedia' : '', meta, oa ? 'Open access' : '', citation.verified === false ? 'Unverified' : '']
+                          ? [
+                              citation.retracted ? 'Retracted' : '',
+                              citation.kind === 'encyclopedia' ? 'Encyclopedia' : '',
+                              meta,
+                              oa ? 'Open access' : '',
+                              citation.verified === false ? 'Unverified' : '',
+                            ]
                               .filter(Boolean)
                               .join(' · ') || citation.source || ''
                           : citationHostname(citation.url) || citation.source || ''}
                       </span>
                     </span>
-                    {itemHref ? (
-                      <a
-                        href={itemHref}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        className="shrink-0 rounded p-1 text-secondary hover:text-primary"
-                        aria-label="Open source"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    ) : null}
                   </button>
+                  {itemHref ? (
+                    <a
+                      href={itemHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 rounded p-1 text-secondary hover:text-primary"
+                      aria-label="Open source"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  ) : null}
                 </li>
               )
             })}

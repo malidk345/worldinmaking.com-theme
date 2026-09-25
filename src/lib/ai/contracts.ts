@@ -61,7 +61,10 @@ export interface AiCitation {
     source?: string
     /** Optional scholarly metadata (academic search). Old stored citations omit all of these. */
     kind?: AiCitationKind
+    /** Up to 20 names (APA 7); with 21+ authors: the first 19 then the last (see `authorCount`). */
     authors?: string[]
+    /** Real author count when `authors` was capped (21+ authors). */
+    authorCount?: number
     year?: number
     venue?: string
     citationCount?: number
@@ -71,6 +74,8 @@ export interface AiCitation {
     oaUrl?: string
     /** Direct open-access PDF URL. */
     pdfUrl?: string
+    /** Retracted work (Crossref retraction notice / OpenAlex is_retracted / "RETRACTED:" title). */
+    retracted?: boolean
     /**
      * Deterministic post-answer check: true = cited and matches this turn's results
      * (or Crossref confirmed the DOI); false = cited in the answer but could not be verified.

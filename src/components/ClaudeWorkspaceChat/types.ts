@@ -126,6 +126,10 @@ export interface WebCitation {
   pdfUrl?: string
   /** false = cited in the answer but not verifiable against this turn's sources. */
   verified?: boolean
+  /** Real author count when `authors` holds APA's first 19 + last (21+ authors). */
+  authorCount?: number
+  /** Retracted work — shown with a "Retracted" tag. */
+  retracted?: boolean
 }
 
 export interface FileAttachment {
