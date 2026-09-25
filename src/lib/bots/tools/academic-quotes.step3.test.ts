@@ -319,7 +319,11 @@ describe('annotated_bibliography (literature-review mode)', () => {
         expect(exec.ok).toBe(true)
         expect(exec.action?.type).toBe('insert_notebook_block')
         expect(String(exec.action?.payload.content)).toMatch(/^## Annotated bibliography: Heidegger/)
-        expect(JSON.parse(exec.result)).toMatchObject({ added_to_notebook: true, entries: 1 })
+        // A pending card, not an insert: the reply must not claim it was added.
+        const body = JSON.parse(exec.result)
+        expect(body).toMatchObject({ added_to_notebook: false, notebook_insert_offered: true, entries: 1 })
+        expect(body.instruction).toMatch(/NOT in the notebook until the user clicks/)
+        expect(body.instruction).not.toMatch(/was added to the notebook/)
     })
 
     it('without a notebook returns the markdown plus a notebook_error; plan mode blocks it', async () => {

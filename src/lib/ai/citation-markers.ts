@@ -110,3 +110,25 @@ export function parseCitationHref(href: string | undefined | null): { id: number
     }
     return null
 }
+
+/**
+ * Calls `replace(ids, marker)` for every citation marker run in prose (code, footnotes,
+ * links and reference definitions skipped, same rules as linkifyCitationMarkers) and
+ * substitutes its return value; `null` keeps the marker as written. Indexing like
+ * `arr[5]` is not a marker (isCitationContext).
+ */
+export function mapCitationMarkers(markdown: string, replace: (ids: number[], marker: string) => string | null): string {
+    if (!markdown) return markdown
+    return splitCodeSegments(markdown)
+        .map((seg) => {
+            if (seg.code) return seg.text
+            return seg.text.replace(MARKER_RE, (full: string, offset: number, whole: string) => {
+                if (!isCitationContext(whole, offset, full.length)) return full
+                const ids = (full.match(ID_RE) || []).map(Number).filter((n) => n > 0)
+                if (ids.length === 0) return full
+                const next = replace(ids, full)
+                return next == null ? full : next
+            })
+        })
+        .join('')
+}

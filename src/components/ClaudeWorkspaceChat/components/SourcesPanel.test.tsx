@@ -103,6 +103,25 @@ describe('SourcesPanel', () => {
     expect(onAdd).toHaveBeenCalledWith(paper)
   })
 
+  it('shows "Added" only after the notebook confirmed it; "Adding…" while waiting', async () => {
+    let resolveAdd: (ok: boolean) => void = () => undefined
+    const onAdd = vi.fn(() => new Promise<boolean>((resolve) => { resolveAdd = resolve }))
+    render(<SourcesPanel citations={[paper]} onClose={() => undefined} onAddToNotebook={onAdd} />)
+    const detail = container.querySelector('[data-testid="source-detail"]') as HTMLElement
+    const add = () => Array.from(detail.querySelectorAll('button')).find((b) => /Add|Adding/.test(b.textContent || '') && !b.textContent?.includes('Copy')) as HTMLButtonElement
+    await act(async () => add().click())
+    expect(add().textContent).toContain('Adding…')
+    expect(add().disabled).toBe(true)
+    await act(async () => add().click()) // double click while pending does nothing
+    expect(onAdd).toHaveBeenCalledTimes(1)
+    await act(async () => resolveAdd(false)) // notebook rejected it
+    expect(add().textContent).toContain('Add to notebook')
+    expect(detail.textContent).not.toContain('Added')
+    await act(async () => add().click())
+    await act(async () => resolveAdd(true))
+    expect(detail.textContent).toContain('Added')
+  })
+
   it('opens the source requested by an inline marker and marks encyclopedia / unverified items', () => {
     render(<SourcesPanel citations={[paper, entry, unverified]} initialActiveId={2} onClose={() => undefined} />)
     const detail = container.querySelector('[data-testid="source-detail"]') as HTMLElement

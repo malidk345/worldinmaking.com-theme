@@ -436,6 +436,8 @@ export interface AgentPipelineParams {
     provider: string
     env?: EnvStore
     host?: HostSnapshot
+    /** Earlier-turn citations from the chat request (tools resolve an earlier [P#] with them). */
+    priorCitations?: AiCitation[]
     forceWebSearch?: boolean
     holdPublicUntilCitations?: boolean
     maxSteps?: number
@@ -892,6 +894,7 @@ async function runTaskSubagent(
             })
             const executed = await executeToolCall(nested, params.env, params.host, 'ask', params.signal, {
                 citations: state.citations,
+                priorCitations: params.priorCitations,
             })
             return { nested, nestedName, allowed: true as const, executed }
         })
@@ -1131,13 +1134,13 @@ async function executeToolCallCached(
         // Parallel identical queries in one ACT: share the in-flight fetch before
         // either side can write searchCache (TOCTOU with Promise.all).
         const shared = await shareInflight(state.searchInflight, key, () =>
-            executeToolCall(call, params.env, params.host, state.agentMode, params.signal, { citations: state.citations })
+            executeToolCall(call, params.env, params.host, state.agentMode, params.signal, { citations: state.citations, priorCitations: params.priorCitations })
         )
         if (shared.ok) state.searchCache.set(key, shared)
         // Remap when we joined another call's promise (callId/summary must match this call).
         return shared.callId === call.id ? shared : remapCachedResearchTool(shared, call)
     }
-    return executeToolCall(call, params.env, params.host, state.agentMode, params.signal, { citations: state.citations })
+    return executeToolCall(call, params.env, params.host, state.agentMode, params.signal, { citations: state.citations, priorCitations: params.priorCitations })
 }
 
 function emitToolRunning(call: ToolCall, params: AgentPipelineParams): string {

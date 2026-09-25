@@ -56,7 +56,8 @@ import {
   clearNotebookChatBind,
   readNotebookChatBind,
   readNotebookSelection,
-  peekStickyNotebookSelection,
+  resolveNotebookSelection,
+  clearStickyNotebookSelection,
   syncNotebookChatBindForIdentity,
   withNotebookBind,
 } from '../../lib/notebook-chat-bind';
@@ -95,8 +96,17 @@ import { LemonScope } from '../LemonScope';
 import { writeForumDraft } from 'lib/wim-os-action-drafts';
 import { findAskAiWindow, findNotebookWindow } from '../../lib/open-ask-ai-window';
 import { extractNotebookId, notebookWindowPath, windowPathMatches } from '../../lib/window-path';
-import { dispatchNotebookOsEvent } from '../../lib/notebook-os-dispatch';
+import {
+  dispatchNotebookOsEvent,
+  dispatchNotebookOsEventWithAck,
+  notebookAckErrorMessage,
+  type NotebookAckResult,
+} from '../../lib/notebook-os-dispatch';
+import { openNotebookWindow as openNotebookWindowInOs } from '../../lib/open-notebook-window';
+import { resolveNotebookAddTarget, type NotebookAddTarget } from '../../lib/notebook-add-target';
+import { notebookHasSource, notebookSourceKey } from '../../lib/notebook-citations';
 import { formatApaReference } from '../../lib/ai/citation-format';
+import { buildPriorCitations } from '../../lib/ai/prior-citations';
 import {
   adoptGuestChatsIntoAccount,
   canSyncChatsToRemote,
@@ -301,33 +311,68 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     return '';
   }, [activeNotebookInfo]);
 
-  const insertIntoNotebook = (content: string, notebookId?: string) => {
+  // Chat → notebook adds run one at a time: a second click waits for the first to finish
+  // (by then the editor's listener is alive), so repeated clicks never open extra windows.
+  const notebookAddQueueRef = useRef<Promise<unknown>>(Promise.resolve())
+
+  /** Open the target notebook's editor unless a window for it already exists. */
+  const openNotebookEditorWindow = (id: string, title?: string) => {
+    if (!addWindow) return
+    openNotebookWindowInOs({
+      notebookId: id,
+      notebookTitle: title,
+      windows: appWindows,
+      addWindow: addWindow as unknown as (item: Record<string, unknown>) => void,
+    })
+  }
+
+  /**
+   * Target for an add: explicit id → bound/open notebook → most recently updated notebook
+   * → a new notebook (existing createNotebook path; guest = localStorage, signed-in = the
+   * same local store plus its remote sync). Never the /notebooks list, which has no listener.
+   */
+  const resolveAddTarget = (notebookId?: string) =>
+    resolveNotebookAddTarget({
+      preferredId: notebookId || notebookBind?.notebookId || activeNotebookInfo?.id,
+      preferredTitle:
+        (notebookId && getNotebook(notebookId)?.title) || notebookBind?.title || activeNotebookInfo?.title,
+      notebooks: getNotebooks(),
+      create: (title) => createNotebook(title, `# ${title}\n`),
+    })
+
+  /**
+   * Send a notebook OS event to the resolved notebook and wait for its real ack
+   * (`wimNotebookAck`), opening the editor first when no notebook listener is alive.
+   */
+  const sendToNotebook = (
+    eventName: 'wimNotebookInsertText' | 'wimNotebookAddFootnote',
+    detail: Record<string, unknown>,
+    notebookId?: string
+  ): Promise<NotebookAckResult & { target?: NotebookAddTarget }> => {
+    const run = async () => {
+      const target = resolveAddTarget(notebookId)
+      const result = await dispatchNotebookOsEventWithAck(
+        eventName,
+        { ...detail, notebookId: target.id },
+        {
+          notebookId: target.id,
+          path: notebookWindowPath(target.id),
+          // A freshly opened editor needs a moment to mount its listeners.
+          maxWaitMs: 4000,
+          open: () => openNotebookEditorWindow(target.id, target.title),
+        }
+      )
+      return { ...result, target }
+    }
+    const next = notebookAddQueueRef.current.then(run, run)
+    notebookAddQueueRef.current = next.catch(() => undefined)
+    return next
+  }
+
+  const insertIntoNotebook = (content: string, notebookId?: string, extra: Record<string, unknown> = {}) => {
     const text = String(content || '').trim()
-    if (!text) return Promise.resolve(false)
-    const targetNbId = notebookId || notebookBind?.notebookId;
-    const notebookPath = targetNbId ? notebookWindowPath(targetNbId) : '/notebooks'
-    return dispatchNotebookOsEvent(
-      'wimNotebookInsertText',
-      {
-        text,
-        mode: 'append',
-        notebookId: targetNbId,
-      },
-      {
-        notebookId: targetNbId,
-        path: notebookPath,
-        open: () => {
-          if (addWindow) {
-            addWindow({
-              title: 'Notebooks',
-              icon: 'DocumentTextIcon',
-              component: 'NotebookApp',
-              path: notebookPath,
-            })
-          }
-        },
-      }
-    )
+    if (!text) return Promise.resolve({ ok: false, error: 'empty_text' } as NotebookAckResult)
+    return sendToNotebook('wimNotebookInsertText', { text, mode: 'append', ...extra }, notebookId)
   }
 
   // Active chat state
@@ -1667,6 +1712,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           styleSuffix: selectedStyle?.promptSuffix || '',
           attachmentContext,
           messages: conversationHistory,
+          // Compact earlier-turn citations (id, title, first author, year, DOI/URL; max 20)
+          // so follow-ups about an earlier [P#] resolve.
+          priorCitations: buildPriorCitations(
+            baseMessages.filter((item) => item.role === 'user' || item.role === 'assistant')
+          ),
           notebookContext: activeNotebookContext,
           notebookBound: Boolean(notebookBind?.notebookId || activeNotebookInfo?.id),
           conversationId: targetChatId,
@@ -2778,8 +2828,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         // Manually fire the ack since createNotebook doesn't via the event listener paths in App.tsx
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nb.id } }));
       } else if (action.type === 'insert_notebook_block') {
-        void Promise.resolve(insertIntoNotebook(action.payload.content || '', action.payload.notebookId)).then((ok) => {
-          if (ok === false) failClosedNotebookMount();
+        // executeOSAction's own ack listener drives the card; only fail fast when the
+        // notebook could not be reached at all.
+        void insertIntoNotebook(action.payload.content || '', action.payload.notebookId).then((result) => {
+          if (!result.ok && result.error === 'not_reachable') failClosedNotebookMount();
         });
       } else if (action.type === 'rewrite_notebook_document') {
         const nbId = action.payload.notebookId || notebookBind?.notebookId;
@@ -3321,6 +3373,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   openArtifactRef.current = openArtifact
   const insertIntoNotebookRef = useRef(insertIntoNotebook)
   insertIntoNotebookRef.current = insertIntoNotebook
+  const sendToNotebookRef = useRef(sendToNotebook)
+  sendToNotebookRef.current = sendToNotebook
 
   const handleOpenArtifactFromMessage = useCallback(
     (art: Artifact, origin?: DOMRect) => {
@@ -3333,37 +3387,44 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     [isArtifactsOpen, activeArtifact?.id, isArtifactExpanded]
   )
 
-  const handleAddMessageToNotebook = useCallback((message: Message) => {
-    insertIntoNotebookRef.current(messageToNotebookMarkdown(message))
-  }, [])
+  // Whole-reply "Add": citation markers become notebook footnotes (APA); the button only
+  // says "Added" after the notebook confirms the insert.
+  const handleAddMessageToNotebook = useCallback(async (message: Message): Promise<boolean> => {
+    const result = await insertIntoNotebookRef.current(messageToNotebookMarkdown(message))
+    if (!result.ok) addToast({ description: notebookAckErrorMessage(result.error), duration: 2800 })
+    return result.ok
+  }, [addToast])
 
   // Sources panel "Add to notebook": APA reference as a footnote on the selected notebook
-  // text (existing wimNotebookAddFootnote path); without a selection, append it instead.
+  // text (live selection first, then the one-shot sticky selection); without a selection,
+  // append it. Resolves true only when the notebook confirmed the change.
   const activeNotebookIdRef = useRef<string | undefined>(undefined)
   activeNotebookIdRef.current = activeNotebookInfo?.id
   const handleAddCitationToNotebook = useCallback(async (citation: WebCitation): Promise<boolean> => {
     const reference = formatApaReference(citation)
+    const source = notebookSourceKey(citation)
     const notebookId = activeNotebookIdRef.current
-    const selection = readNotebookSelection() || peekStickyNotebookSelection()
-    let ok: boolean
-    if (notebookId && selection) {
-      ok = await dispatchNotebookOsEvent(
-        'wimNotebookAddFootnote',
-        { notebookId, text: reference, spanText: selection },
-        {
-          notebookId,
-          path: notebookWindowPath(notebookId),
-          open: () => {
-            if (addWindow) addWindow({ path: notebookWindowPath(notebookId) })
-          },
-        }
-      )
-    } else {
-      ok = await insertIntoNotebookRef.current(reference, notebookId)
+    // Cheap pre-check against the stored copy; the notebook re-checks its live text.
+    if (notebookId && notebookHasSource(getNotebook(notebookId)?.content, source)) {
+      addToast({ description: notebookAckErrorMessage('duplicate_source'), duration: 2400 })
+      return false
     }
-    if (!ok) addToast({ description: 'Could not reach the notebook', duration: 2400 })
-    return ok
-  }, [addWindow, addToast])
+    const selection = notebookId ? resolveNotebookSelection(notebookId) : { text: '', sticky: false }
+    let result: NotebookAckResult
+    if (notebookId && selection.text) {
+      result = await sendToNotebookRef.current(
+        'wimNotebookAddFootnote',
+        { text: reference, spanText: selection.text, source, quiet: true },
+        notebookId
+      )
+      // The sticky selection is single-use: never pin a second source on a stale phrase.
+      if (selection.sticky) clearStickyNotebookSelection()
+    } else {
+      result = await insertIntoNotebookRef.current(reference, notebookId, { source })
+    }
+    if (!result.ok) addToast({ description: notebookAckErrorMessage(result.error), duration: 2800 })
+    return result.ok
+  }, [addToast])
 
   const handleOpenByokFromMessage = useCallback(() => {
     setSidebarOpen(true)

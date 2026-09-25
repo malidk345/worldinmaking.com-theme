@@ -135,20 +135,59 @@ export function readNotebookSelection(): string {
 }
 
 const STICKY_SELECTION_KEY = 'wim_sticky_notebook_selection'
+const STICKY_SELECTION_NOTEBOOK_KEY = 'wim_sticky_notebook_selection_nb'
 let stickySelectionCache = ''
+let stickySelectionNotebookCache = ''
 
-export function rememberStickyNotebookSelection(text: string): void {
+/**
+ * Remember the last notebook selection so chat actions still see it after focus moves
+ * to the chat. `notebookId` (optional) scopes it so a selection made in notebook A is
+ * never used to pin something in notebook B.
+ */
+export function rememberStickyNotebookSelection(text: string, notebookId?: string): void {
     const trimmed = (text || '').trim()
     if (trimmed.length < 2) return
     const clipped = trimmed.slice(0, 2500)
     stickySelectionCache = clipped
+    stickySelectionNotebookCache = notebookId || ''
     try {
         if (typeof sessionStorage !== 'undefined') {
             sessionStorage.setItem(STICKY_SELECTION_KEY, clipped)
+            if (notebookId) sessionStorage.setItem(STICKY_SELECTION_NOTEBOOK_KEY, notebookId)
+            else sessionStorage.removeItem(STICKY_SELECTION_NOTEBOOK_KEY)
         }
     } catch {
         // quota / private mode — in-memory cache still works this session
     }
+}
+
+/**
+ * Sticky selection for a specific notebook: '' when it was made in a different notebook.
+ * Unscoped (legacy) selections are returned for any notebook.
+ */
+export function peekStickyNotebookSelectionFor(notebookId?: string): string {
+    const text = peekStickyNotebookSelection()
+    if (!text || !notebookId) return text
+    let owner = stickySelectionNotebookCache
+    if (!owner) {
+        try {
+            owner = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(STICKY_SELECTION_NOTEBOOK_KEY)) || ''
+        } catch {
+            owner = ''
+        }
+    }
+    return owner && owner !== notebookId ? '' : text
+}
+
+/**
+ * Selection to use for a chat → notebook action: the live notebook selection wins;
+ * otherwise the sticky one (scoped to `notebookId`).
+ */
+export function resolveNotebookSelection(notebookId?: string): { text: string; sticky: boolean } {
+    const live = readNotebookSelection()
+    if (live) return { text: live, sticky: false }
+    const sticky = peekStickyNotebookSelectionFor(notebookId)
+    return { text: sticky, sticky: Boolean(sticky) }
 }
 
 export function peekStickyNotebookSelection(): string {
@@ -173,12 +212,42 @@ export function consumeStickyNotebookSelection(): string {
     return val
 }
 
+const NOTEBOOK_SELECTION_SCOPE = '.notebook-app-scope, [data-app="notebook"], .MarkdownNotebook'
+
+/**
+ * NotebookApp's `selectionchange` handler. Remembers a real selection made inside this
+ * notebook (`container`, when given) and clears the sticky one when the selection
+ * collapses inside the notebook (click to deselect / start typing), so a stale phrase
+ * is never used later. Selections moving to the chat keep the sticky value.
+ */
+export function syncStickyNotebookSelection(notebookId?: string, container?: Element | null): 'remember' | 'clear' | 'keep' {
+    if (typeof window === 'undefined') return 'keep'
+    const selection = window.getSelection()
+    const anchor = selection?.anchorNode
+    const el = anchor instanceof Element ? anchor : anchor?.parentElement
+    if (!el) return 'keep'
+    if (container && !container.contains(el)) return 'keep'
+    if (!el.closest(NOTEBOOK_SELECTION_SCOPE)) return 'keep'
+    const text = readNotebookSelection()
+    if (text) {
+        rememberStickyNotebookSelection(text, notebookId)
+        return 'remember'
+    }
+    if (selection?.isCollapsed || (selection?.toString().trim().length || 0) < 2) {
+        if (peekStickyNotebookSelection()) clearStickyNotebookSelection()
+        return 'clear'
+    }
+    return 'keep'
+}
+
 /** Drop session sticky selection (identity swap / logout). */
 export function clearStickyNotebookSelection(): void {
     stickySelectionCache = ''
+    stickySelectionNotebookCache = ''
     try {
         if (typeof sessionStorage !== 'undefined') {
             sessionStorage.removeItem(STICKY_SELECTION_KEY)
+            sessionStorage.removeItem(STICKY_SELECTION_NOTEBOOK_KEY)
         }
     } catch {
         // ignore storage access errors

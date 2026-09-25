@@ -79,7 +79,10 @@ import { useWindow } from '../context/Window'
 import { parseNotebookRoute, notebookPathForRoute, type NotebookRoute } from '../lib/notebook-route'
 import { isNotebookWindowPath, notebookWindowPath } from '../lib/window-path'
 import { canWriteNotebook } from '../lib/notebook-sharing'
-import { bindNotebookChat, readNotebookSelection, rememberStickyNotebookSelection } from '../lib/notebook-chat-bind'
+import { bindNotebookChat, syncStickyNotebookSelection } from '../lib/notebook-chat-bind'
+import { notebookHasSource, type NotebookSourceKey } from '../lib/notebook-citations'
+import { composeNotebookInsert } from '../lib/notebook-insert-compose'
+import { claimNotebookEvent, removeNotebookEditor, setNotebookEditorTarget } from '../lib/notebook-os-claim'
 import { openAskAiWindow } from '../lib/open-ask-ai-window'
 import { IconSpinner } from '@posthog/icons'
 
@@ -196,11 +199,12 @@ export function App() {
   }, [hostTheme])
 
   useEffect(() => {
+    // Sticky selection lives only while the user keeps text selected in this notebook:
+    // a collapsed selection inside the notebook clears it (see syncStickyNotebookSelection).
     const handleDocumentSelectionChange = () => {
-      const text = readNotebookSelection()
-      if (text && text.length >= 2) {
-        rememberStickyNotebookSelection(text)
-      }
+      const container = editorContainerRef.current
+      if (!container) return
+      syncStickyNotebookSelection(notebookRef.current?.id, container.closest('.notebook-app-scope') || container)
     }
     document.addEventListener('selectionchange', handleDocumentSelectionChange)
     return () => {
@@ -231,6 +235,14 @@ export function App() {
   const [outlineMarkdown, setOutlineMarkdown] = useState('')
   const routeRef = useRef(route)
   const notebookRef = useRef(currentNotebook)
+  // Identifies this NotebookApp instance so only one window handles each chat → notebook event.
+  const notebookInstanceIdRef = useRef('')
+  if (!notebookInstanceIdRef.current) notebookInstanceIdRef.current = `nbapp-${uuid()}`
+  const notebookInstanceId = notebookInstanceIdRef.current
+  useEffect(() => {
+    setNotebookEditorTarget(notebookInstanceId, route.page === 'editor' ? currentNotebook?.id ?? null : null)
+  }, [notebookInstanceId, route.page, currentNotebook?.id])
+  useEffect(() => () => removeNotebookEditor(notebookInstanceId), [notebookInstanceId])
   const markdownRef = useRef(markdown)
   const titleRef = useRef(title)
   const saveInFlightRef = useRef(false)
@@ -808,12 +820,19 @@ export function App() {
         text: string
         mode?: 'append' | 'replace' | 'prepend'
         notebookId?: string
+        requestId?: string
+        source?: NotebookSourceKey
       }>
+      // One notebook window handles each event (the one editing the target, else the first).
+      if (!claimNotebookEvent(customEvent.detail as unknown as Record<string, unknown>, notebookInstanceId)) return
+      const requestId = customEvent.detail?.requestId
+      const ack = (detail: Record<string, unknown>) =>
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: requestId ? { ...detail, requestId } : detail }))
       const text = (customEvent.detail?.text || '').trim()
       const mode = customEvent.detail?.mode || 'append'
       if (!text) {
         // Fail-closed nack (parity with replace/annotate) — do not hang on the 5s card timeout.
-        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'empty_text' } }))
+        ack({ ok: false, error: 'empty_text' })
         return
       }
 
@@ -822,7 +841,7 @@ export function App() {
       if (requestedId) {
         const bound = getNotebook(requestedId)
         if (!bound) {
-          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+          ack({ ok: false, error: 'no_target' })
           return
         }
         target = bound
@@ -837,7 +856,7 @@ export function App() {
         if (target) openNotebookWindow(target.id, target.title)
       }
       if (!target) {
-        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+        ack({ ok: false, error: 'no_target' })
         return
       }
 
@@ -845,21 +864,21 @@ export function App() {
         routeRef.current.page === 'editor' && notebookRef.current?.id === target.id
           ? markdownRef.current || target.content || ''
           : target.content || ''
-      const next =
-        mode === 'replace'
-          ? `${text}\n`
-          : mode === 'prepend'
-            ? `${text}\n\n${current}`
-            : current.trim()
-              ? `${current.trim()}\n\n${text}\n`
-              : `${text}\n`
+      // Same source added twice (DOI / URL / title in a reference line): skip, honest nack.
+      const source = customEvent.detail?.source
+      if (source && mode !== 'replace' && notebookHasSource(current, source)) {
+        ack({ ok: false, error: 'duplicate_source', notebookId: target.id })
+        return
+      }
+      // Inserted footnotes are renumbered after the notebook's own ([^1] never collides).
+      const next = composeNotebookInsert(current, text, mode)
 
       setCurrentNotebook(target)
       setTitle(target.title)
       setMarkdown(next)
       const label = mode === 'replace' ? 'Full document rewrite' : 'Inserted artifact'
       saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: label })
-      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
+      ack({ notebookId: target.id })
 
       // Mark the newly inserted nodes to trigger smooth highlight glow
       try {
@@ -1152,11 +1171,24 @@ export function App() {
         marker?: string
         spanText?: string
         notebookId?: string
+        requestId?: string
+        source?: NotebookSourceKey
+        /** Chat shows its own message for the nack; skip the notebook's toast. */
+        quiet?: boolean
       }>
+      if (!claimNotebookEvent(customEvent.detail as unknown as Record<string, unknown>, notebookInstanceId)) return
+      const requestId = customEvent.detail?.requestId
+      const quiet = customEvent.detail?.quiet === true
+      const ack = (detail: Record<string, unknown>) =>
+        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: requestId ? { ...detail, requestId } : detail }))
+      // appActions has no addToast (calling it threw before the nack was sent); use the toast context.
+      const toastError = (message: string) => {
+        if (!quiet) addToast({ description: message, error: true })
+      }
       const text = String(customEvent.detail?.text || '').trim()
       if (!text) {
-        appActions?.addToast({ type: 'error', message: 'Missing footnote text' })
-        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'empty_text' } }))
+        toastError('Missing footnote text')
+        ack({ ok: false, error: 'empty_text' })
         return
       }
       let target: StoredNotebook | null = notebookRef.current
@@ -1164,8 +1196,8 @@ export function App() {
       if (requestedId) {
         const bound = getNotebook(requestedId)
         if (!bound) {
-          appActions?.addToast({ type: 'error', message: 'No notebook found' })
-          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+          toastError('No notebook found')
+          ack({ ok: false, error: 'no_target' })
           return
         }
         target = bound
@@ -1174,8 +1206,8 @@ export function App() {
         }
       }
       if (!target) {
-        appActions?.addToast({ type: 'error', message: 'No notebook found' })
-        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
+        toastError('No notebook found')
+        ack({ ok: false, error: 'no_target' })
         return
       }
       // Insert/patch parity: never pin footnotes using another notebook's live markdownRef.
@@ -1184,6 +1216,11 @@ export function App() {
           ? markdownRef.current || target.content || ''
           : target.content || ''
       const spanText = String(customEvent.detail?.spanText || '').trim()
+      const source = customEvent.detail?.source
+      if (source && notebookHasSource(current, source)) {
+        ack({ ok: false, error: 'duplicate_source', notebookId: target.id })
+        return
+      }
 
       let marker = String(customEvent.detail?.marker || '').trim()
       if (!marker) {
@@ -1204,24 +1241,24 @@ export function App() {
         !spanText && typeof window !== 'undefined' ? window.getSelection()?.toString().trim() || '' : ''
       const targetPhrase = spanText || selection
       if (!targetPhrase) {
-        appActions?.addToast({ type: 'error', message: 'No selection found for footnote' })
-        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_not_found' } }))
+        toastError('No selection found for footnote')
+        ack({ ok: false, error: 'selection_not_found' })
         return
       }
       const match = findUniqueMatch(next, targetPhrase)
       if (match.kind === 'none') {
         if (spanText) {
-          appActions?.addToast({ type: 'error', message: `Could not locate phrase: "${spanText}"` })
-          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'span_not_found' } }))
+          toastError(`Could not locate phrase: "${spanText}"`)
+          ack({ ok: false, error: 'span_not_found' })
         } else {
-          appActions?.addToast({ type: 'error', message: 'No selection found for footnote' })
-          window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_not_found' } }))
+          toastError('No selection found for footnote')
+          ack({ ok: false, error: 'selection_not_found' })
         }
         return
       }
       if (match.kind === 'ambiguous') {
-        appActions?.addToast({ type: 'error', message: 'Target phrase matches more than once' })
-        window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_ambiguous' } }))
+        toastError('Target phrase matches more than once')
+        ack({ ok: false, error: 'selection_ambiguous' })
         return
       }
       const afterSpan = next.slice(
@@ -1247,7 +1284,7 @@ export function App() {
       setMarkdown(next)
       setMarkdownVersion((v) => v + 1)
       saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: `Added footnote [^${marker}]` })
-      window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: target.id } }))
+      ack({ notebookId: target.id })
     }
 
     window.addEventListener('wimNotebookInsertText', handleInsertText)
@@ -1268,7 +1305,7 @@ export function App() {
       const n = ((window as any).__wimNotebookOsListenerCount || 1) - 1
       ;(window as any).__wimNotebookOsListenerCount = n > 0 ? n : 0
     }
-  }, [appWindow, appActions, openNotebookWindow, addToast])
+  }, [appWindow, appActions, openNotebookWindow, addToast, notebookInstanceId])
 
   const handleCanvasSave = (id: string) => {
     openNotebookWindow(id)

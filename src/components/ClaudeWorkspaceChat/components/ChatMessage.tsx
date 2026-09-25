@@ -68,7 +68,8 @@ interface ChatMessageProps {
   onUpdateMessage?: (chatId: string, messageId: string, updates: Partial<Message>) => void;
   onExecuteOSAction?: (msgId: string, action: OSActionCardType) => void;
   onHumanRespond?: (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => void;
-  onAddToNotebook?: (message: Message) => void;
+  /** Resolves false when the notebook did not confirm the insert (the button then never says "Added"). */
+  onAddToNotebook?: (message: Message) => Promise<boolean> | boolean | void;
   onOpenByok?: () => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
   onContinue?: (messageId: string) => void;
@@ -609,6 +610,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [addedToNotebook, setAddedToNotebook] = useState(false);
+  const [addingToNotebook, setAddingToNotebook] = useState(false);
   // Strip host/tool leaks from stored bubbles (pre-fix polluted localStorage).
   const displayedText = isUser ? message.content : stripLeakedToolMarkup(message.content || '');
   const isLiveAnswer = !isUser && !!message.isStreaming;
@@ -976,8 +978,17 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               {onAddToNotebook && (message.content.trim() || (message.artifacts && message.artifacts.length > 0)) && (
                 <button
                   type="button"
-                  onClick={() => {
-                    onAddToNotebook(message)
+                  disabled={addingToNotebook}
+                  onClick={async () => {
+                    if (addingToNotebook) return
+                    setAddingToNotebook(true)
+                    let ok: boolean | void = false
+                    try {
+                      ok = await onAddToNotebook(message)
+                    } finally {
+                      setAddingToNotebook(false)
+                    }
+                    if (ok === false) return
                     setAddedToNotebook(true)
                     setTimeout(() => setAddedToNotebook(false), 2000)
                   }}
@@ -990,6 +1001,11 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                     <>
                       <Check className="h-3.5 w-3.5 text-primary" />
                       <span>Added ✓</span>
+                    </>
+                  ) : addingToNotebook ? (
+                    <>
+                      <FileInput className="h-3.5 w-3.5" />
+                      <span>Adding…</span>
                     </>
                   ) : (
                     <>

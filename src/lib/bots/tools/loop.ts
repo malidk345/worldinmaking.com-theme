@@ -482,6 +482,8 @@ async function runToolSteps(params: {
     provider: string
     env?: EnvStore
     host?: HostSnapshot
+    /** Earlier-turn citations from the chat request (see lib/ai/prior-citations). */
+    priorCitations?: AiCitation[]
     forceWebSearch?: boolean
     holdPublicUntilCitations?: boolean
     agentMode?: AgentMode
@@ -507,6 +509,7 @@ async function runToolSteps(params: {
         provider: params.provider,
         env: params.env,
         host: params.host,
+        priorCitations: params.priorCitations,
         forceWebSearch: params.forceWebSearch,
         holdPublicUntilCitations: params.holdPublicUntilCitations,
         maxSteps: MAX_STEPS,
@@ -705,6 +708,8 @@ export async function runToolLoop(params: {
     forceWebSearch?: boolean
     holdPublicUntilCitations?: boolean
     host?: HostSnapshot
+    /** Earlier-turn citations from the chat request (see lib/ai/prior-citations). */
+    priorCitations?: AiCitation[]
     agentMode?: AgentMode
     checkpoint?: AgentCheckpoint
     resumeAction?: ResumeAction
@@ -990,6 +995,7 @@ export async function runToolLoop(params: {
             provider: candidate.provider,
             env,
             host: params.host,
+            priorCitations: params.priorCitations,
             forceWebSearch: params.forceWebSearch,
             holdPublicUntilCitations: params.holdPublicUntilCitations,
             baseMessages,

@@ -86,6 +86,8 @@ export interface BotRunInput {
     resumeAction?: ResumeAction
     resumePayload?: string
     host?: HostSnapshot
+    /** Compact earlier-turn citations (chat follow-ups; see lib/ai/prior-citations). */
+    priorCitations?: AiCitation[]
     /** Correlates telemetry with the originating HTTP request. */
     requestId?: string
     /** Abort when the HTTP client disconnects or the user hits Stop. */
@@ -617,6 +619,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
                 forceWebSearch: false,
                 holdPublicUntilCitations: opts?.holdUntilCitations,
                 host: input.host,
+                priorCitations: input.priorCitations,
                 agentMode: parseAgentMode(input.agentMode),
                 checkpoint: input.checkpoint,
                 resumeAction: input.resumeAction,
