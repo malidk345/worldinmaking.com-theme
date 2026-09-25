@@ -39,6 +39,7 @@ const SettingsModal = dynamic(() => import('./components/SettingsModal').then((m
 const ShareModal = dynamic(() => import('./components/ShareModal').then((m) => m.ShareModal), { ssr: false });
 import * as Portal from '@radix-ui/react-portal';
 import { useAppActions, useAppSettings, useAppUIState, useAppWindows, type SiteSettings } from '../../context/App';
+import { useToast } from '../../context/Toast';
 import { useUser } from '../../hooks/useUser';
 import { isUserPro } from '../../lib/wim-billing';
 import { findMatchingWindow } from '../../lib/os/window-finder';
@@ -91,7 +92,7 @@ import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 import { ensureLemonStyles, releaseLemonStyles } from 'lib/lemon/ensureLemonStyles';
 import { LemonScope } from '../LemonScope';
 import { writeForumDraft } from 'lib/wim-os-action-drafts';
-import { findNotebookWindow } from '../../lib/open-ask-ai-window';
+import { findAskAiWindow, findNotebookWindow } from '../../lib/open-ask-ai-window';
 import { extractNotebookId, notebookWindowPath, windowPathMatches } from '../../lib/window-path';
 import { dispatchNotebookOsEvent } from '../../lib/notebook-os-dispatch';
 import {
@@ -247,6 +248,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [settings, setSettings] = useState<UserSettings>(() => readLocalSettings(getDefaultWorkspaceSettings()));
 
   const { addWindow, closeWindow, updateWindow, bringToFront, setChatParams, updateSiteSettings } = useAppActions();
+  const { addToast } = useToast();
   const { chatParams } = useAppUIState();
   const { siteSettings } = useAppSettings();
   const { user } = useUser();
@@ -597,6 +599,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   isStreamingRefForPersist.current = isStreaming
 
   const cloudChatIdsRef = useRef<Set<string>>(new Set())
+  const droppedChatNoticeRef = useRef<string | null>(null)
   const notebookBindIdRef = useRef<string | undefined>(undefined)
   notebookBindIdRef.current = notebookBind?.notebookId
 
@@ -613,6 +616,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       })
       if (next.length === prev.length && next.every((chat, index) => chat.id === prev[index]?.id)) return prev
       const kept = new Set(next.map((chat) => chat.id))
+      const droppedTitled = prev.find(
+        (chat) => !kept.has(chat.id) && chat.messages && chat.messages.length > 0 && chat.title && chat.title !== 'New chat'
+      )
+      if (droppedTitled) droppedChatNoticeRef.current = droppedTitled.title
       for (const chat of prev) {
         if (kept.has(chat.id)) continue
         const onCloud = (chat.messages && chat.messages.length > 0) || cloudChatIdsRef.current.has(chat.id)
@@ -624,6 +631,22 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       return next
     })
   }, [chats, activeChatId])
+
+  useEffect(() => {
+    const title = droppedChatNoticeRef.current
+    if (!title) return
+    droppedChatNoticeRef.current = null
+    addToast({ description: `Older chat dropped: ${title}`, duration: 2400 })
+  }, [chats, addToast])
+
+  useEffect(() => {
+    const voice = models.find((model) => model.id === selectedModelId)
+    const askWindow = findAskAiWindow(appWindows)
+    if (!voice || !askWindow) return
+    const title = `Ask AI · ${voice.name}`
+    if (askWindow.title === title) return
+    updateWindow(askWindow, { title })
+  }, [selectedModelId, models, appWindows, updateWindow])
 
   const flushLocalChats = useCallback((next: Chat[] = chatsRef.current) => {
     try {
