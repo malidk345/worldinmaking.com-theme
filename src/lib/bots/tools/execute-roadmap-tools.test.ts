@@ -72,7 +72,7 @@ describe('Roadmap AI Tools Execution', () => {
             expect(parsed.citations[0].philosopher).toBe('Friedrich Nietzsche')
             expect(parsed.citations[0].work).toBe('Beyond Good and Evil')
             expect(res.citations).toBeDefined()
-            expect(res.citations?.[0].url).toContain('nietzsche')
+            expect(res.citations?.[0].url?.toLowerCase()).toContain('nietzsche')
         })
 
         it('returns error when query is empty', async () => {
@@ -372,7 +372,7 @@ describe('Roadmap AI Tools Execution', () => {
             expect(res.ok).toBe(true)
             const parsed = JSON.parse(res.result)
             expect(parsed.document).toContain('<!DOCTYPE html>')
-            expect(parsed.document).toContain('<h1 id="Section 1">Section 1</h1>')
+            expect(parsed.document).toContain('<h1 id="section-1">Section 1</h1>')
             expect(res.artifact?.type).toBe('html')
         })
         it('fails closed when notebookId is supplied but missing from host', async () => {

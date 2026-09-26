@@ -58,6 +58,15 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok Bot / Cursor (fix: CI typecheck gate + vitest infra; remove committed service-role token from tests)
+
+- **Scope:** Test / CI health only, branched from `main` (`1c5dacaa`). No runtime behavior change; no Supabase schema/data, quota, font, wallpaper or window-animation changes.
+- **Typecheck shell:** `SiteSettings.wallpaper` in `src/context/App.tsx` hard-coded seven wallpapers and missed `keyboard-garden`, so the 5 gated `WallpaperName` TS2322 errors failed CI (and CI never reached the lint step). It now uses `WallpaperName` from `lib/wallpaperChrome` (single source of truth).
+- **Vitest infra:** `vitest.config.ts` mirrors the notebook-app rules of `next.config.js` (inside `src/notebook-app`, `lib/*` → the notebook's own lib; `~/`, `scenes/`, `posthog-js`, `@posthog/react`, `use-resize-observer` → the lemon-ui shim; `@posthog/lemon-ui` alias); new `tests/vitest/setup.ts` (jest-dom matchers, `jest` → `vi`, jsdom `getAnimations` stub); devDependencies `@testing-library/{react,dom,jest-dom,user-event}`, `timekeeper`. 9 vendored PostHog test files that need PostHog's real `~/types` / dayjs setup / `@tiptap/markdown` / DateFilter / Jest module mocks are listed in `QUARANTINED_TESTS` with the reason. Result: `vitest run src` 918 passed / 3 skipped (live) / 0 failed (was 609 passed / 4 failed, 34 files unloadable).
+- **Stale tests fixed:** multimodal alias tests mocked `fetch` without the DoH lookup the SSRF guard now does (DoH-aware mock); `verified_corpus_search` URL check is case-insensitive (Scholar URL keeps "Nietzsche"); `export_notebook` heading ids are slugs (`section-1`).
+- **Security:** `execute-multimodal.test.ts` and `execute-image.test.ts` contained a hard-coded Supabase **service_role** JWT for the live project (public repo, in history since 2026-07-31). Removed; the live-worker tests now run only with `WIM_LIVE_WORKER_TOKEN` set. **The key must be rotated by the owner** — removing it from the tree does not remove it from git history.
+- **Handoff:** vitest on Node 22 needs the `canvas` native module built (pnpm 10 skips its build script; no Node 22 prebuild) — otherwise every jsdom test file fails to start. CI does not run vitest yet.
+
 ### 2026-09-26 — Grok (fix: academic turns no longer send the studio tool schemas)
 
 - **Why:** One academic search was ~32k provider tokens (~52k with related papers) while the sidebar recorded ~290. Each act round re-sent ~33.5k chars of all 42 tool schemas plus ~12.8k chars of system text. The meter still does not count schema or system text (pricing unchanged).
