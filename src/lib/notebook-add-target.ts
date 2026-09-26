@@ -1,7 +1,8 @@
 /**
- * Where chat "Add to notebook" goes when no notebook editor is bound or open:
- * the user's most recently updated notebook (templates and the seeded intro are not
- * "theirs"), else a new notebook created through the normal createNotebook path.
+ * Notebooks a person can add into. Templates and the seeded intro are not theirs.
+ * Add buttons ask with this list (and can create a new notebook). They must not
+ * call resolveNotebookAddTarget with an empty id — that path is only for a caller
+ * that already has no one to ask.
  */
 export type NotebookTargetCandidate = {
     id: string
@@ -13,16 +14,33 @@ export type NotebookTargetCandidate = {
 export const NEW_NOTEBOOK_TITLE = 'Research Notes'
 const SEEDED_NOTEBOOK_IDS = new Set(['introducing-wim-notebook', 'welcome-notebook', 'welcome'])
 
-export function pickRecentNotebook<T extends NotebookTargetCandidate>(notebooks: T[] | undefined): T | null {
+export function listNotebookAddTargets<T extends NotebookTargetCandidate>(notebooks: T[] | undefined): T[] {
     const own = (notebooks || []).filter(
         (nb) => nb && nb.id && !nb.isTemplate && !nb.id.startsWith('template-') && !SEEDED_NOTEBOOK_IDS.has(nb.id)
     )
-    if (own.length === 0) return null
     const time = (nb: T) => {
         const t = Date.parse(nb.updatedAt || '')
         return Number.isFinite(t) ? t : 0
     }
-    return [...own].sort((a, b) => time(b) - time(a))[0]
+    return [...own].sort((a, b) => time(b) - time(a))
+}
+
+export function pickRecentNotebook<T extends NotebookTargetCandidate>(notebooks: T[] | undefined): T | null {
+    return listNotebookAddTargets(notebooks)[0] || null
+}
+
+export const NOTEBOOK_PICK_ACTION_TYPES = [
+    'insert_notebook_block',
+    'rewrite_notebook_document',
+    'replace_notebook_selection',
+    'annotate_notebook',
+    'add_notebook_footnote',
+    'update_notebook_title',
+] as const
+
+/** These cards write into a notebook. The user picks which one; they are not auto-routed. */
+export function actionNeedsNotebookPick(type: string | undefined): boolean {
+    return Boolean(type && (NOTEBOOK_PICK_ACTION_TYPES as readonly string[]).includes(type))
 }
 
 export type NotebookAddTarget = { id: string; title: string; created: boolean }

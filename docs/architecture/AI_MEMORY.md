@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (ask which notebook before adding)
+
+- **Why:** Add, Apply, Rewrite and the sources/artifact inserts went to the most recently updated notebook without asking.
+- **Now:** Those controls open a menu: existing notebooks, or a new one (title, default Research Notes). The chosen id is what gets written. A footnote is pinned only when that notebook is the open one and it has a selection; any other notebook gets the reference at the end. Create / Publish / Open still run immediately.
+- **Files:** `NotebookTargetMenu.tsx`, `notebook-add-target.ts`, `OSActionCard.tsx`, `ChatMessage.tsx`, `SourcesPanel.tsx`, `ArtifactsPanel.tsx`, `ArtifactWindowContent.tsx`, `ClaudeWorkspaceChat/index.tsx`.
+
 ### 2026-09-26 — Grok (OpenAIRE and Zenodo on academic search)
 
 - **Sources:** Keyless OpenAIRE Graph v3 (European publications) and Zenodo (open PDF, thesis, preprint) now run on every academic search, limit 5, in parallel with the others. Same DOI still merges into one card. A failed source stays a status line, not “no literature”.

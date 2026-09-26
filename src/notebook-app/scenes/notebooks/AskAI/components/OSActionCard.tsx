@@ -1,12 +1,14 @@
-import React from 'react'
+import React, { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import OSButton from 'components/OSButton'
 import type { OSActionCard as OSActionCardType } from '../types'
+import { actionNeedsNotebookPick } from 'lib/notebook-add-target'
+import { NotebookTargetMenu } from 'components/ClaudeWorkspaceChat/components/NotebookTargetMenu'
 
 interface OSActionCardProps {
     action: OSActionCardType
-    onExecute: () => void
+    onExecute: (notebookId?: string) => void
     isStreaming?: boolean
 }
 
@@ -29,6 +31,8 @@ export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardPro
     const description = action.description?.trim()
     const rawText = content || description || ''
     const text = cleanActionText(rawText)
+    const [anchor, setAnchor] = useState<DOMRect | null>(null)
+    const asksNotebook = actionNeedsNotebookPick(action.type)
 
     let buttonLabel = 'Apply'
     if (action.type === 'annotate_notebook') buttonLabel = 'Annotate'
@@ -115,6 +119,10 @@ export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardPro
                         variant="white"
                         onClick={(e) => {
                             e.stopPropagation()
+                            if (asksNotebook) {
+                                setAnchor(e.currentTarget.getBoundingClientRect())
+                                return
+                            }
                             onExecute()
                         }}
                     >
@@ -122,6 +130,11 @@ export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardPro
                     </OSButton>
                 )}
             </div>
+            <NotebookTargetMenu
+                anchor={anchor}
+                onClose={() => setAnchor(null)}
+                onSelect={(notebookId) => onExecute(notebookId)}
+            />
         </div>
     )
 }
