@@ -63,12 +63,30 @@ export function slicePdfByPage(
     return { text: `[Page ${found.page}]\n${found.text}`, pageCount, page }
 }
 
-export function pdfPromptExcerpt(name: string, content: string, firstPageChars = 1400): string {
+export function pdfPageCatalog(
+    content: string,
+    maxLines = 80,
+    leadChars = 72
+): { lines: string[]; pageCount: number; listed: number } {
+    const blocks = parsePdfPageBlocks(content)
+    const pageCount = pdfPageCount(content)
+    const listed = blocks.slice(0, maxLines)
+    return {
+        pageCount,
+        listed: listed.length,
+        lines: listed.map((block) => {
+            const lead = block.text.replace(/\s+/g, ' ').trim().slice(0, leadChars)
+            return `${block.page}. ${lead || '(blank)'}`
+        }),
+    }
+}
+
+export function pdfPromptExcerpt(name: string, content: string): string {
     if (isPdfWithoutText(content)) {
-        return `User uploaded PDF this turn: ${name}. No extractable text (scanned or image-only). OCR is not available.`
+        return `User uploaded PDF this turn: ${name}. No extractable text (scanned or image-only). OCR is not available. Do not invent quotations.`
     }
     const pages = pdfPageCount(content)
-    const first = slicePdfByPage(content, 1)
-    const excerpt = (first.text || content).replace(/^\[Page\s+1\]\s*/i, '').slice(0, firstPageChars)
-    return `User uploaded PDF this turn: ${name} (${pages} page${pages === 1 ? '' : 's'}). Page 1 excerpt:\n${excerpt}\nCall read_document with name="${name}" and page= or query= to read more.`
+    const first = parsePdfPageBlocks(content)[0]
+    const lead = (first?.text || '').replace(/\s+/g, ' ').trim().slice(0, 160)
+    return `User uploaded PDF this turn: ${name} (${pages} page${pages === 1 ? '' : 's'}, stored page by page). Page 1 begins: ${lead}\nCall read_document with name="${name}" and page=N to read any page in full. Cite the file with its [P#] and name the page. Do not quote a page you have not read.`
 }

@@ -38,13 +38,15 @@ function safeExternalUrl(value: string | undefined): string | null {
 export function sourcesCountLabel(citations: WebCitation[]): string {
   const papers = citations.filter((c) => c.kind === 'paper').length
   const entries = citations.filter((c) => c.kind === 'encyclopedia').length
-  const other = citations.length - papers - entries
+  const uploads = citations.filter((c) => c.kind === 'upload').length
+  const other = citations.length - papers - entries - uploads
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
-  if (papers + entries === 0) return plural(citations.length, 'website', 'websites')
-  if (other > 0) return plural(citations.length, 'source', 'sources')
+  if (papers + entries + uploads === 0) return plural(citations.length, 'website', 'websites')
+  if (other > 0 || (uploads > 0 && papers + entries > 0)) return plural(citations.length, 'source', 'sources')
   const parts: string[] = []
   if (papers) parts.push(plural(papers, 'paper', 'papers'))
   if (entries) parts.push(plural(entries, 'encyclopedia entry', 'encyclopedia entries'))
+  if (uploads) parts.push(plural(uploads, 'uploaded file', 'uploaded files'))
   return parts.join(' · ')
 }
 
@@ -63,6 +65,7 @@ function CitationTags({ citation }: { citation: WebCitation }) {
     )
   }
   if (citation.kind === 'encyclopedia') tags.push(<span key="enc" className={tagClass}>Encyclopedia entry</span>)
+  if (citation.kind === 'upload') tags.push(<span key="upload" className={tagClass}>Uploaded file</span>)
   if (oa) tags.push(<span key="oa" className={tagClass} title="Open access">Open access</span>)
   if (typeof citation.citationCount === 'number' && citation.citationCount > 0) {
     tags.push(

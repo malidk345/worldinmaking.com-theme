@@ -86,6 +86,7 @@ describe('SourcesPanel', () => {
     expect(sourcesCountLabel([paper])).toBe('1 paper')
     expect(sourcesCountLabel([paper, entry])).toBe('1 paper · 1 encyclopedia entry')
     expect(sourcesCountLabel([legacyWeb])).toBe('1 website')
+    expect(sourcesCountLabel([{ ...legacyWeb, id: 8, kind: 'upload', title: 'notes.pdf' }])).toBe('1 uploaded file')
     expect(sourcesCountLabel([paper, { ...legacyWeb, id: 9, kind: 'web' }])).toBe('2 sources')
   })
 

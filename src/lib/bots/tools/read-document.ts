@@ -1,4 +1,4 @@
-import { isPdfWithoutText, PDF_NO_TEXT, slicePdfByPage } from '../../pdf-pages'
+import { isPdfWithoutText, PDF_NO_TEXT, parsePdfPageBlocks, pdfPageCatalog, slicePdfByPage } from '../../pdf-pages'
 import { extractPdfPages, looksLikePdf, PDF_TEXT_LIMITS, type PdfTextResult } from '../pdf-text'
 import { isBlockedFetchUrl, assertPublicHostname } from './fetch-url'
 import type { HostSnapshot } from './host'
@@ -36,6 +36,18 @@ function readLocalDocument(
     if (isPdfWithoutText(content)) {
         return { ok: false, error: PDF_NO_TEXT }
     }
+    const blocks = parsePdfPageBlocks(content)
+    if (!targetPage && blocks.length > 1) {
+        const catalog = pdfPageCatalog(content, 80)
+        const more =
+            catalog.pageCount > catalog.listed
+                ? `\n${catalog.pageCount - catalog.listed} later pages are stored. Pass page= to read one.`
+                : ''
+        return {
+            ok: true,
+            text: `[${label} — ${catalog.pageCount} pages]\nPage index only. This is not the page text.\n${catalog.lines.join('\n')}${more}\nPass page= to read one page in full. Do not quote a page from this index.`,
+        }
+    }
     const sliced = slicePdfByPage(content, targetPage)
     if (sliced.error) return { ok: false, error: sliced.error }
     const filtered = applyKeywordFilter(sliced.text, filterQuery || '', label)
@@ -43,7 +55,9 @@ function readLocalDocument(
     const head = targetPage
         ? `[${label} — page ${targetPage} of ${sliced.pageCount}]`
         : `[${label}${sliced.pageCount > 1 ? ` — ${sliced.pageCount} pages` : ''}]`
-    return { ok: true, text: `${head}\n${filtered.content.slice(0, MAX_DOC_CHARS)}` }
+    const body = filtered.content.slice(0, MAX_DOC_CHARS)
+    const clipped = filtered.content.length > MAX_DOC_CHARS ? '\n[This page was clipped at 12000 characters.]' : ''
+    return { ok: true, text: `${head}\n${body}${clipped}` }
 }
 
 const FETCH_TIMEOUT_MS = 10_000

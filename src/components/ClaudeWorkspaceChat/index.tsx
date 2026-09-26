@@ -47,6 +47,7 @@ import { WINDOW_BG } from '../../constants/frostedSurfaces';
 import { getNotebook, getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import { ScratchpadStore } from '../../lib/scratchpad-store';
 import { pdfPromptExcerpt } from '../../lib/pdf-pages';
+import { parseDocumentFile } from '../../lib/document-parser';
 import { StudyDeckStore } from '../../lib/study-deck-store';
 import {
   NOTEBOOK_CHAT_BIND_EVENT,
@@ -596,6 +597,26 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           setIncomingAttachments((prev) => [...prev, { id, name: file.name, type, size: sizeStr, url: dataUrl, content: dataUrl }]);
         };
         reader.readAsDataURL(file);
+      } else if (isPdf) {
+        void parseDocumentFile(file).then((parsed) => {
+          setIncomingAttachments((prev) => [...prev, {
+            id,
+            name: file.name,
+            type,
+            size: sizeStr,
+            content: parsed.content,
+            contentPreview: parsed.preview,
+          }]);
+        }).catch(() => {
+          setIncomingAttachments((prev) => [...prev, {
+            id,
+            name: file.name,
+            type,
+            size: sizeStr,
+            content: '',
+            contentPreview: '',
+          }]);
+        });
       } else {
         reader.onload = () => {
           const textContent = reader.result as string;
