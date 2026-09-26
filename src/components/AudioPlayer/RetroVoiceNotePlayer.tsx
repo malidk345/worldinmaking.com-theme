@@ -13,7 +13,7 @@ export interface RetroVoiceNotePlayerProps {
     title?: string
     notebookText?: string
     fullText?: string
-    onAddToNotebook?: (title: string, src: string) => void
+    onAddToNotebook?: (title: string, src: string, from?: HTMLElement) => void
     className?: string
 }
 
@@ -311,17 +311,15 @@ export const RetroVoiceNotePlayer: React.FC<RetroVoiceNotePlayerProps> = ({
         document.body.removeChild(a)
     }, [src, labelTitle])
 
-    const handleAddNotebook = useCallback(() => {
+    const handleAddNotebook = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
         if (onAddToNotebook) {
-            onAddToNotebook(labelTitle, src)
-            setAddedNotebook(true)
-            setTimeout(() => setAddedNotebook(false), 2000)
-        } else {
-            const md = `[🔊 ${labelTitle}](${src})`
-            navigator.clipboard.writeText(md)
-            setAddedNotebook(true)
-            setTimeout(() => setAddedNotebook(false), 2000)
+            onAddToNotebook(labelTitle, src, event.currentTarget)
+            return
         }
+        const md = `[🔊 ${labelTitle}](${src})`
+        navigator.clipboard.writeText(md)
+        setAddedNotebook(true)
+        setTimeout(() => setAddedNotebook(false), 2000)
     }, [onAddToNotebook, labelTitle, src])
 
     return (

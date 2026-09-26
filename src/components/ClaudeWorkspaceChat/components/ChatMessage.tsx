@@ -612,7 +612,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const [copied, setCopied] = useState(false);
   const [addedToNotebook, setAddedToNotebook] = useState(false);
   const [addingToNotebook, setAddingToNotebook] = useState(false);
-  const [notebookMenuAnchor, setNotebookMenuAnchor] = useState<DOMRect | null>(null);
+  const [notebookMenuAnchor, setNotebookMenuAnchor] = useState<HTMLElement | null>(null);
   const [notebookMenuContent, setNotebookMenuContent] = useState<string | null>(null);
   // Strip host/tool leaks from stored bubbles (pre-fix polluted localStorage).
   const displayedText = isUser ? message.content : stripLeakedToolMarkup(message.content || '');
@@ -806,9 +806,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                             notebookText={notebookContentToRead}
                             onAddToNotebook={
                               onAddToNotebook
-                                ? () => {
-                                    const rect = new DOMRect(window.innerWidth / 2, Math.max(80, window.innerHeight / 3), 0, 0)
-                                    setNotebookMenuAnchor(rect)
+                                ? (_title, _src, from) => {
+                                    if (from) setNotebookMenuAnchor(from)
                                     setNotebookMenuContent(`[🔊 ${textContent || 'Voice Note'}](${hrefStr})`)
                                   }
                                 : undefined
@@ -990,7 +989,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   disabled={addingToNotebook}
                   onClick={(event) => {
                     if (addingToNotebook) return
-                    setNotebookMenuAnchor(event.currentTarget.getBoundingClientRect())
+                    setNotebookMenuAnchor(event.currentTarget)
                     setNotebookMenuContent(null)
                   }}
                   className={`flex items-center gap-1 px-1.5 py-0.5 text-[12px] rounded transition-transform duration-150 active:scale-[0.92] hover:scale-[1.05] cursor-pointer ${

@@ -58,6 +58,10 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (notebook menu matches the menu bar and opens on the button)
+
+- The picker uses the menu-bar chrome (`data-scheme="primary"`, 13px rows, same shadow) and opens against the control that was pressed: under it, or above when the window edge is in the way. It follows that control if the thread scrolls.
+
 ### 2026-09-26 — Grok (fix: notebook picker import inside the notebook app)
 
 - **Why:** `lib/…` from a notebook-app file is rewritten to the notebook’s own lib, so the Pages build could not find `notebook-add-target`.

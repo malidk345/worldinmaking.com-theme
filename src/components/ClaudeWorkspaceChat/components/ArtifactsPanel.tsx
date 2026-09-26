@@ -107,7 +107,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
   const [copied, setCopied] = useState(false);
   const [inserted, setInserted] = useState(false);
-  const [notebookAnchor, setNotebookAnchor] = useState<DOMRect | null>(null);
+  const [notebookAnchor, setNotebookAnchor] = useState<HTMLElement | null>(null);
   const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null)
@@ -304,7 +304,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
             {onInsertToNotebook ? (
               <button
                 type="button"
-                onClick={(event) => setNotebookAnchor(event.currentTarget.getBoundingClientRect())}
+                onClick={(event) => setNotebookAnchor(event.currentTarget)}
                 className={`flex items-center gap-1.5 px-2.5 text-[13px] cursor-pointer transition-colors ${
                   inserted ? 'text-emerald-600 font-semibold bg-emerald-50' : 'text-[#3d3d3d] hover:bg-[#fafafa]'
                 }`}

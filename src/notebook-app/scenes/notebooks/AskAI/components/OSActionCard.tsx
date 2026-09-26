@@ -31,7 +31,7 @@ export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardPro
     const description = action.description?.trim()
     const rawText = content || description || ''
     const text = cleanActionText(rawText)
-    const [anchor, setAnchor] = useState<DOMRect | null>(null)
+    const [anchor, setAnchor] = useState<HTMLElement | null>(null)
     const asksNotebook = actionNeedsNotebookPick(action.type)
 
     let buttonLabel = 'Apply'
@@ -120,7 +120,7 @@ export function OSActionCard({ action, onExecute, isStreaming }: OSActionCardPro
                         onClick={(e) => {
                             e.stopPropagation()
                             if (asksNotebook) {
-                                setAnchor(e.currentTarget.getBoundingClientRect())
+                                setAnchor(e.currentTarget)
                                 return
                             }
                             onExecute()
