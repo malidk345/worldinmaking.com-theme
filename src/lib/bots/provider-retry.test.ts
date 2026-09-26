@@ -3,7 +3,6 @@ import { providerFailureCode, shouldRetryProviderFailure, waitUnlessAborted } fr
 
 const base = {
     code: 'PROVIDER_UNAVAILABLE' as const,
-    attempt: 0,
     sentPublicText: false,
     toolEventSeen: false,
     aborted: false,
@@ -19,7 +18,6 @@ describe('provider-retry', () => {
 
     it('retries a provider outage once, before anything reached the user', () => {
         expect(shouldRetryProviderFailure(base)).toBe(true)
-        expect(shouldRetryProviderFailure({ ...base, attempt: 1 })).toBe(false)
     })
 
     it('never retries after public text, a tool event, or an abort', () => {

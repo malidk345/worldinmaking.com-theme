@@ -504,7 +504,6 @@ export default async function handler(req: Request) {
                     !result.success &&
                     shouldRetryProviderFailure({
                         code: providerFailureCode(result.error),
-                        attempt: 0,
                         sentPublicText: sentVisiblePublic.length > 0,
                         toolEventSeen,
                         aborted: turnAbort.signal.aborted || result.error === 'aborted',

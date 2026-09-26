@@ -17,12 +17,10 @@ export function providerFailureCode(error: unknown): ProviderFailureCode {
 
 export function shouldRetryProviderFailure(opts: {
     code: ProviderFailureCode
-    attempt: number
     sentPublicText: boolean
     toolEventSeen: boolean
     aborted: boolean
 }): boolean {
-    if (opts.attempt >= 1) return false
     if (opts.aborted || opts.sentPublicText || opts.toolEventSeen) return false
     return opts.code === 'PROVIDER_UNAVAILABLE'
 }

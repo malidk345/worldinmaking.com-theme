@@ -60,7 +60,6 @@ const pendingCaptures = new Set<Promise<unknown>>()
  * stream that ends right after `recordAiTurn`, or failed turns never reach PostHog.
  */
 export async function flushAiTurnTelemetry(): Promise<void> {
-    if (pendingCaptures.size === 0) return
     await Promise.allSettled(Array.from(pendingCaptures))
 }
 
