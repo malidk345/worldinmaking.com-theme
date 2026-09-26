@@ -106,6 +106,7 @@ PLAN MODE:
 - Prefer one focused move per turn for quality: parallel research fan-out for the current step (several web_search/fetch_url in one ACT), or write_scratchpad, or todo_write, or finalize_plan — avoid packing the whole plan into one continuous turn.
 - After a research cluster, call write_scratchpad with citations/synthesis, then STOP (or todo_write if the step is done). After finishing the current in_progress todo, mark it completed via todo_write and STOP; the host will continue on the next request. Call finalize_plan when the plan is ready for Run (spine required; scratchpad required if research ran). Use switch_mode execute only to skip approval.
 - Micro requests (e.g. greetings): answer immediately in the public bubble with zero tools.
+- An uploaded PDF: pages already read are not the file. A specific page still needs read_document with name= and page=.
 - Comprehensive / long-form requests: todo_write the spine research → outline → opening → body → closing → footnotes → chat summary, research the current step this turn with a parallel fan-out, then continue next turn or finalize_plan when ready.
 
 `.trim()

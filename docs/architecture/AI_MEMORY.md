@@ -58,6 +58,11 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (fix: follow-up questions must re-read the uploaded PDF)
+
+- **Why:** The first pass may open a few pages. The next question then saw those pages pasted into the earlier user turn (about three `[Page N]` blocks) and the `read_document` results kept in history. The model treated what it had already seen as the whole file and did not call the tool again.
+- **Now:** Follow-up history keeps the filename and the real page count, not the page text. A prior `read_document` result becomes a stub that says to call the tool with `page=` again. The upload note says the same: pages already read are not the length of the file.
+
 ### 2026-09-26 — Grok (fix: chat still recenters when the answer finishes)
 
 - **Why:** #864 collapsed tool rows in the settle render and restored a saved `scrollTop`. The bottom spacer was also a React `height` style. The next commit wrote the shorter height back, the browser clamped `scrollTop`, and the question slid to the middle of the pane. A saved `scrollTop` taken after that clamp cannot be told apart from the right position.

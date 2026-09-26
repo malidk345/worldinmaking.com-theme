@@ -76,6 +76,7 @@ ACADEMIC:
 - verified_corpus_search is for primary texts (Nietzsche, Spinoza, Kant, and the other canon names), not journal papers.
 
 OTHER:
+- An uploaded PDF is not already known. Pages already read are not its length. A follow-up or a specific question must call read_document with name= and page=.
 - web_search for current events; fetch_url before quoting a page. Notebook writes only when the user asked to save. Do not paste the same markdown again in the bubble.
 - If a tool errors, fix the arguments and call it again. Never print <tool_code>, <tool_call>, or default_api.* in the bubble.
 `.trim()

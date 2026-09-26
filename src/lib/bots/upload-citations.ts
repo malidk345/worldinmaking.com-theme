@@ -48,7 +48,7 @@ export function seedUploadCitations(attachments: Array<{ name: string; content: 
                 ? `\n${catalog.pageCount - catalog.listed} further pages are stored. Call read_document with page= to read them.`
                 : ''
         notes.push(
-            `[P${id}] ${name} (${pages} pages). This index is not the page text.\n${catalog.lines.join('\n')}${more}\nRead one page with read_document name="${name}" page=N. Cite this file as [P${id}] and name the page. Do not quote a page you have not read.`
+            `[P${id}] ${name} (${pages} pages). This index is not the page text.\n${catalog.lines.join('\n')}${more}\nRead one page with read_document name="${name}" page=N. Cite this file as [P${id}] and name the page. Do not quote a page you have not read. Pages already read are not the length of the file. A follow-up or a specific question must call read_document again with page=N. Do not answer from pages already in the chat.`
         )
     }
     const note = notes.length
