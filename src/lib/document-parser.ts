@@ -67,14 +67,10 @@ export async function parseDocumentFile(file: File): Promise<ParsedDocumentResul
 
   if (isPdf) {
     const extracted = await extractTextFromPdf(file);
-    const content = extracted.hasText ? extracted.text : PDF_NO_TEXT;
-    const truncated = extracted.truncated
-      ? `\n\n[Extracted ${extracted.extractedPages} of ${extracted.pageCount} pages.]`
-      : '';
     return {
       type: 'pdf',
-      content: extracted.hasText ? `${content}${truncated}` : PDF_NO_TEXT,
-      preview: extracted.hasText ? content.slice(0, 200) : PDF_NO_TEXT,
+      content: extracted.hasText ? extracted.text : PDF_NO_TEXT,
+      preview: extracted.hasText ? extracted.text.slice(0, 200) : PDF_NO_TEXT,
       pageCount: extracted.pageCount,
     };
   }

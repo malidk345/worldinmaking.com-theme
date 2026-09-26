@@ -1,13 +1,11 @@
 /**
- * Client-side PDF text extract (pdf.js). Page labels are `[Page N]` so Edge
- * `read_document` can slice without pdfjs.
+ * Client-side PDF text extract (pdf.js). Every page is kept as `[Page N]`
+ * so `read_document` can open one page of a whole book. The file is not
+ * shortened to the first pages.
  */
 
 import { PDF_NO_TEXT } from './pdf-pages'
 import { pdfItemsToText } from './bots/pdf-text'
-
-export const PDF_EXTRACT_PAGE_CAP = 200
-const PDF_EXTRACT_CHAR_CAP = 380_000
 
 export type PdfExtractResult = {
     text: string
@@ -49,42 +47,46 @@ export async function extractTextFromPdf(file: File | ArrayBuffer | Uint8Array):
 
         const pdf = await loadingTask.promise
         const pageCount = pdf.numPages
-        const limit = Math.min(pageCount, PDF_EXTRACT_PAGE_CAP)
         const pageTexts: string[] = []
+        let failedPages = 0
 
-        for (let pageNum = 1; pageNum <= limit; pageNum++) {
-            try {
-                const page = await pdf.getPage(pageNum)
-                const textContent = await page.getTextContent()
-                const items = (textContent.items as Array<{ str?: string; hasEOL?: boolean }>).map((item) => ({
-                    str: typeof item.str === 'string' ? item.str : '',
-                    hasEOL: Boolean(item.hasEOL),
-                }))
-                const pageBody = pdfItemsToText(items)
-                if (pageBody) {
-                    pageTexts.push(`[Page ${pageNum}]\n${pageBody}`)
+        try {
+            for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+                try {
+                    const page = await pdf.getPage(pageNum)
+                    const textContent = await page.getTextContent()
+                    const items = (textContent.items as Array<{ str?: string; hasEOL?: boolean }>).map((item) => ({
+                        str: typeof item.str === 'string' ? item.str : '',
+                        hasEOL: Boolean(item.hasEOL),
+                    }))
+                    const pageBody = pdfItemsToText(items)
+                    if (pageBody) {
+                        pageTexts.push(`[Page ${pageNum}]\n${pageBody}`)
+                    }
+                    page.cleanup()
+                } catch (pageErr) {
+                    failedPages += 1
+                    console.warn(`[PDF Parser] Error reading page ${pageNum}:`, pageErr)
                 }
-            } catch (pageErr) {
-                console.warn(`[PDF Parser] Error reading page ${pageNum}:`, pageErr)
+            }
+        } finally {
+            try {
+                await pdf.destroy()
+            } catch {
+                /* the extract is already in hand */
             }
         }
 
-        let kept = pageTexts
-        let charTruncated = false
-        while (kept.join('\n\n').length > PDF_EXTRACT_CHAR_CAP && kept.length > 1) {
-            kept = kept.slice(0, -1)
-            charTruncated = true
-        }
-        const text = kept.join('\n\n')
+        const text = pageTexts.join('\n\n')
         if (!text.trim()) {
-            return { ...empty, pageCount, truncated: pageCount > limit }
+            return { ...empty, pageCount, truncated: failedPages > 0 }
         }
         return {
             text,
             pageCount,
-            extractedPages: kept.length,
+            extractedPages: pageTexts.length,
             hasText: true,
-            truncated: pageCount > limit || charTruncated,
+            truncated: failedPages > 0,
         }
     } catch (err) {
         console.error('[PDF Parser] pdfjs extraction failed:', err)

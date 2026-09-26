@@ -2,6 +2,9 @@ import type { CitationStyle } from '../../ai/citation-styles'
 import { fetchSupabasePostBySlug, searchSupabasePosts } from '../../supabaseBlog'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../supabase-rest'
 
+/** One uploaded file, kept whole so read_document can open any page. Not a prompt excerpt. */
+const UPLOAD_DOCUMENT_CHARS = 12_000_000
+
 export type HostWindow = { path?: string; title?: string }
 
 export type HostUser = {
@@ -158,7 +161,7 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
                           typeof d.pageCount === 'number' && Number.isFinite(d.pageCount)
                               ? Math.max(0, Math.floor(d.pageCount))
                               : undefined,
-                      content: typeof d.content === 'string' ? d.content.slice(0, 400_000) : undefined,
+                      content: typeof d.content === 'string' ? d.content.slice(0, UPLOAD_DOCUMENT_CHARS) : undefined,
                   }))
                 : undefined,
             nodes: Array.isArray(s.nodes)
@@ -195,7 +198,7 @@ export function parseHostSnapshot(raw: unknown): HostSnapshot | undefined {
             if (typeof item.name !== 'string' || typeof item.content !== 'string') continue
             attachments.push({
                 name: item.name.slice(0, 200),
-                content: item.content.slice(0, 400_000),
+                content: item.content.slice(0, UPLOAD_DOCUMENT_CHARS),
             })
         }
     }

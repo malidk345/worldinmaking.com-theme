@@ -30,6 +30,23 @@ describe('executeReadDocument page slices', () => {
         }
     })
 
+    it('reads a later page from the attachment when the scratchpad row has no text', async () => {
+        const pages = ['[Page 1]', 'Opening.', '', '[Page 5]', 'The later chapter.'].join('\n')
+        const result = await executeReadDocument(
+            { name: 'book.pdf', page: 5 },
+            {
+                scratchpad: { documents: [{ name: 'book.pdf', type: 'pdf', pageCount: 5 }] },
+                attachments: [{ name: 'book.pdf', content: pages }],
+            }
+        )
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+            expect(result.text).toContain('later chapter')
+            expect(result.text).toContain('page 5')
+            expect(result.text).not.toContain('Opening.')
+        }
+    })
+
     it('returns a page index, not the book, when no page is asked', async () => {
         const long = ['[Page 1]', 'Opening.', '', '[Page 2]', `Body ${'zeta'.repeat(40)}.`].join('\n')
         const result = await executeReadDocument(

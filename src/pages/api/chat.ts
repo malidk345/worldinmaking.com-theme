@@ -43,7 +43,7 @@ import { createToolUsageMeter } from '../../lib/tool-usage-meter'
 /** Upper bound for the post-answer citation check (Crossref DOI lookups); skipped when exceeded. */
 const CITATION_VERIFY_BUDGET_MS = 4_500
 
-const MAX_BODY_BYTES = 1024 * 1024
+const MAX_BODY_BYTES = 20 * 1024 * 1024
 
 const MAX_PROMPT_LENGTH = 8000
 const MAX_SYSTEM_PROMPT_LENGTH = 5000
