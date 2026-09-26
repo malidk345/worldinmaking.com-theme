@@ -33,6 +33,7 @@ import {
     questionWantsAcademicFollowUps,
     researchProtocolFor,
     selectTurnTools,
+    shouldOmitResearchWrite,
 } from './turn-tools'
 import { runAgentNodePipeline, type NodeEvent, type RoundFailure } from './pipeline'
 import {
@@ -207,6 +208,8 @@ async function openaiCompletion(params: {
     onThinking?: (text: string) => void
     tools?: OpenAiToolSpec[]
     omitTools?: boolean
+    /** Answer-budget call with no tool schemas. Does not switch Gemini into the short think config. */
+    dropToolSchemas?: boolean
     maxTokens?: number
     timeoutMs?: number
     signal?: AbortSignal
@@ -233,7 +236,7 @@ async function openaiCompletion(params: {
                 temperature: 0.6,
                 max_tokens: params.maxTokens || MAX_TOKENS,
                 stream: true,
-                ...(params.omitTools
+                ...(params.omitTools || params.dropToolSchemas
                     ? {}
                     : {
                           tools: params.tools || OPENAI_CHAT_TOOLS,
@@ -325,6 +328,8 @@ async function groqCompletion(params: {
     onThinking?: (text: string) => void
     tools?: OpenAiToolSpec[]
     omitTools?: boolean
+    /** Answer-budget call with no tool schemas. Does not switch Gemini into the short think config. */
+    dropToolSchemas?: boolean
     maxTokens?: number
     timeoutMs?: number
     signal?: AbortSignal
@@ -351,7 +356,7 @@ async function groqCompletion(params: {
                 max_tokens: params.maxTokens || MAX_TOKENS,
                 stream: true,
                 ...groqNativeThinkingBody(params.model),
-                ...(params.omitTools
+                ...(params.omitTools || params.dropToolSchemas
                     ? {}
                     : {
                           tools: params.tools || OPENAI_CHAT_TOOLS,
@@ -462,6 +467,8 @@ type CompleteFn = (input: {
     onToken?: (text: string) => void
     onThinking?: (text: string) => void
     omitTools?: boolean
+    /** Answer-budget call with no tool schemas. Does not switch Gemini into the short think config. */
+    dropToolSchemas?: boolean
     maxTokens?: number
     timeoutMs?: number
 }) => Promise<CompletionRound>
@@ -746,12 +753,23 @@ export async function runToolLoop(params: {
         academicFollowUps:
             questionWantsAcademicFollowUps(question) || messagesUsedAcademicSeed(params.checkpoint?.messages),
     }
-    const toolsForThisRound = () =>
+    const toolsForThisRound = (messages: ChatMessage[]) =>
         selectTurnTools(OPENAI_CHAT_TOOLS, {
             mode: agentMode,
             question,
             academicFollowUps: toolGate.academicFollowUps,
+            messages,
         })
+    const roundTools = (args: { messages: ChatMessage[]; omitTools?: boolean; toolChoice: 'auto' | 'none' | 'web_search' | 'todo_write' }) => {
+        const dropToolSchemas =
+            Boolean(args.omitTools) ||
+            args.toolChoice === 'none' ||
+            shouldOmitResearchWrite({ mode: agentMode, question, messages: args.messages })
+        return {
+            dropToolSchemas,
+            tools: dropToolSchemas ? undefined : toolsForThisRound(args.messages),
+        }
+    }
     const onTool = (event: ToolEvent) => {
         if (event.status === 'done' && ACADEMIC_SEED_TOOLS.has(event.name)) toolGate.academicFollowUps = true
         params.onTool?.(event)
@@ -814,7 +832,7 @@ export async function runToolLoop(params: {
                         omitTools,
                         maxTokens,
                         timeoutMs,
-                        tools: toolsForThisRound(),
+                        ...roundTools({ messages, omitTools, toolChoice }),
                         signal: params.signal,
                     }),
             })
@@ -834,7 +852,7 @@ export async function runToolLoop(params: {
                         omitTools,
                         maxTokens,
                         timeoutMs,
-                        tools: toolsForThisRound(),
+                        ...roundTools({ messages, omitTools, toolChoice }),
                         signal: params.signal,
                     }),
             })
@@ -856,7 +874,7 @@ export async function runToolLoop(params: {
                             omitTools,
                             maxTokens,
                             timeoutMs,
-                            tools: toolsForThisRound(),
+                            ...roundTools({ messages, omitTools, toolChoice }),
                             signal: params.signal,
                         }),
                 })
@@ -881,7 +899,7 @@ export async function runToolLoop(params: {
                                 omitTools,
                                 maxTokens,
                                 timeoutMs,
-                                tools: toolsForThisRound(),
+                                ...roundTools({ messages, omitTools, toolChoice }),
                                 signal: params.signal,
                             }),
                     })
@@ -908,7 +926,7 @@ export async function runToolLoop(params: {
                                 omitTools,
                                 maxTokens,
                                 timeoutMs: timeoutMs || GEMINI_TIMEOUT_MS,
-                                tools: toolsForThisRound(),
+                                ...roundTools({ messages, omitTools, toolChoice }),
                                 signal: params.signal,
                             }),
                     })

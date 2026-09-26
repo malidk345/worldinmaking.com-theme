@@ -72,6 +72,7 @@ ACADEMIC:
 - If the search is unavailable or degraded, say so. That is not evidence that no literature exists.
 - Turkish user: pass query (English research terms) and query_original (Turkish) in one call. ENCYCLOPEDIA hits are reference entries, not papers.
 - related_papers, find_quotes, and annotated_bibliography appear after a search when this turn has a paper. find_quotes only if the user wants an exact passage. [P#] ids stay stable this turn.
+- A successful search_academic_corpus is not sent again. Open a paper with fetch_url or read_document, or call a follow-up. If that search failed, retry it once with fixed arguments.
 - verified_corpus_search is for primary texts (Nietzsche, Spinoza, Kant, and the other canon names), not journal papers.
 
 OTHER:
@@ -88,6 +89,130 @@ export function isResearchQuestion(text: string): boolean {
 
 export function questionWantsAcademicFollowUps(text: string): boolean {
     return FOLLOWUP_ASK.test(text)
+}
+
+/** Which follow-ups the question named. A vague "sources" ask is not one of these. */
+export function questionFollowUpNames(text: string): string[] {
+    const names: string[] = []
+    if (/related papers?|who cites|citation graph|ilgili (?:makale|çalışma|calisma)|kim atıf|kim atif/.test(text)) {
+        names.push('related_papers')
+    }
+    if (/find quotes?|verbatim|alıntı|alinti|sayfa numar/.test(text)) names.push('find_quotes')
+    if (/annotated bibliography|kaynakça/.test(text)) names.push('annotated_bibliography')
+    return names
+}
+
+const NOTEBOOK_ASK =
+    /notebook|defter|dipnot|footnote|notlar[ıi]ma|notuma|kaydet|kenar not|margin note/i
+
+export function questionWantsNotebook(text: string): boolean {
+    return NOTEBOOK_ASK.test(text)
+}
+
+/**
+ * After a paper is in hand the model still needs the chain (related papers,
+ * quotes, bibliography), a way to open a source, and notebook tools only when
+ * the user asked to save. The corpus schema is not repeated unless it failed.
+ */
+const POST_SEED_TOOLS = [
+    'web_search',
+    'fetch_url',
+    'read_document',
+    'cross_examine_argument',
+    'ask_user',
+] as const
+
+const NOTEBOOK_TOOLS = [
+    'list_notebooks',
+    'create_notebook',
+    'insert_notebook_block',
+    'rewrite_notebook_document',
+    'replace_notebook_selection',
+    'update_notebook_title',
+    'read_notebook',
+    'annotate_notebook',
+    'add_notebook_footnote',
+] as const
+
+export type ToolRoundMessage = {
+    role: string
+    content?: string | null
+    tool_call_id?: string
+    tool_calls?: Array<{ id?: string; function?: { name?: string } }>
+}
+
+function toolResultOk(content: string | null | undefined): boolean {
+    if (!content) return false
+    if (/"ok"\s*:\s*false/.test(content)) return false
+    if (/"ok"\s*:\s*true/.test(content)) return true
+    return content.trim().length > 0
+}
+
+/** Last outcome per tool name, paired by tool_call_id. */
+export function academicToolOutcomes(messages: ToolRoundMessage[] | undefined): Map<string, boolean> {
+    const idToName = new Map<string, string>()
+    const lastOk = new Map<string, boolean>()
+    if (!messages) return lastOk
+    for (const message of messages) {
+        if (message.role === 'assistant') {
+            for (const call of message.tool_calls || []) {
+                const name = call.function?.name
+                if (call.id && name) idToName.set(call.id, name)
+            }
+        }
+        if (message.role !== 'tool' || !message.tool_call_id) continue
+        const name = idToName.get(message.tool_call_id)
+        if (!name) continue
+        lastOk.set(name, toolResultOk(message.content))
+    }
+    return lastOk
+}
+
+function seedSucceeded(messages: ToolRoundMessage[] | undefined): boolean {
+    const outcomes = academicToolOutcomes(messages)
+    for (const name of ACADEMIC_SEED_TOOLS) {
+        if (outcomes.get(name) === true) return true
+    }
+    return false
+}
+
+/** An assistant turn already happened after a seed result, so the chain was offered. */
+export function assistantAfterSeedResult(messages: ToolRoundMessage[] | undefined): boolean {
+    if (!messages) return false
+    const idToName = new Map<string, string>()
+    let seenSeedResult = false
+    for (const message of messages) {
+        if (message.role === 'assistant') {
+            for (const call of message.tool_calls || []) {
+                const name = call.function?.name
+                if (call.id && name) idToName.set(call.id, name)
+            }
+            if (seenSeedResult) return true
+        }
+        if (message.role !== 'tool' || !message.tool_call_id) continue
+        const name = idToName.get(message.tool_call_id)
+        if (name && ACADEMIC_SEED_TOOLS.has(name)) seenSeedResult = true
+    }
+    return false
+}
+
+/**
+ * The round that only writes the answer. The chain round (first decision
+ * after papers) still receives follow-up schemas. A later round does not,
+ * unless the question named a follow-up that has not run yet.
+ * Plan and execute never take this path.
+ */
+export function shouldOmitResearchWrite(input: {
+    mode: AgentMode
+    question: string
+    messages?: ToolRoundMessage[]
+}): boolean {
+    if (input.mode !== 'ask' || !isResearchQuestion(input.question)) return false
+    const messages = input.messages
+    if (!seedSucceeded(messages) || !assistantAfterSeedResult(messages)) return false
+    const outcomes = academicToolOutcomes(messages)
+    const pending = questionFollowUpNames(input.question).filter((name) => outcomes.get(name) !== true)
+    return pending.length === 0
 }
 
 export function researchProtocolFor(question: string): string | null {
@@ -108,10 +233,26 @@ export function messagesUsedAcademicSeed(
 
 export function selectTurnTools<T extends { function: { name: string } }>(
     tools: T[],
-    input: { mode: AgentMode; question: string; academicFollowUps?: boolean }
+    input: {
+        mode: AgentMode
+        question: string
+        academicFollowUps?: boolean
+        messages?: ToolRoundMessage[]
+    }
 ): T[] {
     if (input.mode !== 'ask') return toolsForMode(input.mode, tools)
     if (!isResearchQuestion(input.question)) return tools
+    if (seedSucceeded(input.messages)) {
+        const outcomes = academicToolOutcomes(input.messages)
+        const wanted = new Set<string>([...POST_SEED_TOOLS, ...ACADEMIC_FOLLOWUP_TOOLS])
+        if (questionWantsNotebook(input.question)) {
+            for (const name of NOTEBOOK_TOOLS) wanted.add(name)
+        }
+        for (const name of ACADEMIC_SEED_TOOLS) {
+            if (outcomes.get(name) === false) wanted.add(name)
+        }
+        return tools.filter((tool) => wanted.has(tool.function.name))
+    }
     const followUps = Boolean(input.academicFollowUps) || questionWantsAcademicFollowUps(input.question)
     return tools.filter((tool) => {
         const name = tool.function.name
