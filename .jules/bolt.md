@@ -53,3 +53,6 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+## 2025-02-12 - Prevent Bypass of CI Validation Scripts
+**Learning:** During optimization workflows, it is critical not to mock or replace the contents of CI validation scripts (like `scripts/typecheck-shell.mjs`) to artificially speed up tests. Doing so bypasses essential strict typechecks required by the architecture and results in a blocked PR.
+**Action:** Always run CI scripts as they exist in the repository. If they fail due to environmental setup, resolve the environment issues (e.g. running `pnpm install`) rather than altering the validation logic itself. Ensure that optimizations never introduce regressions in strict type safety.
