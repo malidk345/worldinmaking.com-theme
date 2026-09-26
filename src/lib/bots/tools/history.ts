@@ -1,3 +1,4 @@
+import { historyToolResult, omitPastedPdfBodies } from '../../pdf-pages'
 import { stripLeakedToolMarkup } from './leak'
 
 export type HistoryArtifact = {
@@ -111,6 +112,7 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
     })()
 
     let pendingArtifactNote: string | null = null
+    const toolCallsById = new Map<string, { name: string; arguments: string }>()
     /** Push/merge user text — never emit consecutive user turns (Anthropic rejects them). */
     const pushUserContent = (content: string) => {
         const trimmed = String(content || '').trim()
@@ -132,10 +134,14 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
     for (let index = 0; index < window.length; index += 1) {
         const item = window[index]
         if (item.role === 'tool' && item.tool_call_id) {
+            const known = toolCallsById.get(item.tool_call_id)
+            const raw = known
+                ? historyToolResult(known.name, known.arguments, item.content || '')
+                : item.content || ''
             out.push({
                 role: 'tool',
                 tool_call_id: item.tool_call_id.slice(0, 80),
-                content: clip(item.content || '', recentTools.has(index) ? MAX_TOOL_RESULT : MAX_OLD_TOOL_RESULT),
+                content: clip(raw, recentTools.has(index) ? MAX_TOOL_RESULT : MAX_OLD_TOOL_RESULT),
             })
             const next = window[index + 1]
             // Keep note pending when the next turn is a real user so we can merge (no consecutive users).
@@ -143,7 +149,7 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
             continue
         }
         if (item.role === 'user') {
-            const content = clip(item.content || '', MAX_VISIBLE)
+            const content = clip(omitPastedPdfBodies(item.content || ''), MAX_VISIBLE)
             if (pendingArtifactNote) {
                 const note = pendingArtifactNote
                 pendingArtifactNote = null
@@ -154,6 +160,9 @@ export function compactToolHistory(history?: HistoryTurn[]): CompactedMessage[] 
             continue
         }
         if (item.role !== 'assistant') continue
+        for (const call of item.tool_calls || []) {
+            if (call?.id && call.name) toolCallsById.set(call.id, { name: call.name, arguments: call.arguments || '' })
+        }
         flushPendingArtifactNote()
         const toolCalls = (item.tool_calls || [])
             .filter((call) => call && call.id && call.name)

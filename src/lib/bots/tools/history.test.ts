@@ -151,4 +151,40 @@ describe('History tool/artifact memory (soft)', () => {
         expect(compacted[1]!.content).toContain('make it taller')
         expect(compacted[0]!.content).toBe('done')
     })
+
+    it('does not carry uploaded PDF pages into the next question', () => {
+        const history: HistoryTurn[] = [
+            {
+                role: 'user',
+                content: `What is this?\n\n[Document: book.pdf]\n[Page 1]\nPreface secret\n\n[Page 2]\n${'Z'.repeat(80)}`,
+            },
+            {
+                role: 'assistant',
+                content: 'Opened the start.',
+                tool_calls: [
+                    { id: 'r1', name: 'read_document', arguments: JSON.stringify({ name: 'book.pdf', page: 1 }) },
+                ],
+            },
+            {
+                role: 'tool',
+                tool_call_id: 'r1',
+                content: '[book.pdf — page 1 of 40]\n[Page 1]\nPreface secret in full',
+            },
+            {
+                role: 'assistant',
+                content: '',
+                tool_calls: [{ id: 'w1', name: 'web_search', arguments: '{"query":"x"}' }],
+            },
+            { role: 'tool', tool_call_id: 'w1', content: 'search hit stays' },
+        ]
+        const compacted = compactToolHistory(history)
+        const blob = compacted.map((message) => message.content).join('\n')
+        expect(blob).toContain('What is this?')
+        expect(blob).toContain('call read_document')
+        expect(blob).toContain('page=1')
+        expect(blob).toContain('search hit stays')
+        expect(blob).not.toContain('Preface secret')
+        expect(blob).not.toContain('Z'.repeat(40))
+        expect(blob).not.toContain('3 pages')
+    })
 })

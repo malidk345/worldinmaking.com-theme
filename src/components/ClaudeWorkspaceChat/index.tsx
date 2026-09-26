@@ -46,7 +46,7 @@ import { findMatchingWindow } from '../../lib/os/window-finder';
 import { WINDOW_BG } from '../../constants/frostedSurfaces';
 import { getNotebook, getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import { ScratchpadStore } from '../../lib/scratchpad-store';
-import { pdfPromptExcerpt } from '../../lib/pdf-pages';
+import { historyAttachmentNote, historyToolResult, pdfPromptExcerpt } from '../../lib/pdf-pages';
 import { parseDocumentFile } from '../../lib/document-parser';
 import { StudyDeckStore } from '../../lib/study-deck-store';
 import {
@@ -1747,10 +1747,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         if (message.role === 'user' && message.attachments && message.attachments.length > 0) {
           const docSnippet = message.attachments
             .filter((a) => a.type !== 'image' && (a.content || a.contentPreview))
-            .map((a) => `[Document: ${a.name}]\n${(a.content || a.contentPreview || '').slice(0, 3000)}`)
+            .map((a) => historyAttachmentNote(a.name, a.content || a.contentPreview || '', a.type))
             .join('\n\n');
           if (docSnippet && !msgContent.includes(docSnippet.slice(0, 50))) {
-            msgContent = `${msgContent}\n\n${docSnippet}`;
+            msgContent = `${docSnippet}\n\n${msgContent}`;
           }
         }
         conversationHistory.push({
@@ -1779,7 +1779,11 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           conversationHistory.push({
             role: 'tool',
             tool_call_id: trace.id,
-            content: (trace.result || trace.detail || '{"ok":true}').slice(0, 4000),
+            content: historyToolResult(
+              trace.name,
+              trace.arguments,
+              trace.result || trace.detail || '{"ok":true}'
+            ).slice(0, 4000),
           })
         }
       }

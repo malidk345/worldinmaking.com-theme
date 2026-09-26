@@ -15,6 +15,8 @@ describe('uploaded PDF citations', () => {
         expect(seeded.note).toContain('1. Preface of the book.')
         expect(seeded.note).toContain('2. The will to power')
         expect(seeded.note).not.toContain('Z'.repeat(80))
+        expect(seeded.note).toContain('Pages already read are not the length')
+        expect(seeded.note).toContain('follow-up')
         expect(prefixUploadSource('Attached Document: nietzsche.pdf\npage', seeded.citations)).toContain('[P1]')
     })
 

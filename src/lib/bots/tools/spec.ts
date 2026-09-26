@@ -180,7 +180,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'read_document',
             description:
-                'Read one page of an uploaded PDF or a public document. An uploaded PDF is already a source [P#]. Pass name= the filename and page= to read that page in full. Without page=, a multi-page upload returns an index, not the book. Cite the file as [P#] and name the page. Scanned PDFs have no OCR. Empty query match fails closed. Do not quote a page you have not read.',
+                'Read one page of an uploaded PDF or a public document. An uploaded PDF is already a source [P#]. Pass name= the filename and page= to read that page in full. Without page=, a multi-page upload returns an index, not the book. Pages already returned are not the length of the file. On a follow-up or a specific question, call this tool again with page= even if earlier pages are in the chat. Cite the file as [P#] and name the page. Scanned PDFs have no OCR. Empty query match fails closed. Do not quote a page you have not read.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,
@@ -1189,7 +1189,7 @@ PROCESS (host graph: THINK → ACT → TOOLS → THINK → …):
 
 TOOL USE:
 - You decide which tools to call through the OpenAI/Gemini tool channel. The host will not guess your plan. Call zero or more tools, then answer.
-- Match tools to the task. Greetings and questions you already know: reply now, no tools. Independent reads and research (web_search, fetch_url, search_site, academic/corpus) may run together in one ACT — prefer a parallel fan-out of 2–5 targeted queries over serial single-tool rounds.
+- Match tools to the task. Greetings and questions you already know: reply now, no tools. An uploaded PDF is not something you already know. Pages already read are not the length of the file. A follow-up or a specific question must call read_document with name= and page=, even if earlier pages are in the chat. Independent reads and research (web_search, fetch_url, search_site, academic/corpus) may run together in one ACT — prefer a parallel fan-out of 2–5 targeted queries over serial single-tool rounds.
 - A plan is optional. Use todo_write only when sequencing helps. Never invent a plan for a one-step ask.
 - create_artifact is the only way to put an interactive visual canvas, 3D model, parametric simulation, analytics dashboard, diagram, screen, chart, or table on screen. Never print fake function XML or raw markdown fences in the bubble.
 ${ARTIFACT_RECIPES.trimEnd()}
