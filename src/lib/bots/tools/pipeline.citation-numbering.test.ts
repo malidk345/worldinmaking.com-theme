@@ -38,6 +38,8 @@ describe('pipeline citation numbering', () => {
             if (url.includes('core.ac.uk')) return json({ results: [] })
             if (url.includes('plato.stanford.edu')) return new Response('<div class="search_results"></div>')
             if (url.includes('iep.utm.edu')) return json([])
+            if (url.includes('api.openaire.eu')) return json({ results: [] })
+            if (url.includes('zenodo.org')) return json({ hits: { hits: [] } })
             return new Response('nf', { status: 404 })
         }) as unknown as typeof fetch
     })

@@ -35,6 +35,8 @@ const EMPTY: Record<string, () => Response> = {
     sep: () => new Response('<div class="search_results"></div>', { status: 200 }),
     iep: () => json([]),
     iepPosts: () => json([]),
+    openaire: () => json({ results: [] }),
+    zenodo: () => json({ hits: { hits: [] } }),
 }
 
 function hostKey(url: string): string {
@@ -48,6 +50,8 @@ function hostKey(url: string): string {
     if (url.includes('search.trdizin.gov.tr')) return 'trdizin'
     if (url.includes('api.core.ac.uk')) return 'core'
     if (url.includes('doaj.org/api')) return 'doaj'
+    if (url.includes('api.openaire.eu')) return 'openaire'
+    if (url.includes('zenodo.org/api/records')) return 'zenodo'
     if (url.includes('plato.stanford.edu')) return 'sep'
     if (url.includes('iep.utm.edu/wp-json/wp/v2/search')) return 'iep'
     if (url.includes('iep.utm.edu/wp-json/wp/v2/posts')) return 'iepPosts'
@@ -274,6 +278,52 @@ describe('academic search step 2', () => {
             const p = result.papers.find((x) => x.source === 'DOAJ')
             expect(p).toMatchObject({ isOpenAccess: true, pdfUrl: 'https://ethics.example/a.pdf', year: 2019, venue: 'Ethics Open', language: 'en' })
             expect(result.sources?.find((s) => s.source === 'doaj')?.status).toBe('ok')
+        })
+
+        it('maps Zenodo files and OpenAIRE records, and merges a shared DOI', async () => {
+            installFetch({
+                zenodo: () =>
+                    json({
+                        hits: {
+                            hits: [
+                                {
+                                    id: 9,
+                                    metadata: {
+                                        title: 'Virtue ethics and Aristotle today',
+                                        publication_date: '2019-04-01',
+                                        doi: '10.5555/doaj.1',
+                                        access_right: 'open',
+                                        resource_type: { type: 'publication', subtype: 'article' },
+                                        creators: [{ name: 'Ada Lovelace' }],
+                                    },
+                                    files: [{ key: 'paper.pdf', links: { self: 'https://zenodo.org/records/9/files/paper.pdf' } }],
+                                },
+                            ],
+                        },
+                    }),
+                openaire: () =>
+                    json({
+                        results: [
+                            {
+                                id: 'oa-1',
+                                mainTitle: 'A European reading of Aristotle on virtue',
+                                publicationDate: '2020-01-01',
+                                authors: [{ fullName: 'Ada Lovelace' }],
+                                pids: [{ scheme: 'doi', value: '10.5555/oa.2' }],
+                                language: { code: 'eng' },
+                                container: { name: 'Journal of Ethics' },
+                                instances: [{ type: 'Article', urls: ['https://doi.org/10.5555/oa.2'] }],
+                            },
+                        ],
+                    }),
+            })
+            const result = await searchAcademicCorpus('virtue ethics Aristotle', { env: {}, noCache: true })
+            const zenodo = result.papers.find((item) => item.sources?.includes('Zenodo') || item.source === 'Zenodo')
+            const european = result.papers.find((item) => item.title.startsWith('A European reading'))
+            expect(zenodo?.pdfUrl).toBe('https://zenodo.org/records/9/files/paper.pdf')
+            expect(european).toMatchObject({ source: 'OpenAIRE', year: 2020, venue: 'Journal of Ethics', language: 'en', doi: 'https://doi.org/10.5555/oa.2' })
+            expect(result.sources?.find((s) => s.source === 'zenodo')?.status).toBe('ok')
+            expect(result.sources?.find((s) => s.source === 'openaire')?.status).toBe('ok')
         })
 
         it('serializes CORE requests module-wide (keyless 5 req / 10 s) and parks CORE after a 429', async () => {

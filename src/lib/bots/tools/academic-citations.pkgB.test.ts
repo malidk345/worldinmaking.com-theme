@@ -60,6 +60,8 @@ function installFetch(extra?: Handler) {
         if (url.includes('esearch.fcgi')) return json({ esearchresult: { idlist: [] } })
         if (url.includes('export.arxiv.org')) return new Response('<feed></feed>', { status: 200 })
         if (url.includes('trdizin')) return json({ hits: { hits: [] } })
+        if (url.includes('api.openaire.eu')) return json({ results: [] })
+        if (url.includes('zenodo.org')) return json({ hits: { hits: [] } })
         if (url.includes('plato.stanford.edu')) return new Response('<div class="search_results"></div>')
         if (url.includes('iep.utm.edu')) return json([])
         return new Response('nf', { status: 404 })

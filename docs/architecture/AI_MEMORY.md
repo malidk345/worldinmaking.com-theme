@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (OpenAIRE and Zenodo on academic search)
+
+- **Sources:** Keyless OpenAIRE Graph v3 (European publications) and Zenodo (open PDF, thesis, preprint) now run on every academic search, limit 5, in parallel with the others. Same DOI still merges into one card. A failed source stays a status line, not “no literature”.
+- **Not added:** DOAB was returning 500. dblp blocks datacenter clients. The old OpenAIRE search API was retired in May 2026.
+- **Files:** `academic-sources-extra.ts`, `academic-search.ts`, tool spec, source tests.
+
 ### 2026-09-26 — Grok (uploaded PDFs are citable, page by page)
 
 - **Why:** A dropped PDF was read as raw bytes, so the model never saw the text. The composer extracted pages, then the prompt kept only 1,400 characters of page 1, and `read_document` returned no source card.

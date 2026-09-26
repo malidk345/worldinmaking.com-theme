@@ -3,6 +3,8 @@
  *   - TR Dizin (Turkish national citation index; Turkish-language literature)
  *   - CORE v3 (open-access aggregator; keyless quota ≈ 5 single requests / 10 s → serialized)
  *   - DOAJ articles (open-access journals; ≤ 2 requests / s → serialized)
+ *   - OpenAIRE Graph v3 (European publications; keyless)
+ *   - Zenodo records (open files, theses, preprints; keyless, ~30 searches / min)
  *
  * Every function returns AcademicPaper[] or throws AcademicSourceError so the
  * orchestrator can report per-source status.
@@ -26,6 +28,9 @@ const ABSTRACT_KEEP_CHARS = 600
 
 export const coreQueue = createSerialQueue(2_000)
 export const doajQueue = createSerialQueue(500)
+/** Zenodo allows about 30 anonymous searches a minute. */
+export const zenodoQueue = createSerialQueue(2_000)
+export const openaireQueue = createSerialQueue(1_000)
 
 const LANG3_TO_2: Record<string, string> = {
     TUR: 'tr', ENG: 'en', GER: 'de', DEU: 'de', FRE: 'fr', FRA: 'fr', SPA: 'es', ITA: 'it', RUS: 'ru', ARA: 'ar', PER: 'fa', FAS: 'fa',
@@ -313,6 +318,189 @@ export async function queryDoaj(ctx: AcademicSourceContext, text: string, maxWai
                         type: 'article',
                         isOpenAccess: true,
                         source: 'DOAJ',
+                    },
+                ]
+            })
+        },
+        maxWaitMs,
+        ctx.signal
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Zenodo (open files, theses, preprints) and OpenAIRE Graph (European literature)
+// Both are keyless. Duplicate DOIs merge with OpenAlex / Crossref later.
+// ---------------------------------------------------------------------------
+
+const OA_LANG: Record<string, string> = {
+    eng: 'en', en: 'en', deu: 'de', ger: 'de', fra: 'fr', fre: 'fr', spa: 'es', ita: 'it',
+    por: 'pt', tur: 'tr', rus: 'ru', ell: 'el', nld: 'nl', pol: 'pl', swe: 'sv',
+}
+
+function yearOf(value: unknown): number | undefined {
+    const year = Number(String(value || '').slice(0, 4))
+    return Number.isInteger(year) && year > 1000 && year < 3000 ? year : undefined
+}
+
+function oaLanguage(code: unknown): string | undefined {
+    const first = String(code || '').split('/')[0].trim().toLowerCase()
+    if (!first) return undefined
+    if (first.length === 2) return first
+    return OA_LANG[first]
+}
+
+function workTypeFromLabel(raw: unknown): string | undefined {
+    const text = String(raw || '').toLowerCase()
+    if (!text) return undefined
+    if (text.includes('thesis') || text.includes('dissertation')) return 'dissertation'
+    if (text.includes('chapter') || text.includes('section')) return 'book-chapter'
+    if (text.includes('preprint') || text.includes('working')) return 'preprint'
+    if (text.includes('review')) return 'review'
+    if (text.includes('book')) return 'book'
+    if (text.includes('article')) return 'article'
+    return undefined
+}
+
+type ZenodoHit = {
+    id?: number | string
+    doi?: string
+    metadata?: {
+        title?: string
+        doi?: string
+        publication_date?: string
+        description?: string
+        access_right?: string
+        resource_type?: { type?: string; subtype?: string }
+        creators?: Array<{ name?: string; person_or_org?: { name?: string } }>
+        journal?: { title?: string }
+    }
+    files?: Array<{ key?: string; links?: { self?: string } }>
+    links?: { self_html?: string }
+}
+
+function buildZenodoUrl(text: string, ctx: AcademicSourceContext): string {
+    const safe = text.replace(/["\\]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180)
+    const from = ctx.options.yearFrom || ''
+    const to = ctx.options.yearTo || ''
+    const dated = from || to ? ` AND metadata.publication_date:[${from || 1000} TO ${to || 3000}]` : ''
+    const params = new URLSearchParams()
+    params.set('q', `metadata.title:(${safe}) AND resource_type.type:publication${dated}`)
+    params.set('size', String(Math.min(ctx.limit, 5)))
+    params.set('sort', ctx.options.sortBy === 'recent' ? 'mostrecent' : 'bestmatch')
+    params.set('type', 'publication')
+    return `https://zenodo.org/api/records?${params.toString()}`
+}
+
+export async function queryZenodo(ctx: AcademicSourceContext, text: string, maxWaitMs = 3_000): Promise<AcademicPaper[]> {
+    return zenodoQueue.run(
+        async () => {
+            const res = await fetchAcademic(
+                buildZenodoUrl(text, ctx),
+                { headers: { 'User-Agent': userAgent(ctx.keys.contactEmail), Accept: 'application/json' } },
+                EXTRA_TIMEOUT_MS,
+                ctx.signal,
+                { cooldownKey: 'zenodo' }
+            )
+            const data = await readJson<{ hits?: { hits?: ZenodoHit[] } }>(res)
+            const hits = data?.hits?.hits
+            if (!Array.isArray(hits)) throw new AcademicSourceError('parse_error')
+            return hits.slice(0, ctx.limit).flatMap((hit): AcademicPaper[] => {
+                const meta = hit.metadata
+                const title = stripTags(meta?.title || '')
+                if (!title) return []
+                const doi = doiUrl(meta?.doi || hit.doi)
+                const file = (hit.files || []).find((item) => /\.pdf$/i.test(item.key || '') || isPdfLike(item.links?.self || ''))
+                const pdfUrl = file?.links?.self
+                const page = hit.links?.self_html
+                return [
+                    {
+                        id: `zenodo-${hit.id || title.slice(0, 40)}`,
+                        title,
+                        authors: (meta?.creators || [])
+                            .map((creator) => prettifyName(creator.name || creator.person_or_org?.name || ''))
+                            .filter(Boolean)
+                            .slice(0, 8),
+                        year: yearOf(meta?.publication_date),
+                        venue: meta?.journal?.title?.trim() || undefined,
+                        citationCount: 0,
+                        doi,
+                        pdfUrl,
+                        url: pdfUrl ? undefined : page,
+                        abstract: clipText(stripTags(meta?.description || ''), ABSTRACT_KEEP_CHARS),
+                        type: workTypeFromLabel(meta?.resource_type?.subtype || meta?.resource_type?.type),
+                        isOpenAccess: meta?.access_right === 'open' || Boolean(pdfUrl),
+                        source: 'Zenodo',
+                    },
+                ]
+            })
+        },
+        maxWaitMs,
+        ctx.signal
+    )
+}
+
+type OpenAireProduct = {
+    id?: string
+    mainTitle?: string
+    publicationDate?: string
+    descriptions?: string[]
+    authors?: Array<{ fullName?: string }>
+    pids?: Array<{ scheme?: string; value?: string }>
+    language?: { code?: string }
+    container?: { name?: string }
+    instances?: Array<{ type?: string; urls?: string[] }>
+    bestAccessRight?: { label?: string } | string | null
+    openAccessColor?: string | null
+}
+
+function buildOpenAireUrl(text: string, limit: number): string {
+    const params = new URLSearchParams()
+    params.set('search', text.replace(/\s+/g, ' ').trim().slice(0, 200))
+    params.set('type', 'publication')
+    params.set('page', '1')
+    params.set('pageSize', String(Math.min(limit, 5)))
+    return `https://api.openaire.eu/graph/v3/research-products?${params.toString()}`
+}
+
+export async function queryOpenAire(ctx: AcademicSourceContext, text: string, maxWaitMs = 3_000): Promise<AcademicPaper[]> {
+    return openaireQueue.run(
+        async () => {
+            const res = await fetchAcademic(
+                buildOpenAireUrl(text, ctx.limit),
+                { headers: { 'User-Agent': userAgent(ctx.keys.contactEmail), Accept: 'application/json' } },
+                EXTRA_TIMEOUT_MS,
+                ctx.signal,
+                { cooldownKey: 'openaire' }
+            )
+            const data = await readJson<{ results?: OpenAireProduct[] }>(res)
+            if (!data || !Array.isArray(data.results)) throw new AcademicSourceError('parse_error')
+            return data.results.slice(0, ctx.limit).flatMap((item): AcademicPaper[] => {
+                const title = stripTags(item.mainTitle || '')
+                if (!title) return []
+                const doi = doiUrl((item.pids || []).find((pid) => String(pid.scheme || '').toLowerCase() === 'doi')?.value)
+                const urls = (item.instances || []).flatMap((instance) => instance.urls || [])
+                const pdfUrl = urls.find((url) => isPdfLike(url))
+                const landing = urls.find((url) => url.startsWith('http') && !isPdfLike(url))
+                const access = typeof item.bestAccessRight === 'string' ? item.bestAccessRight : item.bestAccessRight?.label
+                return [
+                    {
+                        id: `openaire-${item.id || title.slice(0, 40)}`,
+                        title,
+                        authors: (item.authors || [])
+                            .map((author) => prettifyName(author.fullName || ''))
+                            .filter(Boolean)
+                            .slice(0, 8),
+                        year: yearOf(item.publicationDate),
+                        venue: item.container?.name?.trim() || undefined,
+                        citationCount: 0,
+                        doi,
+                        pdfUrl,
+                        url: pdfUrl ? undefined : landing,
+                        abstract: clipText(stripTags((item.descriptions || [])[0] || ''), ABSTRACT_KEEP_CHARS),
+                        language: oaLanguage(item.language?.code),
+                        type: workTypeFromLabel(item.instances?.[0]?.type),
+                        isOpenAccess: Boolean(pdfUrl) || /open/i.test(String(access || item.openAccessColor || '')),
+                        source: 'OpenAIRE',
                     },
                 ]
             })

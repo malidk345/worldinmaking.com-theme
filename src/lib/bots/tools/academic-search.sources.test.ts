@@ -29,6 +29,8 @@ const EMPTY: Record<string, () => Response> = {
     esearch: () => json({ esearchresult: { idlist: [] } }),
     arxiv: () => new Response('<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"></feed>', { status: 200 }),
     unpaywall: () => json({ is_oa: false }),
+    openaire: () => json({ results: [] }),
+    zenodo: () => json({ hits: { hits: [] } }),
 }
 
 function hostKey(url: string): string {
@@ -40,6 +42,8 @@ function hostKey(url: string): string {
     if (url.includes('esummary.fcgi')) return 'esummary'
     if (url.includes('export.arxiv.org')) return 'arxiv'
     if (url.includes('api.unpaywall.org')) return 'unpaywall'
+    if (url.includes('api.openaire.eu')) return 'openaire'
+    if (url.includes('zenodo.org/api/records')) return 'zenodo'
     return 'other'
 }
 
