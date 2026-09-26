@@ -53,3 +53,6 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+## 2024-05-24 - React Object.is Equality on Resize Hooks
+**Learning:** Returning a newly minted object (like `getBreakpoints(width)`) on high-frequency events like `resize` defeats React's `Object.is` bailout mechanism, causing all consumers to re-render even if the boolean properties remain identical.
+**Action:** Always implement a manual property-equality check inside the functional state updater (e.g., `setBreakpoints(prev => deepEqual(prev, next) ? prev : next)`) to ensure React can safely bail out when the logical state is unmodified.
