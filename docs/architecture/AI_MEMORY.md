@@ -3109,3 +3109,15 @@
 - **Commands run:** `pnpm typecheck:shell` (0 shell errors), `pnpm lint:shell` (0 errors)
 - **Pass/Fail:** PASS
 - **Handoff:** Dev server active on `http://localhost:3000`.
+
+### 2026-09-23 — Jules (security fix: missing authorization check in /api/chat-quota)
+
+- **Scope:** Added authentication check to `/api/chat-quota` edge API endpoint to prevent unauthenticated quota enumeration / probing.
+- **Root Cause:** `/api/chat-quota` handler checked `getSupabaseUserFromRequest(req)` but fell back to guest/IP-based quota checks instead of rejecting unauthenticated requests.
+- **Fixes Applied:**
+  1. `src/pages/api/chat-quota.ts`: Implemented explicit user check `if (!user) return json({ error: 'sign in required' }, 401)`.
+  2. `tests/api-security.spec.ts`: Added Playwright security test verifying unauthenticated requests to `/api/chat-quota` receive HTTP 401.
+  3. `docs/architecture/AI_MEMORY.md`: Updated active task status to IDLE and logged change details.
+- **Verification:**
+  - `pnpm run typecheck:shell`: Passed with zero shell errors.
+  - `pnpm exec playwright test tests/api-security.spec.ts`: 4/4 tests passed.
