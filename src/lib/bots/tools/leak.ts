@@ -243,6 +243,17 @@ export function stripLeakedToolMarkup(value: string): string {
     return text
 }
 
+/**
+ * Per streamed chunk. The full-text strip trims, so "Hello" + " world" becomes
+ * "Helloworld" if each piece is trimmed before it is joined. When the chunk
+ * has no leak, keep it exactly — including the space at the edge.
+ */
+export function stripLeakedToolMarkupForStream(value: string): string {
+    if (!value) return ''
+    const stripped = stripLeakedToolMarkup(value)
+    return stripped === value.trim() ? value : stripped
+}
+
 export function splitLeakedToolContent(value: string): { calls: ToolCall[]; cleaned: string } {
     return {
         calls: parseLeakedToolCalls(value),
