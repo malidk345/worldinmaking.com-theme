@@ -95,4 +95,33 @@ describe('anthropicToolCompletion', () => {
             ])
         }
     })
+
+    it('sends host context on the system channel once, not the frozen prompt plus a copy', async () => {
+        let body: { system?: string } = {}
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async (_url: string, init: RequestInit) => {
+                body = JSON.parse(String(init.body))
+                return { ok: true, status: 200, body: null, text: async () => '' }
+            })
+        )
+
+        const result = await anthropicToolCompletion({
+            apiKey: 'test-key',
+            model: 'claude-test',
+            systemPrompt: 'BASE',
+            messages: [
+                { role: 'system', content: 'BASE\n\n<system_reminder>\nContinue the section.\n</system_reminder>' },
+                { role: 'user', content: 'go on' },
+            ],
+            toolChoice: 'none',
+            omitTools: true,
+            timeoutMs: 5_000,
+        })
+
+        expect(result.ok).toBe(false)
+        const system = body.system || ''
+        expect(system).toContain('Continue the section.')
+        expect(system.split('BASE').length - 1).toBe(1)
+    })
 })

@@ -24,7 +24,7 @@ import {
     type AgentNodeName,
 } from '../agent/modes'
 import { executeToolCall, resolveToolName, type ToolCall, type ToolExecution } from './execute'
-import { splitLeakedToolContent, stripLeakedToolMarkup } from './leak'
+import { splitLeakedToolContent, stripLeakedToolMarkup, stripLeakedToolMarkupForStream } from './leak'
 import type { HostOsAction, HostSnapshot } from './host'
 import { toolActivityTitle, toolResultSummary } from './labels'
 import type { EnvStore } from '../runtime-env'
@@ -624,7 +624,7 @@ async function runDecisionNode(state: AgentState, params: AgentPipelineParams): 
 
     let deliveredPublic = ''
     const emitPublic = (text: string) => {
-        const cleaned = stripLeakedToolMarkup(text)
+        const cleaned = stripLeakedToolMarkupForStream(text)
         if (!cleaned) return
         if (
             params.holdPublicUntilCitations &&

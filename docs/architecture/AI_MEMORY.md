@@ -68,6 +68,15 @@
 - **Files:** `src/lib/bots/tools/turn-tools.ts` (+ test), `src/lib/bots/tools/loop.ts`.
 - **Verify:** `src/lib/bots/tools/turn-tools.test.ts`. No Playwright (user directive).
 
+### 2026-09-26 — Grok (fix: streamed words no longer glue; Gemini and Anthropic see host notes)
+
+- **Symptom:** While an answer was still streaming, words stuck together (`Helloworld`) until the finished bubble replaced the draft. Multi-step writing (plan board, “keep writing”, memories) never reached Gemini, and Anthropic received the base prompt twice plus the notes.
+- **Stream:** `stripLeakedToolMarkup` trims, which is right for the stored answer and wrong per SSE chunk. `stripLeakedToolMarkupForStream` keeps a clean chunk exactly, including the space at the edge, and still strips a leaked tool call. Used in `pipeline.emitPublic` and the tools-off answer retry. The finished answer is still trimmed.
+- **Host channel:** Plan board, private thought, memories and continue-nudges are written onto `messages[0]` after the base system string is frozen. Gemini sent that frozen string as `systemInstruction` and skipped system turns. Anthropic sent the frozen string and every system turn. `systemTextFromMessages` sends the live system turn once (fallback only when there is no system message). Notebook body was already in the user prompt; this does not move it.
+- **Not changed:** weekly token meter, limits, tool schemas. Academic search still re-sends the full tool list on every act round; the sidebar does not count that schema.
+- **Files:** `src/lib/bots/tools/{leak,pipeline,loop,gemini,anthropic}.ts`, `system-channel.ts` (new), tests alongside.
+- **Verify:** focused unit tests in those files. No Playwright (user directive).
+
 ### 2026-09-26 — Grok (fix: Ask AI composer must not adopt an old chat; budget status lives in the sidebar)
 
 - **Symptom:** Opening WIM AI and starting to type sometimes swapped the blank composer for the newest stored thread. At the same moment the composer showed “checking weekly budget…”.
