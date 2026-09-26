@@ -97,17 +97,23 @@ export function escapeBibtex(value: string): string {
         .join('\\textbackslash{}')
 }
 
+// Unicode classes via the RegExp constructor (repo convention: the root tsconfig targets ES5,
+// where `/…/u` literals are TS1501 errors under a full `tsc`).
+const NON_LETTER_RE = new RegExp('[^\\p{L}]', 'gu')
+const UPPER_RE = new RegExp('\\p{Lu}', 'u')
+const NON_ALNUM_RE = new RegExp('[^\\p{L}\\p{N}]+', 'u')
+
 /** Keeps capitals where styles would lowercase them: {DNA}, {iPhone}, {Heidegger}'s proper nouns are left to the style. */
 function protectTitle(value: string): string {
     return escapeBibtex(value)
         .split(' ')
         .map((word) => {
-            const letters = word.replace(/[^\p{L}]/gu, '')
+            const letters = word.replace(NON_LETTER_RE, '')
             // Acronyms / mixed case (DNA, COVID-19, iPhone, McDowell) keep their capitals.
-            const mixed = /\p{Lu}/u.test(letters.slice(1)) && !/^\\/.test(word)
+            const mixed = UPPER_RE.test(letters.slice(1)) && !/^\\/.test(word)
             if (!mixed) return word
             // Brace the word itself, not trailing punctuation: "{DNA}:" rather than "{DNA:}".
-            const m = /^(.*?)([.,:;!?)\]]*)$/u.exec(word) as RegExpExecArray
+            const m = /^(.*?)([.,:;!?)\]]*)$/.exec(word) as RegExpExecArray
             return `{${m[1]}}${m[2]}`
         })
         .join(' ')
@@ -230,7 +236,7 @@ export function citationExportFile(
 ): { filename: string; mime: string; text: string } {
     const safe =
         baseName
-            .split(/[^\p{L}\p{N}]+/u)
+            .split(NON_ALNUM_RE)
             .map(asciiFold)
             .filter(Boolean)
             .join('-')

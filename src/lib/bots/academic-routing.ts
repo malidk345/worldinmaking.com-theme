@@ -7,6 +7,9 @@
  * those trigger phrases; this adds a per-turn nudge ONLY when the user's
  * message matches (English + Turkish), so ordinary turns pay no extra tokens.
  * It is advice for the model, never an automatic tool call.
+ *
+ * Note: without the `u` flag `\b` is ASCII-only, so a Turkish word ending in a
+ * non-ASCII letter ("kaynakçası") needs an explicit letter lookahead instead.
  */
 
 export type AcademicRouteIntent = 'citations' | 'references' | 'similar' | 'quotes'
@@ -18,7 +21,7 @@ const INTENT_PATTERNS: Array<{ intent: AcademicRouteIntent; re: RegExp }> = [
     },
     {
         intent: 'references',
-        re: /\bwhat (?:does|did) .{1,120}? cite\b|\bwhich (?:works|papers|sources) (?:does|did) .{1,120}? cite\b|\b(?:its|their|the paper['’]?s|the article['’]?s|this paper['’]?s) (?:references|bibliography|reference list|sources)\b|\bworks? (?:it|they|this paper) cites?\b|\bcited (?:in|by) (?:this|that|the) (?:paper|article)['’]?s? (?:references|bibliography)\b|kaynakçası(?:nda|ndaki)?\b|(?:hangi|neler(?:e|i)) (?:kaynaklara|çalışmalara|eserlere) atıf (?:yap|ver)/i,
+        re: /\bwhat (?:does|did) .{1,120}? cite\b|\bwhich (?:works|papers|sources) (?:does|did) .{1,120}? cite\b|\b(?:its|their|the paper['’]?s|the article['’]?s|this paper['’]?s) (?:references|bibliography|reference list|sources)\b|\bworks? (?:it|they|this paper) cites?\b|\bcited (?:in|by) (?:this|that|the) (?:paper|article)['’]?s? (?:references|bibliography)\b|kaynakçası(?:nda|ndaki)?(?![a-zçğıöşü])|(?:hangi|neler(?:e|i)) (?:kaynaklara|çalışmalara|eserlere) atıf (?:yap|ver)/i,
     },
     {
         intent: 'citations',

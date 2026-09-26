@@ -176,7 +176,7 @@ describe('find_quotes (grounded verbatim passages)', () => {
         expect(status(res, 's2_snippets')).toMatchObject({ status: 'failed', reason: 'rate_limited', keyed: true })
     })
 
-    it('falls back to the open-access PDF through read_document with an approximate page label', async () => {
+    it('falls back to the legacy scan of the open-access PDF with an approximate page label', async () => {
         const { calls } = installFetch({
             epmcSearch: () => json({ resultList: { result: [] } }),
             core: () => json({ results: [] }),
@@ -184,7 +184,8 @@ describe('find_quotes (grounded verbatim passages)', () => {
         })
         const res = await findGroundedQuotes({ raw: DOI, doi: DOI }, 'essence of technology', { env: {}, noCache: true })
         expect(res.ok).toBe(true)
-        expect(calls.some((c) => c.key === 'pdf')).toBe(true)
+        // pdf.js cannot open this PDF: the legacy scan reuses the same download (was fetched twice).
+        expect(calls.filter((c) => c.key === 'pdf')).toHaveLength(1)
         expect(status(res, 'europepmc')).toMatchObject({ status: 'skipped', reason: 'no_fulltext', note: 'not in Europe PMC' })
         expect(status(res, 'core')).toMatchObject({ status: 'skipped', note: 'not in CORE' })
         expect(res.quotes[0]).toMatchObject({ source: 'oa_pdf', location: 'open-access PDF, text block 1 (approximate page)' })

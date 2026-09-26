@@ -400,8 +400,8 @@ async function coreFullText(doi: string | undefined, title: string | undefined, 
 /**
  * OA PDF / full-text page. PDFs go through the pdf.js extractor (compressed /
  * object-stream PDFs such as DergiPark's, every page within PDF_TEXT_LIMITS,
- * real page numbers); HTML landing pages and PDFs pdf.js cannot open fall back
- * to the read_document reader as before.
+ * real page numbers). PDFs pdf.js cannot open use the legacy byte scan of the
+ * same download (no second fetch); HTML landing pages go through read_document.
  */
 async function readDocumentChunks(url: string, signal?: AbortSignal): Promise<{ chunks: Array<{ label: string; text: string }>; note?: string }> {
     const pdf = await readRemotePdfPages(url, signal)
@@ -414,10 +414,18 @@ async function readDocumentChunks(url: string, signal?: AbortSignal): Promise<{ 
     } else if (pdf.fetchFailed) {
         throw Object.assign(new AcademicSourceError('http_error'), { note: truncateAtWord(pdf.error, 90) })
     }
-    const read = await executeReadDocument({ url }, undefined, signal)
-    if (signal?.aborted) throw abortError()
-    if (!read.ok) throw Object.assign(new AcademicSourceError('http_error'), { note: truncateAtWord(read.error, 90) })
-    const body = read.text.replace(/^\[Document Content for [^\]]*\]\n?/, '')
+    let body: string
+    if (!pdf.ok && pdf.legacyText !== undefined) {
+        // A PDF pdf.js could not read: the reader already ran the legacy scan on the same bytes.
+        if (!pdf.legacyText) throw Object.assign(new AcademicSourceError('http_error'), { note: truncateAtWord(pdf.error, 90) })
+        body = pdf.legacyText
+    } else {
+        // HTML landing page / not a PDF: the read_document reader as before.
+        const read = await executeReadDocument({ url }, undefined, signal)
+        if (signal?.aborted) throw abortError()
+        if (!read.ok) throw Object.assign(new AcademicSourceError('http_error'), { note: truncateAtWord(read.error, 90) })
+        body = read.text.replace(/^\[Document Content for [^\]]*\]\n?/, '')
+    }
     const parts = body.split(/\[Page (\d+)\]\n?/)
     if (parts.length <= 1) return { chunks: [{ label: 'open-access full-text page', text: body }] }
     const chunks: Array<{ label: string; text: string }> = []

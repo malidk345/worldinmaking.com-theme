@@ -253,7 +253,28 @@ async function decodePdf(bytes: Uint8Array, truncated: boolean, signal?: AbortSi
 
 export type RemotePdfPages =
     | { ok: true; pdf: PdfTextResult; url: string }
-    | { ok: false; error: string; notPdf?: boolean; fetchFailed?: boolean }
+    | {
+          ok: false
+          error: string
+          notPdf?: boolean
+          fetchFailed?: boolean
+          /**
+           * pdf.js could not read the downloaded PDF (or found no text): the legacy BT…ET scan of
+           * the same bytes, formatted like read_document (`[Page N]` blocks, ≤ MAX_DOC_CHARS).
+           * '' when that found nothing either. Callers use it instead of downloading the PDF again.
+           */
+          legacyText?: string
+      }
+
+/** Legacy byte-scan text in read_document's shape (approximate `[Page N]` blocks, capped). */
+function legacyPdfText(bytes: Uint8Array): string {
+    const pages = extractPdfTextFast(bytes.byteLength > MAX_BYTES ? bytes.slice(0, MAX_BYTES) : bytes)
+    const text = pages
+        .map((p, idx) => (p.trim() ? `[Page ${idx + 1}]\n${p}` : ''))
+        .filter(Boolean)
+        .join('\n\n')
+    return !text.trim() || isPdfWithoutText(text) ? '' : text.slice(0, MAX_DOC_CHARS)
+}
 
 /**
  * All pages of a remote PDF (within PDF_TEXT_LIMITS) for callers that search
@@ -272,6 +293,11 @@ export async function readRemotePdfPages(rawUrl: string, signal?: AbortSignal): 
         const contentType = (fetched.res.headers.get('content-type') || '').toLowerCase()
         const declared = Number(fetched.res.headers.get('content-length') || 0)
         if (declared > PDF_TEXT_LIMITS.maxBytes) {
+            try {
+                await fetched.res.body?.cancel()
+            } catch {
+                /* ignore */
+            }
             return { ok: false, error: `PDF is larger than ${Math.round(PDF_TEXT_LIMITS.maxBytes / 1_000_000)} MB` }
         }
         if (contentType.includes('text/html')) {
@@ -284,10 +310,28 @@ export async function readRemotePdfPages(rawUrl: string, signal?: AbortSignal): 
         }
         const { bytes, truncated } = await readBodyCapped(fetched.res, PDF_TEXT_LIMITS.maxBytes)
         if (!looksLikePdf(bytes)) return { ok: false, error: 'not a PDF', notPdf: true }
-        if (truncated) return { ok: false, error: `PDF is larger than ${Math.round(PDF_TEXT_LIMITS.maxBytes / 1_000_000)} MB` }
+        if (truncated) {
+            // Too large for pdf.js; the legacy scan reads the first 500 KB we already hold.
+            return { ok: false, error: `PDF is larger than ${Math.round(PDF_TEXT_LIMITS.maxBytes / 1_000_000)} MB`, legacyText: legacyPdfText(bytes) }
+        }
         clearTimeout(timer) // the download finished; extraction has its own time budget
-        const pdf = await extractPdfPages(bytes, { signal })
-        return { ok: true, pdf, url: fetched.currentUrl }
+        let pdf: PdfTextResult | null = null
+        let extractError = ''
+        try {
+            pdf = await extractPdfPages(bytes, { signal })
+        } catch (error) {
+            if (signal?.aborted) throw error
+            extractError = error instanceof Error ? error.message : 'PDF read failed'
+        }
+        if (pdf && pdf.pages.some((p) => p.text.trim())) return { ok: true, pdf, url: fetched.currentUrl }
+        // pdf.js could not open it / found no text: scan the bytes already in memory rather than
+        // letting the caller download (up to 12 MB) and run pdf.js on the same file a second time.
+        const legacyText = legacyPdfText(bytes)
+        return {
+            ok: false,
+            error: legacyText ? (extractError || 'no text layer').slice(0, 180) : 'PDF contained no readable text or is image-only scan',
+            legacyText,
+        }
     } catch (error) {
         if (signal?.aborted) return { ok: false, error: 'client request aborted' }
         const message = error instanceof Error ? error.message : 'PDF read failed'

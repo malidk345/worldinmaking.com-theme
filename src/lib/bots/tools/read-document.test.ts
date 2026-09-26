@@ -137,4 +137,23 @@ describe('executeReadDocument remote PDFs (pdf.js first, legacy scan preserved)'
         expect(await readRemotePdfPages('https://1.1.1.1/missing.pdf')).toMatchObject({ ok: false, fetchFailed: true, error: 'document fetch failed (404)' })
         expect(await readRemotePdfPages('http://127.0.0.1/secret.pdf')).toMatchObject({ ok: false, fetchFailed: true })
     })
+
+    it('readRemotePdfPages: a PDF pdf.js cannot open is scanned from the same download (no second fetch)', async () => {
+        const fetchMock = vi.fn(
+            async () =>
+                new Response(`%PDF-1.4\n1 0 obj\n<< >>\nstream\nBT\n/F1 12 Tf\n(Legacy text survives) Tj\nET\nendstream\nendobj\n%%EOF`, {
+                    status: 200,
+                    headers: { 'content-type': 'application/pdf' },
+                })
+        )
+        vi.stubGlobal('fetch', fetchMock)
+        const res = await readRemotePdfPages('https://1.1.1.1/legacy.pdf')
+        expect(res).toMatchObject({ ok: false, legacyText: '[Page 1]\nLegacy text survives' })
+        expect(fetchMock).toHaveBeenCalledTimes(1)
+        // Image-only / empty PDF: nothing from either reader, still one download.
+        fetchMock.mockClear()
+        fetchMock.mockImplementation(async () => new Response('%PDF-1.4\n%%EOF', { status: 200, headers: { 'content-type': 'application/pdf' } }))
+        expect(await readRemotePdfPages('https://1.1.1.1/scan.pdf')).toMatchObject({ ok: false, legacyText: '' })
+        expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
 })

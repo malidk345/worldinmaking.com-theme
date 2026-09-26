@@ -127,10 +127,6 @@ function linkOf(c: StyledCitation): string {
     return citationDoiUrl(c) || c.oaUrl || c.pdfUrl || c.url || ''
 }
 
-function parsedAuthors(c: StyledCitation): ParsedPersonName[] {
-    return (c.authors || []).map(parsePersonName).filter((n): n is ParsedPersonName => Boolean(n))
-}
-
 /** "Heidegger, Martin" (inverted) or "Martin Heidegger" (natural order); organisations verbatim. */
 function fullName(n: ParsedPersonName, inverted: boolean): string {
     if (n.corporate) return n.full

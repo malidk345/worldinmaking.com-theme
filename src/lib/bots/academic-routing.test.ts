@@ -10,6 +10,8 @@ describe('academic routing hints', () => {
         ['What does P2 cite?', ['references']],
         ['Show me the paper’s references', ['references']],
         ['P1’in kaynakçasında neler var?', ['references']],
+        ['Bu makalenin kaynakçası nedir?', ['references']],
+        ['P2 kaynakçası', ['references']],
         ['Give me similar papers to P4', ['similar']],
         ['more like this one please', ['similar']],
         ['Buna benzer makaleler öner', ['similar']],

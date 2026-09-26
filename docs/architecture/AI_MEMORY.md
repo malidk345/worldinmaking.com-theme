@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok Bot / Cursor (fix: package E follow-up — full-tsc errors, Turkish routing hint, single PDF download)
+
+- **Scope:** Audit follow-up on `feat/citations-pkgE` (#848) after merging `main` (#847). No behavior change beyond the fixes below; no Supabase, quota, font, wallpaper or window-animation changes.
+- **Fixes:** (1) `citation-export.ts`: the four `/…/u` regex literals were TS1501 errors under a full `tsc` (root tsconfig targets ES5) — now `new RegExp(…, 'u')` constants, the repo convention; unused `parsedAuthors` removed from `citation-styles.ts` (TS6133). (2) `academic-routing.ts`: `kaynakçası\b` never matched "…kaynakçası nedir?" / "P2 kaynakçası" because `\b` is ASCII-only without the `u` flag (ı is a non-word char) — explicit Turkish-letter lookahead. (3) `readRemotePdfPages` (`tools/read-document.ts`): when pdf.js cannot open a downloaded PDF, finds no text, or the PDF exceeds 12 MB, it now returns the legacy `BT…ET` scan of the bytes it already holds (`legacyText`, same `[Page N]` shape / 12k cap as `read_document`); `find_quotes` (`academic-quotes.ts` `readDocumentChunks`) uses it instead of calling `read_document`, which downloaded the PDF again (up to 12 MB) and re-ran pdf.js (up to 8 s CPU) on the same file. A declared-oversize response body is now cancelled.
+- **Tests:** `academic-routing.test.ts` (+2 Turkish cases), `read-document.test.ts` (one download for an unreadable / empty PDF), `academic-quotes.step3.test.ts` (legacy fallback asserts a single PDF download). All four fail on the previous code.
+
 ### 2026-09-25 — Grok Bot / Cursor (feature: package E — citation export, citation styles, compressed PDFs for quotes, academic tool routing)
 
 - **Scope:** Items E1–E4. Branch `feat/citations-pkgE` from `main` (`d2ff3e8d`), not stacked on #847 (package D). No Supabase schema/data, quota, font, wallpaper or window-animation changes. New dependency: `unpdf@1.8.1` (pnpm 10.23 lockfile, +14 lines).
