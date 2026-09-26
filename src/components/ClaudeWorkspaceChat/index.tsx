@@ -260,7 +260,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   const [settings, setSettings] = useState<UserSettings>(() => readLocalSettings(getDefaultWorkspaceSettings()));
 
-  const { addWindow, closeWindow, updateWindow, bringToFront, setChatParams, updateSiteSettings } = useAppActions();
+  const { addWindow, closeWindow, updateWindow, setWindowTitle, bringToFront, setChatParams, updateSiteSettings } = useAppActions();
   const { addToast } = useToast();
   const { chatParams } = useAppUIState();
   const { siteSettings } = useAppSettings();
@@ -695,8 +695,10 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (!voice || !askWindow) return
     const title = `Ask AI · ${voice.name}`
     if (askWindow.title === title) return
-    updateWindow(askWindow, { title })
-  }, [selectedModelId, models, appWindows, updateWindow])
+    // setWindowTitle, not updateWindow: WindowUpdate has no `title`, so updateWindow dropped it,
+    // the title never matched, and this effect re-ran setWindows forever ("Maximum update depth").
+    setWindowTitle(askWindow, title)
+  }, [selectedModelId, models, appWindows, setWindowTitle])
 
   const flushLocalChats = useCallback((next: Chat[] = chatsRef.current) => {
     try {
