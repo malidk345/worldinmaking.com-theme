@@ -4,6 +4,12 @@
  * That is expected in the OS shell (overlapping window routes).
  * Dev overlay still treats the unhandled rejection as a crash unless
  * `push`/`replace` catch it.
+ *
+ * With rewrites in next.config.js, hydration runs `router.replace` to the
+ * current URL. If the build manifest does not load in 3.8s (slow mobile),
+ * Next wants a hard reload of that same URL, refuses it to avoid a reload
+ * loop, and rejects with `Invariant: attempted to hard navigate to the same
+ * URL`. The page is already rendered, so that rejection is also harmless.
  */
 
 export function isCancelledRouteError(reason: unknown): boolean {
@@ -20,6 +26,12 @@ export function isCancelledRouteError(reason: unknown): boolean {
     return /cancel(?:led)? render(?:ing)? route/i.test(message)
 }
 
+export function isSameUrlHardNavigationError(reason: unknown): boolean {
+    const message =
+        reason instanceof Error ? reason.message : typeof reason === 'string' ? reason : ''
+    return /attempted to hard navigate to the same URL/i.test(message)
+}
+
 type NavFn = (...args: unknown[]) => unknown
 
 function wrapNav(fn: NavFn): NavFn {
@@ -27,7 +39,7 @@ function wrapNav(fn: NavFn): NavFn {
         const result = fn.apply(this, args)
         if (result && typeof (result as Promise<unknown>).then === 'function') {
             return (result as Promise<unknown>).catch((err) => {
-                if (isCancelledRouteError(err)) return false
+                if (isCancelledRouteError(err) || isSameUrlHardNavigationError(err)) return false
                 throw err
             })
         }
