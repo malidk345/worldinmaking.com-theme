@@ -152,7 +152,7 @@ function bibtexType(c: ExportableCitation): { type: string; container?: string }
 export function citationToBibtex(c: ExportableCitation, key: string): string {
     const { type, container } = bibtexType(c)
     const doi = bareDoi(c.doi) || bareDoi(c.url)
-    const url = doi ? `https://doi.org/${doi}` : c.url || c.oaUrl || c.pdfUrl || ''
+    const url = doi ? `https://doi.org/${doi}` : c.kind === 'upload' ? '' : c.url || c.oaUrl || c.pdfUrl || ''
     const fields: Array<[string, string]> = []
     const authors = bibtexAuthors(c)
     if (authors) fields.push(['author', authors])
@@ -161,7 +161,9 @@ export function citationToBibtex(c: ExportableCitation, key: string): string {
     if (c.year) fields.push(['year', String(c.year)])
     if (doi) fields.push(['doi', verbatim(doi)])
     if (url) fields.push(['url', verbatim(url)])
-    if (c.kind === 'encyclopedia' || c.kind === 'web') fields.push(['note', c.kind === 'encyclopedia' ? 'Encyclopedia entry' : 'Web page'])
+    if (c.kind === 'encyclopedia' || c.kind === 'web' || c.kind === 'upload') {
+        fields.push(['note', c.kind === 'encyclopedia' ? 'Encyclopedia entry' : c.kind === 'upload' ? 'Uploaded file' : 'Web page'])
+    }
     if (c.retracted) fields.push(['note', 'Retracted'])
     // Two notes → merge (BibTeX keeps only one field per name).
     const merged: Array<[string, string]> = []

@@ -109,7 +109,7 @@ type WorkShape = 'article' | 'book' | 'chapter' | 'encyclopedia' | 'web' | 'thes
 
 export function citationWorkShape(c: StyledCitation): WorkShape {
     if (c.kind === 'encyclopedia') return 'encyclopedia'
-    if (c.kind === 'web') return 'web'
+    if (c.kind === 'upload' || c.kind === 'web') return 'web'
     const type = String(c.workType || '').toLowerCase()
     if (type === 'book' || type === 'monograph' || type === 'edited-book' || type === 'reference-book') return 'book'
     if (type === 'book-chapter' || type === 'chapter' || type === 'book-section' || type === 'reference-entry') return 'chapter'
@@ -211,6 +211,11 @@ export function formatChicagoReference(c: StyledCitation): string {
 
 /** One reference in the chosen style (APA 7 is the default and unchanged). */
 export function formatReference(c: StyledCitation, style: CitationStyle = DEFAULT_CITATION_STYLE): string {
+    if (c.kind === 'upload') {
+        const title = String(c.title || 'Uploaded file').replace(/\s+/g, ' ').trim()
+        const where = String(c.venue || 'Uploaded file').replace(/\s+/g, ' ').trim()
+        return `${title}. ${where}.`
+    }
     if (style === 'mla') return formatMlaReference(c)
     if (style === 'chicago') return formatChicagoReference(c)
     return formatApaReference(c)

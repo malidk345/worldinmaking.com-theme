@@ -51,7 +51,7 @@ export interface AiLifecycleEvent {
     provider?: AiPublicProvider
 }
 
-export type AiCitationKind = 'paper' | 'encyclopedia' | 'web'
+export type AiCitationKind = 'paper' | 'encyclopedia' | 'web' | 'upload'
 
 export interface AiCitation {
     id: number

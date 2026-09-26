@@ -5,6 +5,7 @@ import { artifactContentError } from '../../artifacts/validate-source'
 import type { EnvStore } from '../runtime-env'
 import { formatSearchResults, searchWebSources } from '../web-search'
 import { academicResultsToCitations } from '../academic-citations'
+import { prefixUploadSource } from '../upload-citations'
 import { fetchPublicUrl, isBlockedFetchUrl, assertPublicHostname } from './fetch-url'
 import {
     searchAcademicCorpus,
@@ -2057,7 +2058,7 @@ export async function executeToolCall(
                 const result = JSON.stringify({ ok: false, error: executed.error })
                 return { ...base, ok: false, result, summary: toolResultSummary(name, false, result) }
             }
-            const result = clip(executed.text, MAX_READ_RESULT)
+            const result = clip(prefixUploadSource(executed.text, context.citations), MAX_READ_RESULT)
             return { ...base, ok: true, result, summary: toolResultSummary(name, true, result) }
         }
         if (name === 'write_scratchpad') {

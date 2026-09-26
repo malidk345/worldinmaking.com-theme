@@ -39,5 +39,6 @@ describe('pdf page slices', () => {
         expect(blurb).toContain('read_document')
         expect(blurb).toContain('Preface')
         expect(blurb).not.toContain('Closing remarks')
+        expect(blurb).toContain('Do not quote a page you have not read')
     })
 })

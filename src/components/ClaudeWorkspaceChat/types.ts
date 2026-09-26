@@ -104,7 +104,7 @@ export interface Artifact {
   toolCallId?: string
 }
 
-export type WebCitationKind = 'paper' | 'encyclopedia' | 'web'
+export type WebCitationKind = 'paper' | 'encyclopedia' | 'web' | 'upload'
 
 /**
  * A source shown in the Sources panel. Academic fields are optional so

@@ -4,8 +4,10 @@
  */
 
 import { PDF_NO_TEXT } from './pdf-pages'
+import { pdfItemsToText } from './bots/pdf-text'
 
 export const PDF_EXTRACT_PAGE_CAP = 200
+const PDF_EXTRACT_CHAR_CAP = 380_000
 
 export type PdfExtractResult = {
     text: string
@@ -54,10 +56,11 @@ export async function extractTextFromPdf(file: File | ArrayBuffer | Uint8Array):
             try {
                 const page = await pdf.getPage(pageNum)
                 const textContent = await page.getTextContent()
-                const items = textContent.items
-                    .map((item: { str?: string }) => ('str' in item ? item.str : ''))
-                    .filter(Boolean)
-                const pageBody = items.join(' ').replace(/\s+/g, ' ').trim()
+                const items = (textContent.items as Array<{ str?: string; hasEOL?: boolean }>).map((item) => ({
+                    str: typeof item.str === 'string' ? item.str : '',
+                    hasEOL: Boolean(item.hasEOL),
+                }))
+                const pageBody = pdfItemsToText(items)
                 if (pageBody) {
                     pageTexts.push(`[Page ${pageNum}]\n${pageBody}`)
                 }
@@ -66,16 +69,22 @@ export async function extractTextFromPdf(file: File | ArrayBuffer | Uint8Array):
             }
         }
 
-        const text = pageTexts.join('\n\n')
+        let kept = pageTexts
+        let charTruncated = false
+        while (kept.join('\n\n').length > PDF_EXTRACT_CHAR_CAP && kept.length > 1) {
+            kept = kept.slice(0, -1)
+            charTruncated = true
+        }
+        const text = kept.join('\n\n')
         if (!text.trim()) {
             return { ...empty, pageCount, truncated: pageCount > limit }
         }
         return {
             text,
             pageCount,
-            extractedPages: pageTexts.length,
+            extractedPages: kept.length,
             hasText: true,
-            truncated: pageCount > limit,
+            truncated: pageCount > limit || charTruncated,
         }
     } catch (err) {
         console.error('[PDF Parser] pdfjs extraction failed:', err)

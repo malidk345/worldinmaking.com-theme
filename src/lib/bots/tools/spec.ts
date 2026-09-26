@@ -180,7 +180,7 @@ export const OPENAI_CHAT_TOOLS: OpenAiToolSpec[] = [
         function: {
             name: 'read_document',
             description:
-                'Read a PDF or workspace document. For an uploaded PDF, pass name as the filename (or omit name to use the latest upload) and page for a real page slice, or query for a lexical passage. Scanned PDFs have no OCR — if the tool says no extractable text, say so. Empty query match fails closed; do not invent citations.',
+                'Read one page of an uploaded PDF or a public document. An uploaded PDF is already a source [P#]. Pass name= the filename and page= to read that page in full. Without page=, a multi-page upload returns an index, not the book. Cite the file as [P#] and name the page. Scanned PDFs have no OCR. Empty query match fails closed. Do not quote a page you have not read.',
             parameters: {
                 type: 'object',
                 additionalProperties: false,

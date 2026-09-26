@@ -9,6 +9,7 @@
 
 import type { AiCitation } from '../../ai/contracts'
 import { ACADEMIC_MARKER_TOOLS, mergeToolCitations } from '../academic-citations'
+import { seedUploadCitations } from '../upload-citations'
 import type { ArtifactDocument } from '../../artifacts/kinds'
 import { countModel3DRenderable, model3dGeometryDigest, parseModel3DSpecStrict } from '../../ai/visual-artifacts'
 import { createActivityClock, type AgentActivity } from '../agent/activity'
@@ -1599,6 +1600,17 @@ export async function runAgentNodePipeline(params: AgentPipelineParams): Promise
         provider: params.provider,
         agentMode: parseAgentMode(params.agentMode),
         answerMissing: false,
+    }
+
+    const seededUploads = seedUploadCitations(params.host?.attachments)
+    if (seededUploads.citations.length) {
+        state.citations.push(...seededUploads.citations)
+        const first = state.messages[0]
+        if (first?.role === 'system' && typeof first.content === 'string') {
+            state.messages[0] = { ...first, content: `${first.content}\n\n${seededUploads.note}` }
+        } else {
+            state.messages.unshift({ role: 'system', content: seededUploads.note })
+        }
     }
 
     while (state.phase !== 'complete' && state.phase !== 'failed') {

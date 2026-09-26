@@ -30,6 +30,20 @@ describe('executeReadDocument page slices', () => {
         }
     })
 
+    it('returns a page index, not the book, when no page is asked', async () => {
+        const long = ['[Page 1]', 'Opening.', '', '[Page 2]', `Body ${'zeta'.repeat(40)}.`].join('\n')
+        const result = await executeReadDocument(
+            { name: 'ryle.pdf' },
+            { attachments: [{ name: 'ryle.pdf', content: long }] }
+        )
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+            expect(result.text).toContain('Page index only')
+            expect(result.text).toContain('2. Body')
+            expect(result.text).not.toContain('zeta'.repeat(40))
+        }
+    })
+
     it('fails closed on a scanned PDF', async () => {
         const result = await executeReadDocument(
             { name: 'scan.pdf' },

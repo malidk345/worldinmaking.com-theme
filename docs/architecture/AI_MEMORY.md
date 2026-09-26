@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (uploaded PDFs are citable, page by page)
+
+- **Why:** A dropped PDF was read as raw bytes, so the model never saw the text. The composer extracted pages, then the prompt kept only 1,400 characters of page 1, and `read_document` returned no source card.
+- **Now:** Each uploaded PDF is one Sources card, kind `upload`, cited as `[P#]`. The prompt gets a page index, not the book. `read_document` with `page=` returns that page (clipped at 12,000 characters, and it says so). A multi-page read without `page=` returns the index. Window-drop uses the same pdf.js extract as the composer, up to 200 pages or 380,000 characters, whichever comes first. Scanned files stay “no text”, and the model is told not to invent quotations.
+- **Files:** `src/lib/pdf-pages.ts`, `src/lib/pdf-parser.ts`, `src/lib/bots/upload-citations.ts`, `read-document.ts`, `execute.ts`, `pipeline.ts`, `spec.ts`, Sources panel, citation format/export.
+
 ### 2026-09-26 — Grok (legal contact and notices)
 
 - **Contact:** public legal pages and the academic polite-pool default are `info@worldinmaking.com`. The old personal Gmail is no longer the fallback. Cloudflare `ACADEMIC_CONTACT_EMAIL` still overrides it when set.
