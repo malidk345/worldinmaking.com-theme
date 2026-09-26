@@ -130,6 +130,8 @@ export interface WebCitation {
   authorCount?: number
   /** Retracted work — shown with a "Retracted" tag. */
   retracted?: boolean
+  /** Source work type (article, book, book-chapter, dissertation, preprint) for exports / styles. */
+  workType?: string
 }
 
 export interface FileAttachment {

@@ -1,3 +1,4 @@
+import type { CitationStyle } from '../../ai/citation-styles'
 import { fetchSupabasePostBySlug, searchSupabasePosts } from '../../supabaseBlog'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../supabase-rest'
 
@@ -34,6 +35,8 @@ export type HostSnapshot = {
         tasks?: Array<{ title: string; status: string }>
         memories?: Array<{ fact: string; category?: string }>
     }
+    /** Browser reference-style preference (set by /api/chat from the request, never from the model). */
+    citationStyle?: CitationStyle
 }
 
 export type HostOsAction = {

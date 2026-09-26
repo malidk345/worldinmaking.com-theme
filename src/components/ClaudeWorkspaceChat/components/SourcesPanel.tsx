@@ -1,9 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Copy, ExternalLink, FileInput, FileText, Link2, X } from 'lucide-react'
+import { Check, Copy, Download, ExternalLink, FileInput, FileText, Link2, X } from 'lucide-react'
 import type { ArtifactOrigin, WebCitation } from '../types'
 import { citationHostname } from '../utils/citationMeta'
-import { citationDoiUrl, citationMetaLine, formatApaReference, isAcademicCitation } from '../../../lib/ai/citation-format'
+import { citationDoiUrl, citationMetaLine, isAcademicCitation } from '../../../lib/ai/citation-format'
+import { CITATION_STYLES, citationStyleLabel, formatReference, type CitationStyle } from '../../../lib/ai/citation-styles'
+import { citationExportFile, downloadCitationFile, type CitationExportFormat } from '../../../lib/ai/citation-export'
+import { useCitationStyle } from '../../../lib/citation-style-pref'
+import { LemonSelect } from '../../../notebook-app/lib/lemon-ui/LemonSelect/LemonSelect'
 import { SourceFavicon } from './SourceFavicon'
 
 interface SourcesPanelProps {
@@ -11,7 +15,7 @@ interface SourcesPanelProps {
   origin?: ArtifactOrigin | null
   /** Source to select first (e.g. an inline [3] marker was clicked). */
   initialActiveId?: number | null
-  /** Adds the source's APA reference to the notebook (footnote on the selection, else appended). */
+  /** Adds the source's reference (chosen style) to the notebook (footnote on the selection, else appended). */
   onAddToNotebook?: (citation: WebCitation) => Promise<boolean> | boolean | void
   onClose: () => void
 }
@@ -78,11 +82,78 @@ function CitationTags({ citation }: { citation: WebCitation }) {
   return <div className="mt-1.5 flex flex-wrap items-center gap-1.5">{tags}</div>
 }
 
+/** Sources worth exporting: everything except references the verifier could not find. */
+export function exportableSources(citations: WebCitation[]): WebCitation[] {
+  return citations.filter((c) => c.verified !== false)
+}
+
+function exportBaseName(): string {
+  return `sources-${new Date().toISOString().slice(0, 10)}`
+}
+
+function SourcesToolbar({
+  citations,
+  style,
+  onStyleChange,
+  showStyle,
+}: {
+  citations: WebCitation[]
+  style: CitationStyle
+  onStyleChange: (style: CitationStyle) => void
+  showStyle: boolean
+}) {
+  const [done, setDone] = useState<CitationExportFormat | null>(null)
+  const items = exportableSources(citations)
+  const skipped = citations.length - items.length
+  const exportAs = (format: CitationExportFormat) => {
+    if (!items.length) return
+    if (downloadCitationFile(citationExportFile(items, format, exportBaseName()))) {
+      setDone(format)
+      setTimeout(() => setDone(null), 2000)
+    }
+  }
+  const exportTitle = (label: string) =>
+    `Download ${items.length === 1 ? '1 source' : `${items.length} sources`} as ${label} (Zotero, Mendeley, EndNote)` +
+    (skipped ? ` — ${skipped} unverified skipped` : '')
+  return (
+    <div
+      className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-primary bg-primary px-3 py-1.5"
+      data-testid="sources-toolbar"
+    >
+      {showStyle ? (
+        <span className="inline-flex items-center gap-1 text-[11px] text-secondary">
+          Style
+          <LemonSelect
+            size="xsmall"
+            value={style}
+            onChange={(value) => value && onStyleChange(value)}
+            options={CITATION_STYLES.map((option) => ({ value: option.value, label: option.long }))}
+            renderButtonContent={() => <span className="text-[12px] text-primary">{citationStyleLabel(style)}</span>}
+            dropdownMatchSelectWidth={false}
+            data-attr="sources-citation-style"
+          />
+        </span>
+      ) : null}
+      <span className="ml-auto" />
+      <button type="button" className={`${actionClass} disabled:cursor-default disabled:opacity-50`} disabled={!items.length} onClick={() => exportAs('bibtex')} title={exportTitle('BibTeX')}>
+        {done === 'bibtex' ? <Check className="h-3 w-3" /> : <Download className="h-3 w-3" />}
+        BibTeX
+      </button>
+      <button type="button" className={`${actionClass} disabled:cursor-default disabled:opacity-50`} disabled={!items.length} onClick={() => exportAs('ris')} title={exportTitle('RIS')}>
+        {done === 'ris' ? <Check className="h-3 w-3" /> : <Download className="h-3 w-3" />}
+        RIS
+      </button>
+    </div>
+  )
+}
+
 function AcademicActions({
   citation,
+  style,
   onAddToNotebook,
 }: {
   citation: WebCitation
+  style: CitationStyle
   onAddToNotebook?: SourcesPanelProps['onAddToNotebook']
 }) {
   const [copied, setCopied] = useState(false)
@@ -90,15 +161,15 @@ function AcademicActions({
   useEffect(() => {
     setCopied(false)
     setAdded(false)
-  }, [citation.id])
+  }, [citation.id, style])
 
   const pdfHref = safeExternalUrl(citation.pdfUrl || citation.oaUrl)
   const doiHref = safeExternalUrl(citationDoiUrl(citation))
   const openHref = safeExternalUrl(citation.url)
   const showOpen = openHref && openHref !== doiHref && openHref !== pdfHref
 
-  const copyApa = async () => {
-    const text = formatApaReference(citation)
+  const copyReference = async () => {
+    const text = formatReference(citation, style)
     try {
       await navigator.clipboard.writeText(text)
       setCopied(true)
@@ -146,9 +217,9 @@ function AcademicActions({
           {citation.kind === 'encyclopedia' ? 'Open entry' : 'Open'}
         </a>
       ) : null}
-      <button type="button" onClick={copyApa} className={actionClass} title="Copy APA reference">
+      <button type="button" onClick={copyReference} className={actionClass} title={`Copy ${citationStyleLabel(style)} reference`}>
         {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-        {copied ? 'Copied' : 'Copy APA'}
+        {copied ? 'Copied' : `Copy ${citationStyleLabel(style)}`}
       </button>
       {onAddToNotebook ? (
         <button
@@ -179,6 +250,7 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({
   const pickInitial = () =>
     (initialActiveId != null && citations.some((c) => c.id === initialActiveId) ? initialActiveId : citations[0]?.id)
   const [activeId, setActiveId] = useState(pickInitial)
+  const [style, setStyle] = useCitationStyle()
 
   useEffect(() => {
     setActiveId(pickInitial())
@@ -251,6 +323,8 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({
           </button>
         </div>
 
+        <SourcesToolbar citations={citations} style={style} onStyleChange={setStyle} showStyle={anyAcademic} />
+
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="border-b border-primary px-4 py-3" data-testid="source-detail">
             <div className="flex items-start gap-3">
@@ -275,7 +349,7 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({
                   <p className="mt-2 text-[13px] leading-relaxed text-secondary">{active.snippet}</p>
                 ) : null}
                 {academic ? (
-                  <AcademicActions citation={active} onAddToNotebook={onAddToNotebook} />
+                  <AcademicActions citation={active} style={style} onAddToNotebook={onAddToNotebook} />
                 ) : href ? (
                   <a
                     href={href}

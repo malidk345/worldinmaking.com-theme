@@ -4,6 +4,21 @@ import { act } from 'react-dom/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SourcesPanel, sourcesCountLabel } from './SourcesPanel'
 import type { WebCitation } from '../types'
+import { CITATION_STYLE_STORAGE_KEY } from '../../../lib/citation-style-pref'
+
+// The real LemonSelect pulls notebook-app path aliases vitest does not resolve; a native
+// <select> with the same value/options/onChange contract is enough here.
+vi.mock('../../../notebook-app/lib/lemon-ui/LemonSelect/LemonSelect', () => ({
+  LemonSelect: (props: { value: string; options: Array<{ value: string; label: string }>; onChange: (v: string) => void }) => (
+    <select data-testid="style-select" value={props.value} onChange={(e) => props.onChange(e.target.value)}>
+      {props.options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  ),
+}))
 
 // React 18 act() environment flag for non-RTL rendering.
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -61,6 +76,7 @@ describe('SourcesPanel', () => {
   afterEach(() => {
     act(() => root.unmount())
     container.remove()
+    window.localStorage.removeItem(CITATION_STYLE_STORAGE_KEY)
   })
 
   const render = (el: React.ReactElement) => act(() => root.render(el))
@@ -163,11 +179,73 @@ describe('SourcesPanel', () => {
     expect(rows[1].textContent).not.toContain('Retracted')
   })
 
+  it('copies in the saved style; the Style selector switches APA / MLA / Chicago and persists it', async () => {
+    window.localStorage.setItem(CITATION_STYLE_STORAGE_KEY, 'mla')
+    const writeText = vi.fn(async () => undefined)
+    Object.assign(navigator, { clipboard: { writeText } })
+    render(<SourcesPanel citations={[paper, entry]} onClose={() => undefined} />)
+    await act(async () => undefined)
+    const copyButton = () => Array.from(container.querySelectorAll('button')).find((b) => b.textContent?.startsWith('Copy')) as HTMLButtonElement
+    expect(copyButton().textContent).toBe('Copy MLA')
+    await act(async () => copyButton().click())
+    expect(writeText).toHaveBeenLastCalledWith(
+      'Heidegger, Martin, and William Lovitt. “The Question Concerning Technology.” Harper & Row, 1977, https://doi.org/10.1234/qct.'
+    )
+    const select = container.querySelector('[data-testid="style-select"]') as HTMLSelectElement
+    expect(Array.from(select.options).map((o) => o.textContent)).toEqual(['APA 7', 'MLA 9', 'Chicago (author-date)'])
+    await act(async () => {
+      select.value = 'chicago'
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    expect(window.localStorage.getItem(CITATION_STYLE_STORAGE_KEY)).toBe('chicago')
+    expect(copyButton().textContent).toBe('Copy Chicago')
+    await act(async () => copyButton().click())
+    expect(writeText).toHaveBeenLastCalledWith(
+      'Heidegger, Martin, and William Lovitt. 1977. “The Question Concerning Technology.” Harper & Row. https://doi.org/10.1234/qct.'
+    )
+  })
+
+  it('exports every verified source of the reply as BibTeX or RIS, client-side', async () => {
+    const blobs: Blob[] = []
+    const downloads: string[] = []
+    Object.assign(URL, { createObjectURL: (b: Blob) => (blobs.push(b), 'blob:x'), revokeObjectURL: () => undefined })
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      downloads.push(this.download)
+    })
+    const readBlob = (b: Blob) =>
+      new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result))
+        reader.readAsText(b)
+      })
+    render(<SourcesPanel citations={[paper, entry, unverified]} onClose={() => undefined} />)
+    const toolbar = container.querySelector('[data-testid="sources-toolbar"]') as HTMLElement
+    const bib = Array.from(toolbar.querySelectorAll('button')).find((b) => b.textContent?.includes('BibTeX')) as HTMLButtonElement
+    expect(bib.title).toContain('2 sources')
+    expect(bib.title).toContain('1 unverified skipped')
+    await act(async () => bib.click())
+    const ris = Array.from(toolbar.querySelectorAll('button')).find((b) => b.textContent?.includes('RIS')) as HTMLButtonElement
+    await act(async () => ris.click())
+    expect(downloads[0]).toMatch(/^sources-\d{4}-\d{2}-\d{2}\.bib$/)
+    expect(downloads[1]).toMatch(/\.ris$/)
+    const bibText = await readBlob(blobs[0])
+    expect(bibText).toContain('@article{heidegger1977question,')
+    expect(bibText).toContain('Stanford Encyclopedia of Philosophy')
+    expect(bibText).not.toContain('10.5555/fake.2')
+    const risText = await readBlob(blobs[1])
+    expect(risText).toContain('TY  - JOUR')
+    expect(risText).toContain('TY  - ENCYC')
+    expect((risText.match(/ER {2}-/g) || []).length).toBe(2)
+    click.mockRestore()
+  })
+
   it('keeps the legacy website layout for old stored citations', () => {
     render(<SourcesPanel citations={[legacyWeb]} onClose={() => undefined} />)
     expect(container.textContent).toContain('1 website')
     expect(container.textContent).toContain('Open site')
     expect(container.textContent).toContain('old.example')
     expect(container.textContent).not.toContain('Copy APA')
+    expect(container.querySelector('[data-testid="style-select"]')).toBeNull() // no academic sources → no style picker
+    expect(container.querySelector('[data-testid="sources-toolbar"]')?.textContent).toContain('BibTeX')
   })
 })

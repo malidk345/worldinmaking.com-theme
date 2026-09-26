@@ -946,7 +946,7 @@ export interface OpenAlexWork {
     authorships?: Array<{ author?: { display_name?: string } }>
     open_access?: { is_oa?: boolean; oa_url?: string }
     abstract_inverted_index?: Record<string, number[]>
-    topics?: Array<{ display_name?: string; subfield?: { display_name?: string } }>
+    topics?: Array<{ id?: string; display_name?: string; subfield?: { display_name?: string } }>
     language?: string
     type?: string
     referenced_works?: string[]

@@ -7,10 +7,11 @@
  */
 
 import type { AiCitation } from '../ai/contracts'
-import { formatApaReference } from '../ai/citation-format'
+import { formatReference, type CitationStyle } from '../ai/citation-styles'
 import { lookupDoiViaCrossref } from './academic-search'
 import { stripTags } from './academic-common'
 import { parsePaperRef } from './academic-graph'
+import { normalizeWorkType } from './academic-citations'
 import type { EnvStore } from './runtime-env'
 
 export const BIBLIOGRAPHY_MAX_ENTRIES = 25
@@ -57,16 +58,20 @@ export function normalizeBibliographyEntries(raw: unknown): BibliographyEntryInp
     return out.slice(0, BIBLIOGRAPHY_MAX_ENTRIES)
 }
 
+/** Alphabetize on the first letter, not on an opening quote (MLA / Chicago works without authors). */
+const sortKey = (reference: string): string => reference.replace(/^[\s"“‘'([]+/, '')
+
 /**
- * Resolves each entry to real metadata and formats an alphabetical APA
- * annotated bibliography. Entries that are not a source this turn and not a
+ * Resolves each entry to real metadata and formats an alphabetical annotated
+ * bibliography (APA by default, MLA or Chicago on request). Entries that are not a source this turn and not a
  * Crossref-confirmed DOI are rejected (never invented).
  */
 export async function buildAnnotatedBibliography(
     input: BibliographyEntryInput[],
     turnCitations: AiCitation[] | undefined,
-    options: { title?: string; env?: EnvStore; signal?: AbortSignal; priorCitations?: AiCitation[] } = {}
+    options: { title?: string; env?: EnvStore; signal?: AbortSignal; priorCitations?: AiCitation[]; style?: CitationStyle } = {}
 ): Promise<BibliographyResult> {
+    const style = options.style || 'apa'
     const rejected: BibliographyResult['rejected'] = []
     const resolved: Array<{ paper: string; reference: string; annotation: string; citationId?: number }> = []
     const seen = new Set<string>()
@@ -83,14 +88,14 @@ export async function buildAnnotatedBibliography(
             const ref = parsed.ref
             let reference = ''
             if (ref.citation) {
-                reference = formatApaReference(ref.citation)
+                reference = formatReference(ref.citation, style)
             } else if (ref.doi) {
                 const found = await lookupDoiViaCrossref(ref.doi, { env: options.env, signal: options.signal })
                 if (!found.found || !found.title) {
                     rejected.push({ paper: entry.paper, reason: found.transient ? 'Crossref unavailable — could not confirm the DOI' : 'DOI not found in Crossref' })
                     return
                 }
-                reference = formatApaReference({
+                reference = formatReference({
                     title: stripTags(found.title),
                     url: `https://doi.org/${ref.doi}`,
                     authors: found.authors?.map((a) => stripTags(a)),
@@ -98,7 +103,8 @@ export async function buildAnnotatedBibliography(
                     venue: found.venue ? stripTags(found.venue) : undefined,
                     doi: ref.doi,
                     kind: 'paper',
-                })
+                    workType: normalizeWorkType(found.paper?.type),
+                }, style)
             } else {
                 rejected.push({ paper: entry.paper, reason: 'use a [P#] from this turn or a DOI' })
                 return
@@ -114,7 +120,7 @@ export async function buildAnnotatedBibliography(
             seen.add(key)
             return true
         })
-        .sort((a, b) => a.reference.localeCompare(b.reference, 'en', { sensitivity: 'base' }))
+        .sort((a, b) => sortKey(a.reference).localeCompare(sortKey(b.reference), 'en', { sensitivity: 'base' }))
     if (entries.length === 0) {
         return { ok: false, markdown: '', entries: [], rejected, error: 'none of the entries could be matched to a real source' }
     }

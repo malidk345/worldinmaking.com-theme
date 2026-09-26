@@ -105,7 +105,8 @@ import {
 import { openNotebookWindow as openNotebookWindowInOs } from '../../lib/open-notebook-window';
 import { resolveNotebookAddTarget, type NotebookAddTarget } from '../../lib/notebook-add-target';
 import { notebookHasSource, notebookSourceKey } from '../../lib/notebook-citations';
-import { formatApaReference } from '../../lib/ai/citation-format';
+import { formatReference } from '../../lib/ai/citation-styles';
+import { getCitationStyle } from '../../lib/citation-style-pref';
 import { buildPriorCitations } from '../../lib/ai/prior-citations';
 import {
   adoptGuestChatsIntoAccount,
@@ -1741,6 +1742,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           priorCitations: buildPriorCitations(
             baseMessages.filter((item) => item.role === 'user' || item.role === 'assistant')
           ),
+          // Reference style for annotated_bibliography (browser preference; APA by default).
+          citationStyle: getCitationStyle(),
           notebookContext: activeNotebookContext,
           notebookBound: Boolean(notebookBind?.notebookId || activeNotebookInfo?.id),
           conversationId: targetChatId,
@@ -3416,21 +3419,21 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     [isArtifactsOpen, activeArtifact?.id, isArtifactExpanded]
   )
 
-  // Whole-reply "Add": citation markers become notebook footnotes (APA); the button only
+  // Whole-reply "Add": citation markers become notebook footnotes (user's style); the button only
   // says "Added" after the notebook confirms the insert.
   const handleAddMessageToNotebook = useCallback(async (message: Message): Promise<boolean> => {
-    const result = await insertIntoNotebookRef.current(messageToNotebookMarkdown(message))
+    const result = await insertIntoNotebookRef.current(messageToNotebookMarkdown(message, getCitationStyle()))
     if (!result.ok) addToast({ description: notebookAckErrorMessage(result.error), duration: 2800 })
     return result.ok
   }, [addToast])
 
-  // Sources panel "Add to notebook": APA reference as a footnote on the selected notebook
+  // Sources panel "Add to notebook": reference (user's style) as a footnote on the selected notebook
   // text (live selection first, then the one-shot sticky selection); without a selection,
   // append it. Resolves true only when the notebook confirmed the change.
   const activeNotebookIdRef = useRef<string | undefined>(undefined)
   activeNotebookIdRef.current = activeNotebookInfo?.id
   const handleAddCitationToNotebook = useCallback(async (citation: WebCitation): Promise<boolean> => {
-    const reference = formatApaReference(citation)
+    const reference = formatReference(citation, getCitationStyle())
     const source = notebookSourceKey(citation)
     const notebookId = activeNotebookIdRef.current
     // Cheap pre-check against the stored copy; the notebook re-checks its live text.

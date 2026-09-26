@@ -82,16 +82,32 @@ function isParticle(token: string): boolean {
     return NAME_PARTICLES.has(token.toLowerCase())
 }
 
+/** A person's name split for reference styles; organisations are kept whole. */
+export interface ParsedPersonName {
+    /** Organisation / group author, or a single-field name ("Plato"): use `full` verbatim. */
+    corporate: boolean
+    full: string
+    /** Family name incl. particles ("van Beethoven"). */
+    family: string
+    /** Given names as written ("Jean-Paul", "M."). */
+    given: string[]
+    suffix: string
+    /** Turkish-looking name (dotted İ for initials). */
+    turkish: boolean
+}
+
 /**
- * "Martin Heidegger" → "Heidegger, M."; "Heidegger, Martin" → "Heidegger, M.";
- * "Ludwig van Beethoven" → "van Beethoven, L."; "Jean-Paul Sartre" → "Sartre, J.-P.";
- * "Martin Luther King Jr." → "King, M. L., Jr."; organisations and single-field
- * names ("World Health Organization", "Plato") are kept as-is.
+ * "Martin Heidegger" / "Heidegger, Martin" → family "Heidegger", given ["Martin"];
+ * "Ludwig van Beethoven" → family "van Beethoven"; "Martin Luther King Jr." → suffix "Jr.";
+ * organisations ("World Health Organization") and single names ("Plato") → corporate.
+ * Shared by APA, MLA, Chicago, BibTeX and RIS so every style splits names the same way.
  */
-export function apaAuthorName(name: string): string {
+export function parsePersonName(name: string): ParsedPersonName | null {
     const clean = String(name || '').replace(/\s+/g, ' ').trim()
-    if (!clean) return ''
-    if (isCorporateAuthor(clean)) return clean
+    if (!clean) return null
+    const turkish = TURKISH_CHARS_RE.test(clean)
+    const whole = (full: string): ParsedPersonName => ({ corporate: true, full, family: full, given: [], suffix: '', turkish })
+    if (isCorporateAuthor(clean)) return whole(clean)
     let family: string[]
     let given: string[]
     let suffix = ''
@@ -109,16 +125,42 @@ export function apaAuthorName(name: string): string {
     } else {
         const parts = clean.split(' ')
         if (parts.length > 1 && NAME_SUFFIX_RE.test(parts[parts.length - 1])) suffix = parts.pop() as string
-        if (parts.length === 1) return suffix ? `${parts[0]}, ${suffix}` : parts[0]
+        if (parts.length === 1) {
+            return { corporate: true, full: suffix ? `${parts[0]}, ${suffix}` : parts[0], family: parts[0], given: [], suffix, turkish }
+        }
         family = [parts.pop() as string]
         while (parts.length > 1 && isParticle(parts[parts.length - 1])) family.unshift(parts.pop() as string)
         given = parts
     }
     const familyText = family.join(' ')
-    if (!familyText) return clean
-    const initials = givenInitials(given, TURKISH_CHARS_RE.test(clean))
-    const suffixText = suffix ? `, ${/\.$/.test(suffix) || /^[ivx]+$/i.test(suffix) ? suffix : `${suffix}.`}` : ''
-    return initials ? `${familyText}, ${initials}${suffixText}` : `${familyText}${suffixText}`
+    if (!familyText) return whole(clean)
+    return { corporate: false, full: clean, family: familyText, given, suffix, turkish }
+}
+
+/** "Jr" → "Jr."; roman numerals stay bare. */
+export function nameSuffixText(suffix: string): string {
+    if (!suffix) return ''
+    return /\.$/.test(suffix) || /^[ivx]+$/i.test(suffix) ? suffix : `${suffix}.`
+}
+
+/** Initials of the given names ("Jean-Paul" → "J.-P."). */
+export function givenNameInitials(parsed: ParsedPersonName): string {
+    return givenInitials(parsed.given, parsed.turkish)
+}
+
+/**
+ * "Martin Heidegger" → "Heidegger, M."; "Heidegger, Martin" → "Heidegger, M.";
+ * "Ludwig van Beethoven" → "van Beethoven, L."; "Jean-Paul Sartre" → "Sartre, J.-P.";
+ * "Martin Luther King Jr." → "King, M. L., Jr."; organisations and single-field
+ * names ("World Health Organization", "Plato") are kept as-is.
+ */
+export function apaAuthorName(name: string): string {
+    const parsed = parsePersonName(name)
+    if (!parsed) return ''
+    if (parsed.corporate) return parsed.full
+    const initials = givenNameInitials(parsed)
+    const suffixText = parsed.suffix ? `, ${nameSuffixText(parsed.suffix)}` : ''
+    return initials ? `${parsed.family}, ${initials}${suffixText}` : `${parsed.family}${suffixText}`
 }
 
 /**

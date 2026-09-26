@@ -277,8 +277,9 @@ function openAlexAuth(keys: AcademicApiKeys, params: URLSearchParams): void {
     else params.set('mailto', keys.contactEmail)
 }
 
+// `topics` feeds the similar-paper topical-overlap filter (seed ↔ candidate concepts).
 const OPENALEX_SELECT =
-    'id,doi,title,publication_year,cited_by_count,primary_location,best_oa_location,authorships,open_access,abstract_inverted_index,type,language,is_retracted'
+    'id,doi,title,publication_year,cited_by_count,primary_location,best_oa_location,authorships,open_access,abstract_inverted_index,type,language,is_retracted,topics'
 
 async function openAlexSingle(id: string, keys: AcademicApiKeys, signal: AbortSignal | undefined, withLinks = false): Promise<OpenAlexWork> {
     const params = new URLSearchParams()
@@ -474,9 +475,23 @@ export function relatedScore(paper: AcademicPaper, focusSets: string[][]): numbe
     return Math.round(score * 1000) / 1000
 }
 
-export function rankRelatedPapers(papers: AcademicPaper[], sortBy: RelatedPapersOptions['sortBy'] = 'relevance', focus?: string): AcademicPaper[] {
+export function rankRelatedPapers(
+    papers: AcademicPaper[],
+    sortBy: RelatedPapersOptions['sortBy'] = 'relevance',
+    focus?: string,
+    seed?: AcademicPaper
+): AcademicPaper[] {
     const sets = focus ? queryTokenSets(focus) : []
-    const scored = papers.map((p) => ({ ...p, score: relatedScore(p, sets) }))
+    const profile = seed ? seedProfile(seed, focus) : undefined
+    const scored = papers.map((p) => {
+        let score = relatedScore(p, sets)
+        // Similar-only works: rank by topical overlap with the seed, not by popularity alone.
+        if (profile && isSimilarOnly(p)) {
+            const o = topicalOverlap(p, profile)
+            score += Math.min(o.shared, 4) * 0.5 + Math.min(o.topics, 2) * 0.3
+        }
+        return { ...p, score: Math.round(score * 1000) / 1000 }
+    })
     scored.sort((a, b) => {
         if (sortBy === 'citations' && b.citationCount !== a.citationCount) return b.citationCount - a.citationCount
         if (sortBy === 'recent' && (b.year || 0) !== (a.year || 0)) return (b.year || 0) - (a.year || 0)
@@ -491,20 +506,72 @@ function stems(text: string): Set<string> {
     return out
 }
 
+interface SeedProfile {
+    stems: Set<string>
+    topics: Set<string>
+}
+
+function seedProfile(seed: AcademicPaper | undefined, focus?: string): SeedProfile {
+    return {
+        // Topics are compared as whole labels (below), not as loose stems — otherwise a shared
+        // topic word ("political") would count twice.
+        stems: stems([seed?.title, seed?.abstract, focus].filter(Boolean).join(' ')),
+        topics: new Set((seed?.topics || []).map((t) => t.toLowerCase().trim()).filter(Boolean)),
+    }
+}
+
+/** Shared content stems (candidate title + abstract vs. seed title / abstract / topics / focus) and shared OpenAlex topics / subjects. */
+export function topicalOverlap(paper: AcademicPaper, profile: SeedProfile): { shared: number; titleShared: number; topics: number } {
+    let shared = 0
+    for (const st of Array.from(stems(`${paper.title} ${paper.abstract || ''}`))) if (profile.stems.has(st)) shared++
+    let titleShared = 0
+    for (const st of Array.from(stems(paper.title || ''))) if (profile.stems.has(st)) titleShared++
+    let topics = 0
+    for (const t of paper.topics || []) if (profile.topics.has(t.toLowerCase().trim())) topics++
+    return { shared, titleShared, topics }
+}
+
+function isSimilarOnly(p: AcademicPaper): boolean {
+    const rels = new Set(Object.keys(p.ranks || {}).map(relationOf).filter(Boolean))
+    return rels.size === 1 && rels.has('similar')
+}
+
+/** Seeds with an abstract / topics give enough stems to demand two shared ones. */
+const RICH_SEED_STEMS = 8
+
+const NON_SCHOLARLY_TYPES = new Set(['paratext', 'erratum', 'peer-review', 'grant', 'dataset', 'component', 'report-component', 'standard', 'supplementary-materials'])
+const NON_SCHOLARLY_TITLE_RE =
+    /^(?:front matter|back matter|(?:table of )?contents|index|subject index|author index|editorial board|issue information|masthead|cover(?: image| picture)?|title page|copyright page|call for papers|announcements?|list of (?:reviewers|contributors)|(?:erratum|corrigendum|correction|addendum)\b.*|in this issue)$/i
+
+/** Front matter, errata, peer-review records, datasets… are not "related literature". */
+export function isNonScholarlyWork(p: AcademicPaper): boolean {
+    if (!String(p.title || '').trim()) return true
+    if (p.type && NON_SCHOLARLY_TYPES.has(p.type.toLowerCase())) return true
+    return NON_SCHOLARLY_TITLE_RE.test(String(p.title).replace(/[.:\s]+$/, '').trim())
+}
+
 /**
- * "similar" recommendations (OpenAlex related_works, S2 recommendations) can be
- * off-topic for new or non-English papers. A work that is ONLY "similar" must
- * share at least one content stem with the seed (title, abstract, focus);
- * citing / reference links are kept regardless — they are facts.
+ * "similar" recommendations (OpenAlex related_works / topic fallback, S2
+ * recommendations) can be off-topic for new or non-English papers. A work that
+ * is ONLY "similar" must overlap the seed topically: two shared content stems
+ * (its title / abstract vs. the seed's title / abstract / topics / focus), or one
+ * shared stem plus a shared OpenAlex topic / subject, or two shared topics
+ * (cross-language); one stem suffices when the seed has only a title. Citing / reference links are kept regardless — they
+ * are facts — but front matter, errata and other non-scholarly records are
+ * dropped from every list.
  */
 export function dropUnrelatedSimilar(papers: AcademicPaper[], seed: AcademicPaper | undefined, focus?: string): AcademicPaper[] {
-    const seedStems = stems([seed?.title, seed?.abstract, seed?.topics?.join(' '), focus].filter(Boolean).join(' '))
-    if (seedStems.size < 3) return papers
-    return papers.filter((p) => {
-        const rels = new Set(Object.keys(p.ranks || {}).map(relationOf).filter(Boolean))
-        if (rels.size !== 1 || !rels.has('similar')) return true
-        for (const st of Array.from(stems(`${p.title} ${p.abstract || ''}`))) if (seedStems.has(st)) return true
-        return false
+    const scholarly = papers.filter((p) => !isNonScholarlyWork(p))
+    const profile = seedProfile(seed, focus)
+    if (profile.stems.size < 3 && profile.topics.size === 0) return scholarly
+    return scholarly.filter((p) => {
+        if (!isSimilarOnly(p)) return true
+        const o = topicalOverlap(p, profile)
+        // Thin seed profile (title only): one shared stem is all we can ask for.
+        // Two shared OpenAlex topics = conceptual match even across languages (Turkish seed, English work).
+        if (o.topics >= 2) return true
+        if (profile.stems.size < RICH_SEED_STEMS) return o.shared >= 1
+        return o.shared >= 2 || (o.shared >= 1 && o.topics >= 1)
     })
 }
 
@@ -790,6 +857,23 @@ export async function findRelatedPapers(ref: PaperRef, options: RelatedPapersOpt
                     addPapers('openalex:related', v)
                 )
             )
+        } else if (openAlexWork?.topics?.[0]?.id) {
+            // No related_works (common for recent / non-English works): most-cited works in the seed's
+            // OpenAlex topic; the topical-overlap filter below keeps only the ones close to the seed.
+            const topic = openAlexWork.topics[0]
+            const topicId = String(topic.id).match(/T\d+/)?.[0]
+            if (topicId) {
+                phase2.push(
+                    run(
+                        { id: 'openalex:related', keyed: oaKeyed },
+                        async () => (await openAlexList(`topics.id:${topicId}`, perList, keys, signal)).map(openAlexWorkToPaper),
+                        (v) => v.length,
+                        () => `by topic: ${String(topic.display_name || topicId).slice(0, 60)}`
+                    ).then((v) => addPapers('openalex:related', v))
+                )
+            } else {
+                skip('openalex:related', 'no_fulltext', 'no related works in OpenAlex')
+            }
         } else {
             skip('openalex:related', openAlexWork ? 'no_fulltext' : 'no_identifier', openAlexWork ? 'no related works in OpenAlex' : undefined)
         }
@@ -886,7 +970,7 @@ export async function findRelatedPapers(ref: PaperRef, options: RelatedPapersOpt
         mergeAcademicPapers(collected).filter((p) => !isSameWork(p, seedMatch)),
         { wantsRetracted: queryWantsRetracted(focus) }
     )
-    const ranked = rankRelatedPapers(dropUnrelatedSimilar(merged, seed, focus), sortBy, focus)
+    const ranked = rankRelatedPapers(dropUnrelatedSimilar(merged, seed, focus), sortBy, focus, seed)
     const selected = direction === 'all' && sortBy === 'relevance' ? balanceByRelation(ranked, limit) : ranked.slice(0, limit)
 
     const oaPool = selected.filter((p) => !p.pdfUrl && cleanDoi(p.doi)).slice(0, UNPAYWALL_MAX)

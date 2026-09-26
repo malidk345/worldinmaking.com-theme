@@ -74,6 +74,8 @@ export interface AiCitation {
     oaUrl?: string
     /** Direct open-access PDF URL. */
     pdfUrl?: string
+    /** Source work type when reported (article, book, book-chapter, dissertation, …) — picks BibTeX/RIS/style shapes. */
+    workType?: string
     /** Retracted work (Crossref retraction notice / OpenAlex is_retracted / "RETRACTED:" title). */
     retracted?: boolean
     /**

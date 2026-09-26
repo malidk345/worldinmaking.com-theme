@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { executeToolCall } from './execute'
 import type { HostSnapshot } from './host'
@@ -174,7 +176,7 @@ describe('find_quotes (grounded verbatim passages)', () => {
         expect(status(res, 's2_snippets')).toMatchObject({ status: 'failed', reason: 'rate_limited', keyed: true })
     })
 
-    it('falls back to the open-access PDF through read_document with an approximate page label', async () => {
+    it('falls back to the legacy scan of the open-access PDF with an approximate page label', async () => {
         const { calls } = installFetch({
             epmcSearch: () => json({ resultList: { result: [] } }),
             core: () => json({ results: [] }),
@@ -182,11 +184,30 @@ describe('find_quotes (grounded verbatim passages)', () => {
         })
         const res = await findGroundedQuotes({ raw: DOI, doi: DOI }, 'essence of technology', { env: {}, noCache: true })
         expect(res.ok).toBe(true)
-        expect(calls.some((c) => c.key === 'pdf')).toBe(true)
+        // pdf.js cannot open this PDF: the legacy scan reuses the same download (was fetched twice).
+        expect(calls.filter((c) => c.key === 'pdf')).toHaveLength(1)
         expect(status(res, 'europepmc')).toMatchObject({ status: 'skipped', reason: 'no_fulltext', note: 'not in Europe PMC' })
         expect(status(res, 'core')).toMatchObject({ status: 'skipped', note: 'not in CORE' })
         expect(res.quotes[0]).toMatchObject({ source: 'oa_pdf', location: 'open-access PDF, text block 1 (approximate page)' })
         expect(PDF_TEXT.join(' ')).toContain(res.quotes[0].text)
+    })
+
+    it('reads compressed (DergiPark-style) PDFs with pdf.js: Turkish claim, verbatim quote, real page label', async () => {
+        const compressed = new Uint8Array(readFileSync(path.join(__dirname, '__fixtures__/compressed-tr.pdf')))
+        const { calls } = installFetch({
+            epmcSearch: () => json({ resultList: { result: [] } }),
+            core: () => json({ results: [] }),
+            pdf: () => new Response(compressed, { status: 200, headers: { 'content-type': 'application/pdf' } }),
+        })
+        const res = await findGroundedQuotes(
+            { raw: DOI, doi: DOI, pdfUrl: 'https://files.example.org/article-file/1223288' },
+            'hesaplayan düşünce varolanları kaynak olarak görür',
+            { env: {}, noCache: true }
+        )
+        expect(res.ok).toBe(true)
+        expect(calls.filter((c) => c.key === 'pdf')).toHaveLength(1) // one download, no legacy re-fetch
+        expect(res.quotes[0]).toMatchObject({ source: 'oa_pdf', location: 'open-access PDF, p. 132 (PDF page 2)' })
+        expect(res.quotes[0].text).toContain('hesaplayan düşünce, varolanları yalnızca')
     })
 
     it('garbage PDF text yields no quotes and tells the model not to quote', async () => {
@@ -305,6 +326,22 @@ describe('annotated_bibliography (literature-review mode)', () => {
         const annotation = res.markdown.split('\n').find((l) => l.startsWith('Classic essay')) || ''
         expect(annotation.length).toBeLessThanOrEqual(ANNOTATION_MAX_CHARS)
         expect(res.entries[0].citationId).toBe(1)
+    })
+
+    it('formats MLA / Chicago on request; the browser preference is the default and an explicit style wins', async () => {
+        const entries = normalizeBibliographyEntries([{ paper: 'P1', annotation: 'Classic.' }])
+        const mla = await buildAnnotatedBibliography(entries, turn, { env: {}, style: 'mla' })
+        expect(mla.markdown).toContain('Heidegger, Martin. “The Question Concerning Technology.”')
+        const chicago = await buildAnnotatedBibliography(entries, turn, { env: {}, style: 'chicago' })
+        expect(chicago.markdown).toContain('Heidegger, Martin. 1977.')
+        const run = async (args: Record<string, unknown>, snap?: HostSnapshot) =>
+            JSON.parse(
+                (await executeToolCall({ id: 's', name: 'annotated_bibliography', argumentsJson: JSON.stringify({ entries: [{ paper: 'P1', annotation: 'Classic.' }], ...args }) }, {}, snap, 'ask', undefined, { citations: turn })).result
+            ).markdown as string
+        expect(await run({})).toMatch(/Heidegger, M\. \(1977\)/)
+        expect(await run({}, { ...host, citationStyle: 'mla' })).toContain('Heidegger, Martin. “')
+        expect(await run({ style: 'chicago' }, { ...host, citationStyle: 'mla' })).toContain('Heidegger, Martin. 1977.')
+        expect(await run({ citation_style: 'MLA 9' })).toContain('Heidegger, Martin. “')
     })
 
     it('adds the bibliography to the bound notebook through the existing insert_notebook_block action', async () => {

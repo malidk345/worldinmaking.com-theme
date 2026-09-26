@@ -20,6 +20,7 @@ import {
 import { buildRelatedToolOutput, findRelatedPapers, parsePaperRef, RELATED_DIRECTIONS, type PaperRef, type RelatedDirection } from '../academic-graph'
 import { buildQuotesToolOutput, findGroundedQuotes, QUOTES_DEFAULT, QUOTES_MAX } from '../academic-quotes'
 import { buildAnnotatedBibliography, normalizeBibliographyEntries } from '../academic-bibliography'
+import { parseCitationStyle } from '../../ai/citation-styles'
 import { executeCodeSandbox } from './run-code-sandbox'
 import { executeReadDocument } from './read-document'
 import {
@@ -202,7 +203,7 @@ const ARG_ALIASES: Record<string, Record<string, string>> = {
     generate_image: { p: 'prompt', description: 'prompt', query: 'prompt', text: 'prompt', image_prompt: 'prompt' },
     related_papers: { doi: 'paper', id: 'paper', ref: 'paper', source: 'paper', seed: 'paper', paper_id: 'paper', mode: 'direction', relation: 'direction', type: 'direction', topic: 'focus', query: 'focus', sort: 'sort_by' },
     find_quotes: { doi: 'paper', id: 'paper', ref: 'paper', source: 'paper', statement: 'claim', query: 'claim', text: 'claim', q: 'claim', max: 'max_quotes', limit: 'max_quotes', url: 'pdf_url', pdf: 'pdf_url' },
-    annotated_bibliography: { items: 'entries', papers: 'entries', sources: 'entries', references: 'entries', topic: 'title', name: 'title', insert: 'add_to_notebook', save_to_notebook: 'add_to_notebook', notebookId: 'notebook_id', notebook: 'notebook_id' },
+    annotated_bibliography: { citation_style: 'style', format: 'style', items: 'entries', papers: 'entries', sources: 'entries', references: 'entries', topic: 'title', name: 'title', insert: 'add_to_notebook', save_to_notebook: 'add_to_notebook', notebookId: 'notebook_id', notebook: 'notebook_id' },
     search_academic_corpus: { q: 'query', search: 'query', text: 'query', topic: 'query', subject: 'field', discipline: 'field', lang: 'language', work_type: 'type', until: 'year_to', year_until: 'year_to', since: 'year_from', original_query: 'query_original', query_tr: 'query_original', queryOriginal: 'query_original' },
     cross_examine_argument: {
         arg: 'argument',
@@ -729,8 +730,16 @@ async function executeAnnotatedBibliography(
     if (signal?.aborted) return clientAborted()
     const entries = normalizeBibliographyEntries(args.entries)
     const title = asText(args.title, 120).trim() || undefined
+    // Explicit style from the model (user named one) wins; otherwise the browser preference.
+    const style = typeof args.style === 'string' && args.style.trim() ? parseCitationStyle(args.style) : host?.citationStyle || 'apa'
     try {
-        const built = await buildAnnotatedBibliography(entries, context.citations, { title, env, signal, priorCitations: context.priorCitations })
+        const built = await buildAnnotatedBibliography(entries, context.citations, {
+            title,
+            env,
+            signal,
+            priorCitations: context.priorCitations,
+            style,
+        })
         if (signal?.aborted) return clientAborted()
         if (!built.ok) {
             return { ok: false, result: JSON.stringify({ ok: false, error: built.error, rejected: built.rejected.length ? built.rejected : undefined }) }
