@@ -1128,11 +1128,14 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
   /**
    * After Thought/tool collapse the browser may already have clamped scrollTop.
-   * Grow spacer for the *saved* settle scrollTop and write it back (layout-safe).
+   * Grow spacer for the saved settle (or sticky) scrollTop and write it back.
+   * The first layout pass nulls settle; the deferred frame must still read sticky,
+   * because a later collapse clamps after that pass (Safari applies the clamp
+   * after ResizeObserver, so the observer write does not stick).
    */
-  const restoreSettledScrollTop = useCallback(() => {
+  const restoreSettledScrollTop = useCallback((allowSticky = false) => {
     const scroller = chatScrollRef.current;
-    const saved = settleScrollTopRef.current;
+    const saved = settleScrollTopRef.current ?? (allowSticky ? stickyViewScrollTopRef.current : null);
     if (!scroller || saved == null) return;
     if (pinnedMessageIdRef.current) {
       settleScrollTopRef.current = null;
@@ -1170,7 +1173,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     setPinSpacerHeight((prev) => (prev === keep ? prev : keep));
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        restoreSettledScrollTop();
+        // Settle was cleared by the layout pass. Read sticky so this frame
+        // still repairs a clamp that landed after that measurement.
+        restoreSettledScrollTop(true);
       });
     });
   }, [restoreSettledScrollTop]);
