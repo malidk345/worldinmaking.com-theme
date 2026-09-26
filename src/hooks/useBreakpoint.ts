@@ -36,9 +36,23 @@ export function useBreakpoint(): Breakpoints {
     )
 
     useEffect(() => {
-        const update = () => setBreakpoints(getBreakpoints(window.innerWidth))
+        // ⚡ Bolt: Prevent unnecessary re-renders on resize by checking if breakpoints actually changed, and return the same object reference to bail out of React rendering. Also using passive listener for better scroll/resize performance.
+        const update = () => setBreakpoints(prev => {
+            const next = getBreakpoints(window.innerWidth)
+            if (
+                prev.xs === next.xs &&
+                prev.sm === next.sm &&
+                prev.md === next.md &&
+                prev.lg === next.lg &&
+                prev.xl === next.xl &&
+                prev.xxl === next.xxl
+            ) {
+                return prev
+            }
+            return next
+        })
         update()
-        window.addEventListener('resize', update)
+        window.addEventListener('resize', update, { passive: true })
         return () => window.removeEventListener('resize', update)
     }, [])
 
