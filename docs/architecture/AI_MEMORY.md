@@ -58,6 +58,14 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (fix: academic answer rounds stop resending tool schemas)
+
+- **Why:** Narrowing the research bundle (#852) still attached that bundle to the round that writes the answer. The chain (related papers, quotes, bibliography) has to stay available once, or the model cannot choose it.
+- **After a successful corpus or canon search:** the next decision sends 8 tools (chain, web, fetch, read, cross-examine, ask-user), about 8.5k chars of schema instead of the 17.2k research bundle. It does not resend `search_academic_corpus` unless that call failed. Notebook tools stay only when the question asks to save. Plan, execute, and studio turns are unchanged.
+- **The round after that chain:** no tool schemas, and the answer token budget stays the normal one (Gemini is not switched into the short think config). If the question named a follow-up that has not run, those schemas stay until it does.
+- **Not changed:** weekly meter, tool behavior once a tool is called, the first search round's schema, host notes.
+- **Files:** `src/lib/bots/tools/turn-tools.ts` (+ test), `loop.ts`, `gemini.ts`, `anthropic.ts`.
+
 ### 2026-09-26 — Grok Bot / Cursor (fix: package E follow-up — full-tsc errors, Turkish routing hint, single PDF download)
 
 - **Scope:** Audit follow-up on `feat/citations-pkgE` (#848) after merging `main` (#847). No behavior change beyond the fixes below; no Supabase, quota, font, wallpaper or window-animation changes.

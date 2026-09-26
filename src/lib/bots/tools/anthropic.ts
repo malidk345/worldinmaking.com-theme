@@ -93,6 +93,8 @@ export async function anthropicToolCompletion(params: {
     onToken?: (text: string) => void
     onThinking?: (text: string) => void
     omitTools?: boolean
+    /** Strip tool schemas. Generation budget stays on max_tokens, unlike Gemini's think flag. */
+    dropToolSchemas?: boolean
     maxTokens?: number
     timeoutMs?: number
     tools?: OpenAiToolSpec[]
@@ -121,7 +123,7 @@ export async function anthropicToolCompletion(params: {
         const system = systemTextFromMessages(params.messages, params.systemPrompt || '')
         if (system) body.system = system
 
-        if (!params.omitTools) {
+        if (!params.omitTools && !params.dropToolSchemas) {
             const rawTools = params.tools || OPENAI_CHAT_TOOLS
             if (rawTools.length > 0) {
                 body.tools = openaiToAnthropicTools(rawTools)
