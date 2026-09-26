@@ -286,9 +286,19 @@ export function userFacingChatStreamMessage(
   return MESSAGE_BY_KIND[kind]
 }
 
+/**
+ * Where a turn failed: `request` = fetch / HTTP status before the SSE body, `stream` =
+ * backend SSE `error` event or a read failure mid-stream, `finalize` = client work after the
+ * stream ended (e.g. no public content).
+ */
+export type ChatStreamFailStage = 'request' | 'stream' | 'finalize'
+
 export function chatStreamErrorTelemetryProps(opts: {
   kind: ChatStreamErrorKind
   httpStatus?: number
+  /** Backend error code (SSE `error` event or JSON body), e.g. PROVIDER_UNAVAILABLE. */
+  code?: string
+  stage?: ChatStreamFailStage
   hadPublicText: boolean
   /** True once thinking/tokens/tools/SSE progress existed (not keep-alive alone). */
   hadStreamProgress?: boolean
@@ -301,6 +311,8 @@ export function chatStreamErrorTelemetryProps(opts: {
   return {
     kind: opts.kind,
     httpStatus: opts.httpStatus,
+    code: opts.code,
+    stage: opts.stage,
     hadPublicText: opts.hadPublicText,
     hadStreamProgress: opts.hadStreamProgress,
     durationMs: Math.max(0, Math.round(opts.durationMs)),
@@ -308,5 +320,24 @@ export function chatStreamErrorTelemetryProps(opts: {
     byteLength: opts.byteLength,
     agentMode: opts.agentMode,
     retried: opts.retried,
+  }
+}
+
+/** Success counterpart of `wim chat stream fail`, so the failure rate is measurable. */
+export function chatStreamDoneTelemetryProps(opts: {
+  durationMs: number
+  chunkCount?: number
+  byteLength?: number
+  agentMode?: string
+  retried?: boolean
+  hadPublicText: boolean
+}): Record<string, string | number | boolean | undefined> {
+  return {
+    durationMs: Math.max(0, Math.round(opts.durationMs)),
+    chunkCount: opts.chunkCount,
+    byteLength: opts.byteLength,
+    agentMode: opts.agentMode,
+    retried: opts.retried,
+    hadPublicText: opts.hadPublicText,
   }
 }

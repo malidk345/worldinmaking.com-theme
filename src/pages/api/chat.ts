@@ -39,6 +39,13 @@ import { parseHostSnapshot } from 'lib/bots/tools/host'
 import { isUserPro } from '../../lib/wim-billing'
 import { estimateTokens, getTokenQuota, recordTokenUsage, type UserTier } from '../../lib/token-quota'
 import { createToolUsageMeter } from '../../lib/tool-usage-meter'
+import { flushAiTurnTelemetry } from 'lib/bots/telemetry'
+import {
+    PROVIDER_RETRY_DELAY_MS,
+    providerFailureCode,
+    shouldRetryProviderFailure,
+    waitUnlessAborted,
+} from 'lib/bots/provider-retry'
 
 /** Upper bound for the post-answer citation check (Crossref DOI lookups); skipped when exceeded. */
 const CITATION_VERIFY_BUDGET_MS = 4_500
@@ -443,11 +450,12 @@ export default async function handler(req: Request) {
                 let liveThinkingAcc = ''
                 // Executed tool calls this turn (incl. sub-agent + host search) for the quota surcharge.
                 const toolMeter = createToolUsageMeter()
+                let toolEventSeen = false
 
                 const byokEnv = readByokEnv(body)
                 const activeEnv = { ...getRuntimeEnv(), ...byokEnv }
 
-                const result = await streamBotTurn(
+                const runTurn = () => streamBotTurn(
                     {
                         question: prompt,
                         philosopher,
@@ -467,6 +475,7 @@ export default async function handler(req: Request) {
                         priorCitations: priorCitations.length ? priorCitations : undefined,
                         abortSignal: turnAbort.signal,
                         onTool: (event) => {
+                            toolEventSeen = true
                             toolMeter.observe(event)
                             send({ type: 'tool', tool: event })
                         },
@@ -490,6 +499,28 @@ export default async function handler(req: Request) {
                     }
                 )
 
+                let result = await runTurn()
+                if (
+                    !result.success &&
+                    shouldRetryProviderFailure({
+                        code: providerFailureCode(result.error),
+                        sentPublicText: sentVisiblePublic.length > 0,
+                        toolEventSeen,
+                        aborted: turnAbort.signal.aborted || result.error === 'aborted',
+                    })
+                ) {
+                    console.warn('[chat] providers failed, retrying turn once', {
+                        error: result.error,
+                        attempts: 'attempts' in result ? result.attempts : [],
+                    })
+                    send({ type: 'phase', phase: { phase: 'generation', status: 'started', detail: 'Retrying' } })
+                    await waitUnlessAborted(PROVIDER_RETRY_DELAY_MS, turnAbort.signal)
+                    if (!turnAbort.signal.aborted) {
+                        liveThinkingAcc = ''
+                        result = await runTurn()
+                    }
+                }
+
                 clearInterval(heartbeat)
 
                 if (turnAbort.signal.aborted || ('error' in result && result.error === 'aborted')) {
@@ -508,18 +539,14 @@ export default async function handler(req: Request) {
                         typeof result.reply === 'string' && result.reply.trim()
                             ? result.reply.trim()
                             : 'The philosopher network is unavailable right now.'
-                    const errorCode =
-                        result.error === 'empty_public_reply'
-                            ? 'EMPTY_REPLY'
-                            : result.error === 'tools_required'
-                              ? 'TOOLS_REQUIRED'
-                              : 'PROVIDER_UNAVAILABLE'
                     send({
                         type: 'error',
-                        code: errorCode,
+                        code: providerFailureCode(result.error),
                         message: productReply,
                         retryable: true,
                     })
+                    // Edge drops in-flight fetches once the response ends: keep the failed-turn event.
+                    await flushAiTurnTelemetry()
                     controller.close()
                     return
                 }
