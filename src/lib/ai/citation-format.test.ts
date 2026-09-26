@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { apaAuthorList, apaAuthorName, apaSentence, formatApaReference, isCorporateAuthor } from './citation-format'
+import { apaAuthorList, apaAuthorName, apaSentence, formatApaReference, inlineCitationLabel, inlineCitationLabels, isCorporateAuthor } from './citation-format'
 import { capAuthors, crossrefItemToPaper, formatApaBibliography } from '../bots/academic-search'
 import { academicResultsToCitations } from '../bots/academic-citations'
 
@@ -110,5 +110,34 @@ describe('APA 7 reference punctuation', () => {
         const bib = formatApaBibliography([paper])
         expect(bib).toContain('… Author24, A. (2015). A large collaboration: does it replicate? *Science*. https://doi.org/10.5555/big')
         expect(bib).not.toContain('replicate?.')
+    })
+})
+
+describe('inline citation chip', () => {
+    it('shows author and year, not a bare number', () => {
+        expect(inlineCitationLabel({ id: 7, authors: ['Martin Heidegger'], year: 1977, title: 'The Question Concerning Technology' })).toBe(
+            'Heidegger, 1977'
+        )
+        expect(
+            inlineCitationLabel({
+                id: 7,
+                authors: ['Martin Heidegger', 'Hannah Arendt', 'Hans-Georg Gadamer'],
+                year: 1960,
+            })
+        ).toBe('Heidegger et al., 1960')
+        expect(inlineCitationLabel({ id: 3, title: 'A site', kind: 'web' })).toBe('A site')
+        expect(inlineCitationLabel({ id: 4, title: 'nietzsche.pdf', kind: 'upload' })).toBe('nietzsche')
+        expect(inlineCitationLabel({ id: 7 })).toBe('P7')
+    })
+
+    it('adds the title when two chips would otherwise say the same thing', () => {
+        const labels = inlineCitationLabels([
+            { id: 1, authors: ['Martin Heidegger'], year: 1977, title: 'The Question Concerning Technology' },
+            { id: 2, authors: ['Martin Heidegger'], year: 1977, title: 'Building Dwelling Thinking' },
+        ])
+        expect(labels.get(1)).toContain('Heidegger, 1977')
+        expect(labels.get(1)).toContain('Question Concerning')
+        expect(labels.get(2)).toContain('Building Dwelling')
+        expect(labels.get(1)).not.toBe(labels.get(2))
     })
 })

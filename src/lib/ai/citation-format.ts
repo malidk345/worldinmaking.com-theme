@@ -229,3 +229,61 @@ export function citationMetaLine(c: Pick<AiCitation, 'authors' | 'year' | 'venue
     const authorText = authors.length === 0 ? '' : authors.length > 3 ? `${authors.slice(0, 3).join(', ')} et al.` : authors.join(', ')
     return [authorText, c.year ? String(c.year) : '', c.venue || ''].filter(Boolean).join(' · ')
 }
+
+function clipLabel(value: string, max: number): string {
+    const text = value.replace(/\s+/g, ' ').trim()
+    if (text.length <= max) return text
+    return `${text.slice(0, max - 1).trimEnd()}…`
+}
+
+function citationFamily(name: string): string {
+    const parsed = parsePersonName(name)
+    if (!parsed) return ''
+    return parsed.family || parsed.full
+}
+
+type InlineCitation = {
+    id?: number
+    title?: string
+    authors?: string[]
+    year?: number
+    kind?: string
+}
+
+/**
+ * What the answer shows instead of a bare [P7]. Author and year when we have
+ * them; otherwise the title or filename. Never a naked number.
+ */
+export function inlineCitationLabel(c: InlineCitation): string {
+    if (c.kind === 'upload') {
+        const file = String(c.title || '').replace(/\.pdf$/i, '').trim()
+        if (file) return clipLabel(file, 42)
+    }
+    const names = (c.authors || []).map(citationFamily).filter(Boolean)
+    let who = ''
+    if (names.length === 1) who = names[0]
+    else if (names.length === 2) who = `${names[0]} & ${names[1]}`
+    else if (names.length > 2) who = `${names[0]} et al.`
+    const year = typeof c.year === 'number' && Number.isFinite(c.year) && c.year > 0 ? String(Math.floor(c.year)) : ''
+    if (who && year) return clipLabel(`${who}, ${year}`, 56)
+    if (who) return clipLabel(who, 42)
+    const title = String(c.title || '').trim()
+    if (title) return clipLabel(title, 42)
+    return c.id ? `P${c.id}` : 'kaynak'
+}
+
+/** Same author-year twice in one answer gets a short title so the chips stay distinct. */
+export function inlineCitationLabels<T extends InlineCitation & { id: number }>(citations: T[]): Map<number, string> {
+    const rows = citations.map((c) => ({ id: c.id, label: inlineCitationLabel(c), title: String(c.title || '').trim() }))
+    const counts = new Map<string, number>()
+    for (const row of rows) counts.set(row.label, (counts.get(row.label) || 0) + 1)
+    const out = new Map<number, string>()
+    for (const row of rows) {
+        if ((counts.get(row.label) || 0) < 2 || !row.title || row.label === row.title) {
+            out.set(row.id, row.label)
+            continue
+        }
+        out.set(row.id, clipLabel(`${row.label} · ${clipLabel(row.title, 32)}`, 72))
+    }
+    return out
+}
