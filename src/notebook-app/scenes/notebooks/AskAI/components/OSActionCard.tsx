@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import OSButton from 'components/OSButton'
 import type { OSActionCard as OSActionCardType } from '../types'
-import { actionNeedsNotebookPick } from 'lib/notebook-add-target'
+import { actionNeedsNotebookPick } from '../../../../../lib/notebook-add-target'
 import { NotebookTargetMenu } from 'components/ClaudeWorkspaceChat/components/NotebookTargetMenu'
 
 interface OSActionCardProps {
