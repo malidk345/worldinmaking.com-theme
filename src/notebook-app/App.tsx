@@ -1023,7 +1023,7 @@ export function App() {
       const customEvent = event as CustomEvent<{ text: string; spanText?: string; notebookId?: string }>
       const text = String(customEvent.detail?.text || '').trim()
       if (!text) {
-        appActions?.addToast({ type: 'error', message: 'Missing replacement text' })
+        addToast({ description: 'Missing replacement text', error: true })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'empty_text' } }))
         return
       }
@@ -1032,7 +1032,7 @@ export function App() {
       if (requestedId) {
         const bound = getNotebook(requestedId)
         if (!bound) {
-          appActions?.addToast({ type: 'error', message: 'No notebook found' })
+          addToast({ description: 'No notebook found', error: true })
           window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
           return
         }
@@ -1043,7 +1043,7 @@ export function App() {
         }
       }
       if (!target) {
-        appActions?.addToast({ type: 'error', message: 'No notebook found' })
+        addToast({ description: 'No notebook found', error: true })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
         return
       }
@@ -1058,7 +1058,7 @@ export function App() {
 
       if (!targetPhrase) {
         console.warn('handleReplaceSelection: No spanText or selection provided, aborting replace.')
-        appActions?.addToast({ type: 'error', message: 'Target phrase not found in notebook' })
+        addToast({ description: 'Target phrase not found in notebook', error: true })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_not_found' } }))
         return
       }
@@ -1067,13 +1067,13 @@ export function App() {
       const match = findUniqueMatch(current, targetPhrase)
       if (match.kind === 'none') {
         console.warn('handleReplaceSelection: No valid selection found in content, aborting replace.')
-        appActions?.addToast({ type: 'error', message: 'Target phrase not found in notebook' })
+        addToast({ description: 'Target phrase not found in notebook', error: true })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_not_found' } }))
         return
       }
       if (match.kind === 'ambiguous') {
         console.warn('handleReplaceSelection: Ambiguous selection match, aborting replace.')
-        appActions?.addToast({ type: 'error', message: 'Target phrase matches more than once' })
+        addToast({ description: 'Target phrase matches more than once', error: true })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'selection_ambiguous' } }))
         return
       }
@@ -1101,7 +1101,7 @@ export function App() {
       const note = String(customEvent.detail?.note || '').trim()
       if (!spanText || !note) {
         setCloudMessage({ type: 'error', text: 'span_text and note are required' })
-        appActions?.addToast({ type: 'error', message: 'Missing span or note content for annotation' })
+        addToast({ description: 'Missing span or note content for annotation', error: true })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'missing_args' } }))
         return
       }
@@ -1111,7 +1111,7 @@ export function App() {
       if (requestedId) {
         const bound = getNotebook(requestedId)
         if (!bound) {
-          appActions?.addToast({ type: 'error', message: 'No notebook found' })
+          addToast({ description: 'No notebook found', error: true })
           window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
           return
         }
@@ -1121,7 +1121,7 @@ export function App() {
         }
       }
       if (!target) {
-        appActions?.addToast({ type: 'error', message: 'No notebook found' })
+        addToast({ description: 'No notebook found', error: true })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'no_target' } }))
         return
       }
@@ -1137,7 +1137,7 @@ export function App() {
 
       if (placement.kind !== 'span') {
         setCloudMessage({ type: 'error', text: 'Could not locate the exact phrase in the notebook' })
-        appActions?.addToast({ type: 'error', message: `Could not locate phrase: "${spanText}"` })
+        addToast({ description: `Could not locate phrase: "${spanText}"`, error: true })
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { ok: false, error: 'span_not_found' } }))
         return
       }

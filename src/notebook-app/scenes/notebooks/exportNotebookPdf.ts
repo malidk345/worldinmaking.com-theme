@@ -117,6 +117,26 @@ function renderComponent(node: NotebookComponentBlockNode): HTMLElement | null {
     return box
 }
 
+const CALLOUT_LABELS: Record<string, string> = {
+    NOTE: 'Note',
+    TIP: 'Tip',
+    IMPORTANT: 'Important',
+    WARNING: 'Warning',
+    CAUTION: 'Caution',
+}
+
+/**
+ * GitHub-style callout inside a blockquote (`> [!TIP]` + body). Returns the readable label
+ * and the remaining body so exports print "Tip" instead of the literal `[!TIP]` marker.
+ */
+export function notebookCallout(text: string): { label: string; body: string } | null {
+    const match = String(text || '').match(/^\s*\\?\[!([A-Za-z]+)\\?\][ \t]*(?:\r?\n)?/)
+    if (!match) return null
+    const label = CALLOUT_LABELS[match[1].toUpperCase()]
+    if (!label) return null
+    return { label, body: String(text).slice(match[0].length).trim() }
+}
+
 function renderBlock(node: NotebookBlockNode): HTMLElement | null {
     if (node.type === 'heading') {
         const level = Math.min(Math.max(node.level ?? 1, 1), 4) as 1 | 2 | 3 | 4
@@ -143,7 +163,14 @@ function renderBlock(node: NotebookBlockNode): HTMLElement | null {
             color: '#444',
             fontStyle: 'italic',
         })
-        quote.appendChild(textEl('p', inlineToText(node.children), { margin: '0', lineHeight: '1.6' }))
+        const quoteText = inlineToText(node.children)
+        const callout = notebookCallout(quoteText)
+        if (callout) {
+            quote.appendChild(textEl('p', callout.label, { margin: '0 0 2px', fontWeight: '600', fontStyle: 'normal', color: '#333' }))
+            if (callout.body) quote.appendChild(textEl('p', callout.body, { margin: '0', lineHeight: '1.6' }))
+            return quote
+        }
+        quote.appendChild(textEl('p', quoteText, { margin: '0', lineHeight: '1.6' }))
         return quote
     }
     if (node.type === 'list') {
@@ -631,7 +658,14 @@ export async function writeNotebookPdf(title: string, markdown: string, filename
             continue
         }
         if (node.type === 'blockquote') {
-            writer.textBlock(inlineToText(node.children), {
+            const quoteText = inlineToText(node.children)
+            const callout = notebookCallout(quoteText)
+            if (callout) {
+                writer.textBlock(callout.label, { size: 10, weight: 'bold', color: '#333333', indent: 6, after: callout.body ? 1 : 4 })
+                if (callout.body) writer.textBlock(callout.body, { size: 11, color: '#444444', indent: 6, after: 4 })
+                continue
+            }
+            writer.textBlock(quoteText, {
                 size: 11,
                 color: '#444444',
                 indent: 6,
