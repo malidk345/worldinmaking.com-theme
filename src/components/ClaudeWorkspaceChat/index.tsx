@@ -1862,21 +1862,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               .slice(0, 4)
               .map((item) => ({
                 name: item.name,
-                content: (item.content || item.contentPreview || '').slice(0, 350_000),
+                content: item.content || item.contentPreview || '',
               })),
             scratchpad: {
               documents: (() => {
-                let budget = 350_000
+                const carried = new Set(
+                  effectiveAttachments
+                    .filter((item) => item.type !== 'image' && item.type !== 'audio' && (item.content || item.contentPreview))
+                    .map((item) => item.name.trim().toLowerCase())
+                )
                 return ScratchpadStore.getState().documents.slice(0, 8).map((d) => {
-                  const raw = d.content || ''
-                  const take = raw.slice(0, budget)
-                  budget = Math.max(0, budget - take.length)
+                  const alreadyAttached = carried.has(d.name.trim().toLowerCase())
                   return {
                     name: d.name,
                     size: d.size ? String(d.size) : undefined,
                     type: d.type,
                     pageCount: d.pageCount,
-                    content: take || undefined,
+                    content: alreadyAttached ? undefined : d.content || undefined,
                   }
                 })
               })(),

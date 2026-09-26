@@ -58,6 +58,11 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (fix: an uploaded book was cut before read_document)
+
+- **Why:** A PDF was stored as the first 200 pages or 380,000 characters, then cut again to 350,000 on the way to the model. `read_document` can only open a page that was stored, so a long book stopped early.
+- **Now:** The upload keeps every page. The prompt still does not get the book. One page is read with `read_document`. The same file is not sent twice (scratchpad points at the attachment). The chat request can carry the whole text.
+
 ### 2026-09-26 — Grok (fix: an inline citation showed only its number)
 
 - **Why:** `[P7]` was drawn as a chip whose text was `7`. In the sentence that reads as a stray digit, not a citation.

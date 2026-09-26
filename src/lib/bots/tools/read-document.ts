@@ -431,9 +431,9 @@ export async function executeReadDocument(
                     doc.name.toLowerCase().includes(docName.toLowerCase()) ||
                     docName.toLowerCase().includes(doc.name.toLowerCase())
             )
-            if (matchedScratchDoc) {
+            if (matchedScratchDoc?.content?.trim()) {
                 return readLocalDocument(
-                    matchedScratchDoc.content || '',
+                    matchedScratchDoc.content,
                     `Scratchpad Document: ${matchedScratchDoc.name}`,
                     targetPage,
                     filterQuery
