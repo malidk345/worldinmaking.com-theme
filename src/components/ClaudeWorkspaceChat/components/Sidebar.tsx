@@ -1,9 +1,10 @@
 import React from 'react'
 import { Chat } from '../types'
-import { Plus, Trash2, Zap, ShieldCheck } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { ByokSidebarPanel } from './ByokSidebarPanel'
 import { useTokenQuota } from '../../../lib/chat-usage-client'
 import { hasActiveByok } from '../../../lib/byok-vault'
+import { useOptionalApp } from '../../../context/App'
 
 interface SidebarProps {
     isOpen: boolean
@@ -114,6 +115,7 @@ export const Sidebar = React.memo(SidebarComponent, (prev, next) => {
 
 const SidebarUsageMeter: React.FC = () => {
     const { quota } = useTokenQuota()
+    const app = useOptionalApp()
     const [byokActive, setByokActive] = React.useState(false)
 
     React.useEffect(() => {
@@ -132,32 +134,63 @@ const SidebarUsageMeter: React.FC = () => {
         )
     }
 
-    if (!quota) return null
+    if (!quota) {
+        return (
+            <div className="px-3 py-1.5 text-[11.5px] text-muted">
+                <span>Usage</span>
+            </div>
+        )
+    }
 
     const remainingPercent = Math.max(0, Math.min(100, Math.round(100 - (quota.percentage || 0))))
     const planLabel =
         quota.tier === 'pro' ? 'pro' : quota.tier === 'guest' ? 'guest' : quota.tier === 'dev' ? 'dev' : 'free'
+    const resetAt = new Date(quota.resetAtUtc)
+    const resetLabel = Number.isNaN(resetAt.getTime())
+        ? ''
+        : resetAt.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }).toLowerCase()
+    const blocked = quota.allowed === false && !quota.unavailable
 
     return (
         <div className="px-3 py-1.5 space-y-1">
             <div className="flex items-center justify-between text-[11.5px] text-secondary">
                 <span>Usage</span>
                 <span className="font-mono text-[11px] font-medium text-primary">
-                    {remainingPercent}% · weekly · {planLabel}
+                    {quota.unavailable ? 'unavailable' : `${remainingPercent}% · weekly · ${planLabel}`}
                 </span>
             </div>
-            <div className="h-1 w-full rounded-full bg-primary/10 overflow-hidden">
-                <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                        remainingPercent <= 10
-                            ? 'bg-rose-500'
-                            : remainingPercent <= 25
-                              ? 'bg-amber-500'
-                              : 'bg-primary/50'
-                    }`}
-                    style={{ width: `${remainingPercent}%` }}
-                />
-            </div>
+            {!quota.unavailable ? (
+                <div className="h-1 w-full rounded-full bg-primary/10 overflow-hidden">
+                    <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                            remainingPercent <= 10
+                                ? 'bg-rose-500'
+                                : remainingPercent <= 25
+                                  ? 'bg-amber-500'
+                                  : 'bg-primary/50'
+                        }`}
+                        style={{ width: `${remainingPercent}%` }}
+                    />
+                </div>
+            ) : null}
+            {blocked ? (
+                <p className="m-0 text-[11px] leading-4 text-muted">
+                    {quota.tier === 'pro' || quota.tier === 'dev' ? (
+                        <>Weekly limit reached{resetLabel ? `. Resets ${resetLabel}` : ''}.</>
+                    ) : (
+                        <>
+                            Weekly limit reached.{' '}
+                            <button
+                                type="button"
+                                onClick={() => app?.addWindow?.({ path: '/pricing' })}
+                                className="underline hover:text-primary transition-colors cursor-pointer"
+                            >
+                                Study
+                            </button>
+                        </>
+                    )}
+                </p>
+            ) : null}
         </div>
     )
 }

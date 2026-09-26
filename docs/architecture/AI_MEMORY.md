@@ -67,6 +67,34 @@
 - **Security:** `execute-multimodal.test.ts` and `execute-image.test.ts` contained a hard-coded Supabase **service_role** JWT for the live project (public repo, in history since 2026-07-31). Removed; the live-worker tests now run only with `WIM_LIVE_WORKER_TOKEN` set. **The key must be rotated by the owner** — removing it from the tree does not remove it from git history.
 - **Handoff:** vitest on Node 22 needs the `canvas` native module built (pnpm 10 skips its build script; no Node 22 prebuild) — otherwise every jsdom test file fails to start. CI does not run vitest yet.
 
+### 2026-09-26 — Grok (fix: academic turns no longer send the studio tool schemas)
+
+- **Why:** One academic search was ~32k provider tokens (~52k with related papers) while the sidebar recorded ~290. Each act round re-sent ~33.5k chars of all 42 tool schemas plus ~12.8k chars of system text. The meter still does not count schema or system text (pricing unchanged).
+- **Ask-mode research turns** (papers, DOI, literatür, makale, kaynak, or a canon thinker in a real question) send the literature + notebook tools only. Studio schemas stay off: artifact, concept map, image, windows, voice, flashcards, publish, export, sandbox. A question that also asks for those (çiz, kavram haritası, seslendir, pencere, …) keeps the full list.
+- **Follow-ups** `related_papers` / `find_quotes` / `annotated_bibliography` are omitted until this turn has a corpus or canon hit, or the question already asks for related papers, quotes, or a bibliography. Plan and execute are unchanged.
+- **Protocol:** those turns use a short academic protocol (cite rules kept, artifact recipes dropped) so the system text is not repeated at the old size every round.
+- **Not changed:** weekly meter, limits, tool behavior once a tool is actually called, notebook body in the user prompt.
+- **Files:** `src/lib/bots/tools/turn-tools.ts` (+ test), `src/lib/bots/tools/loop.ts`.
+- **Verify:** `src/lib/bots/tools/turn-tools.test.ts`. No Playwright (user directive).
+
+### 2026-09-26 — Grok (fix: streamed words no longer glue; Gemini and Anthropic see host notes)
+
+- **Symptom:** While an answer was still streaming, words stuck together (`Helloworld`) until the finished bubble replaced the draft. Multi-step writing (plan board, “keep writing”, memories) never reached Gemini, and Anthropic received the base prompt twice plus the notes.
+- **Stream:** `stripLeakedToolMarkup` trims, which is right for the stored answer and wrong per SSE chunk. `stripLeakedToolMarkupForStream` keeps a clean chunk exactly, including the space at the edge, and still strips a leaked tool call. Used in `pipeline.emitPublic` and the tools-off answer retry. The finished answer is still trimmed.
+- **Host channel:** Plan board, private thought, memories and continue-nudges are written onto `messages[0]` after the base system string is frozen. Gemini sent that frozen string as `systemInstruction` and skipped system turns. Anthropic sent the frozen string and every system turn. `systemTextFromMessages` sends the live system turn once (fallback only when there is no system message). Notebook body was already in the user prompt; this does not move it.
+- **Not changed:** weekly token meter, limits, tool schemas. Academic search still re-sends the full tool list on every act round; the sidebar does not count that schema.
+- **Files:** `src/lib/bots/tools/{leak,pipeline,loop,gemini,anthropic}.ts`, `system-channel.ts` (new), tests alongside.
+- **Verify:** focused unit tests in those files. No Playwright (user directive).
+
+### 2026-09-26 — Grok (fix: Ask AI composer must not adopt an old chat; budget status lives in the sidebar)
+
+- **Symptom:** Opening WIM AI and starting to type sometimes swapped the blank composer for the newest stored thread. At the same moment the composer showed “checking weekly budget…”.
+- **Cause:** Supabase session restore emits `wim-identity-changed` (same event as login and token refresh). The handler replaced the in-memory list with stored threads, which omit the unsent opener. Remote sync then did `setActiveChatId(merged[0])` whenever the open id was missing. The same identity event blanked the quota snapshot, and `quota === null` rendered the checking line under `ChatInput`. Empty `activeChatId` also fell through to `chats[0]`.
+- **Session model:** The open composer is not history. Hydration may refresh the sidebar but must not move the composer onto another thread. `reinsertOpenThread` puts the live opener back when storage/remote dropped it. A tombstoned open thread becomes a new blank draft, never the newest old chat. Same-owner identity (token refresh) does not replace the live list. An owner change keeps an unsent draft or opens a blank one, then loads that account’s history beside it. Deleting the open chat opens a blank draft instead of the next history row.
+- **Quota model:** Composer never prints budget copy. Send stays fail-closed until `allowed === true`. Sidebar Usage is the only status surface (quiet “Usage” while unknown, meter once known, limit / Study only when blocked). `shouldBlankQuotaOnIdentity` blanks the snapshot only when the owner key changes, so a token refresh does not flash a null quota.
+- **Files:** `src/lib/chat-session.ts` (+ test), `src/lib/chat-usage-client.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `components/ChatInput.tsx`, `components/Sidebar.tsx`.
+- **Verify:** `src/lib/chat-session.test.ts`. No Playwright (user directive).
+
 ### 2026-09-25 — Grok Bot / Cursor (fix: package D — tool quota surcharge, notebook leftovers, Ask AI render loop)
 
 - **Scope:** Branch from `main` (`d2ff3e8d`, includes #846). No Supabase schema/data changes (read-only SELECTs on `wim_chat_token_usage` / `increment_wim_chat_token_usage` only), no change to the base token estimate, limits or fail-closed logic.

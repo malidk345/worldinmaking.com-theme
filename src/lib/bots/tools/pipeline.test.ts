@@ -324,6 +324,29 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
         expect(publicTokens.join('')).toContain('Then the answer.')
     })
 
+    it('does not glue a leading space onto the previous streamed chunk', async () => {
+        const publicTokens: string[] = []
+        const complete: AgentPipelineParams['complete'] = async (input) => {
+            input.onToken?.('Hello')
+            input.onToken?.(' world')
+            return { ok: true, content: 'Hello world', toolCalls: [] }
+        }
+
+        const result = await runAgentNodePipeline({
+            complete,
+            baseMessages: [
+                { role: 'system', content: 'You are helpful.' },
+                { role: 'user', content: 'hi' },
+            ],
+            provider: 'test',
+            agentMode: 'ask',
+            onToken: (piece) => publicTokens.push(piece),
+        })
+
+        expect(result.ok).toBe(true)
+        expect(publicTokens.join('')).toBe('Hello world')
+    })
+
     it('still paints decision-round native onThinking when think phase is skipped', async () => {
         const thoughtUi: string[] = []
         const publicTokens: string[] = []

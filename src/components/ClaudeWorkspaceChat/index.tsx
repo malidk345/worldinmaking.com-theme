@@ -155,6 +155,7 @@ import {
 } from '../../lib/chat-scroll';
 import { getActiveByokPayload } from '../../lib/byok-vault';
 import { chatsForStorage, protectedChatIds, retainOpenChats, STORED_CHAT_LIMIT } from '../../lib/chat-local';
+import { reinsertOpenThread, threadHasContent } from '../../lib/chat-session';
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 
@@ -641,6 +642,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const [shareBusy, setShareBusy] = useState(false);
 
   const persistOwnerRef = useRef(getChatStorageKey())
+  const sessionOwnerKeyRef = useRef(getChatStorageKey())
   const lastWrittenChatsStrRef = useRef<string>('')
   const chatsRef = useRef(chats)
   chatsRef.current = chats
@@ -808,27 +810,28 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (cancelled || removed.every((ok) => !ok)) break
         }
         if (!pulled || cancelled) return
-        let nextActive = activeChatIdRef.current
+        const openId = activeChatIdRef.current
+        const openDeleted = Boolean(openId && deletedIds.includes(openId))
         setChats((prev) => {
-          const openId = activeChatIdRef.current
           const merged = mergeChats(prev, keptRemote, deletedIds, {
             preferLocalIds:
               openId && isStreamingRef.current ? [openId] : undefined,
           })
-          if (merged.length > 0 && !merged.some((chat) => chat.id === nextActive)) {
-            nextActive = merged[0].id
-            pinBottomOnNextChatRef.current = true
-            setActiveChatId(merged[0].id)
-          }
-          if (merged.length === 0) {
-            nextActive = ''
-            pinBottomOnNextChatRef.current = true
-            setActiveChatId('')
-          }
-          return merged
+          // Never steer the composer onto history[0]. A blank opener is not stored,
+          // so a missing id used to become "the newest old chat" mid-typing.
+          if (openDeleted) return merged.filter((chat) => chat.id !== openId)
+          return reinsertOpenThread(merged, prev, openId, deletedIds)
         })
-        // List is metadata-only — load messages for the open chat (egress).
-        if (nextActive) await hydrateChatById(nextActive)
+        if (openDeleted) {
+          const fresh = createOpeningChat(selectedModelIdRef.current)
+          pinBottomOnNextChatRef.current = true
+          setComposerDraft('')
+          setComposerDraftNonce((n) => n + 1)
+          setActiveChatId(fresh.id)
+          setChats((prev) => [fresh, ...prev.filter((chat) => chat.id !== fresh.id)])
+        } else if (openId) {
+          await hydrateChatById(openId)
+        }
         // Push local drafts the other device has not seen yet (cap inside helper).
         if (!cancelled) {
           void pushDirtyLocalChats(chatsRef.current, 6)
@@ -898,17 +901,36 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       syncNotebookChatBindForIdentity()
       syncWorkspaceLocalForIdentity()
       adoptGuestChatsIntoAccount()
-      persistOwnerRef.current = getChatStorageKey()
-      const stored = readLocalChats<Chat[]>([])
-      // Keep sticky messages mounted across owner-key swap; do not pin-to-bottom unless chat id changes.
-      setChats(settleInterruptedStreams(Array.isArray(stored) ? stored : []))
+      const nextKey = getChatStorageKey()
+      const ownerChanged = nextKey !== sessionOwnerKeyRef.current
+      sessionOwnerKeyRef.current = nextKey
+      persistOwnerRef.current = nextKey
       // Projects/settings were global — reload owner-namespaced rows so systemPrompt/prefs do not leak.
       setProjects(readLocalProjects(INITIAL_PROJECTS))
       setSettings(readLocalSettings(getDefaultWorkspaceSettings()))
       setActiveProjectId(undefined)
       startLiveRemote()
+      if (ownerChanged) {
+        // Account switch: do not carry the previous owner's threads, and do not
+        // land on the new owner's latest chat. Keep the unsent composer, or open a blank one.
+        const storedRaw = readLocalChats<Chat[]>([])
+        const stored = settleInterruptedStreams(Array.isArray(storedRaw) ? storedRaw : [])
+        const openId = activeChatIdRef.current
+        const open = chatsRef.current.find((chat) => chat.id === openId)
+        const draft = open && !threadHasContent(open) ? open : createOpeningChat(selectedModelIdRef.current)
+        if (draft.id !== openId) {
+          pinBottomOnNextChatRef.current = true
+          setComposerDraft('')
+          setComposerDraftNonce((n) => n + 1)
+          setActiveChatId(draft.id)
+        }
+        setChats([draft, ...stored.filter((chat) => chat.id !== draft.id)])
+      }
+      // Same owner (token refresh): leave the open composer alone. Replacing the
+      // list from storage drops the unsent draft; the following sync then opened
+      // the newest old thread while the user was typing.
       if (canSyncChatsToRemote()) {
-        void syncFromRemote(true)
+        void syncFromRemote(ownerChanged)
       }
     }
 
@@ -986,7 +1008,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     }
   }, [abortActiveStream, flushLocalChats])
 
-  const resolvedActiveChat = chats.find((c) => c.id === activeChatId) || (!activeChatId ? chats[0] : undefined)
+  const resolvedActiveChat = chats.find((c) => c.id === activeChatId)
   if (resolvedActiveChat) {
     stickyActiveChatRef.current = resolvedActiveChat
   } else if (!activeChatId) {
@@ -3075,14 +3097,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   const handleDeleteChat = (id: string) => {
     rememberDeletedChatId(id)
     if (persistChatIdRef.current === id) persistChatIdRef.current = null
+    const replacingOpen = activeChatId === id
+    const fresh = replacingOpen ? createOpeningChat(selectedModelIdRef.current) : null
+    if (fresh) {
+      pinBottomOnNextChatRef.current = true
+      setComposerDraft('')
+      setComposerDraftNonce((n) => n + 1)
+      setActiveChatId(fresh.id)
+    }
     setChats((prev) => {
       const next = prev.filter((c) => c.id !== id)
-      writeLocalChats(next)
-      if (activeChatId === id) {
-        pinBottomOnNextChatRef.current = true
-        setActiveChatId(next[0]?.id || '')
-      }
-      return next
+      const list = fresh ? [fresh, ...next] : next
+      writeLocalChats(list)
+      return list
     })
     void deleteChatOnRemote(id)
   }

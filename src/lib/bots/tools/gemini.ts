@@ -1,5 +1,6 @@
 import type { ToolCall } from './execute'
 import { OPENAI_CHAT_TOOLS, toGeminiFunctionDeclarations, type OpenAiToolSpec } from './spec'
+import { systemTextFromMessages } from './system-channel'
 
 export type OpenAiChatMessage = {
     role: 'system' | 'user' | 'assistant' | 'tool'
@@ -233,7 +234,7 @@ export async function geminiToolCompletion(params: {
                     ? { mode: 'ANY' as const, allowedFunctionNames: ['todo_write'] }
                     : { mode: 'AUTO' as const }
         const baseBody: Record<string, unknown> = {
-            systemInstruction: { parts: [{ text: params.systemPrompt }] },
+            systemInstruction: { parts: [{ text: systemTextFromMessages(params.messages, params.systemPrompt) }] },
             contents: openaiMessagesToGeminiContents(params.messages),
         }
         if (!params.omitTools) {

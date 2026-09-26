@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { stripLeakedOnScreenArtifacts, stripLeakedToolMarkup } from './leak'
+import { stripLeakedOnScreenArtifacts, stripLeakedToolMarkup, stripLeakedToolMarkupForStream } from './leak'
 
 describe('stripLeakedOnScreenArtifacts', () => {
     it('removes On-screen host marker + model3d JSON dump', () => {
@@ -97,4 +97,20 @@ describe('stripLeakedOnScreenArtifacts', () => {
         expect(cleaned).toBe('See this.\nDone.')
     })
 
+})
+
+describe('stripLeakedToolMarkupForStream', () => {
+    it('keeps the space at the edge of a clean chunk', () => {
+        expect(stripLeakedToolMarkupForStream('Hello')).toBe('Hello')
+        expect(stripLeakedToolMarkupForStream(' world')).toBe(' world')
+        expect(`${stripLeakedToolMarkupForStream('Hello')}${stripLeakedToolMarkupForStream(' world')}`).toBe(
+            'Hello world'
+        )
+    })
+
+    it('still drops a leaked tool call in a chunk', () => {
+        const cleaned = stripLeakedToolMarkupForStream('Hello <tool_call>web_search(q="x")</tool_call>')
+        expect(cleaned).not.toContain('tool_call')
+        expect(cleaned).toContain('Hello')
+    })
 })
