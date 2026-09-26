@@ -34,6 +34,8 @@ describe('academic search web fallback hygiene', () => {
             if (u.includes('openalex')) return new Response(JSON.stringify({ results: [] }), { status: 200 })
             if (u.includes('crossref')) return new Response(JSON.stringify({ message: { items: [] } }), { status: 200 })
             if (u.includes('semanticscholar')) return new Response(JSON.stringify({ total: 0, data: [] }), { status: 200 })
+            if (u.includes('openaire')) return new Response(JSON.stringify({ results: [] }), { status: 200 })
+            if (u.includes('zenodo')) return new Response(JSON.stringify({ hits: { hits: [] } }), { status: 200 })
             return new Response('{}', { status: 404 })
         }) as unknown as typeof fetch
     })

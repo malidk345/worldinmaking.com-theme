@@ -2,7 +2,7 @@
  * Live Academic Corpus Search for WorldInMaking AI.
  *
  * Fans out to OpenAlex, Crossref, Semantic Scholar, arXiv, PubMed Central,
- * Europe PMC, TR Dizin, CORE and DOAJ (plus SEP / IEP encyclopedia lookup for
+ * Europe PMC, TR Dizin, CORE, DOAJ, OpenAIRE and Zenodo (plus SEP / IEP encyclopedia lookup for
  * philosophy), merges duplicates, fuses per-source ranks (reciprocal rank
  * fusion + a minimum relevance threshold), and resolves open-access PDFs via
  * Unpaywall. Turkish `queryOriginal` is sent to TR Dizin / Crossref / OpenAlex
@@ -53,7 +53,7 @@ import {
     type AcademicApiKeys,
     type AcademicSourceReason,
 } from './academic-common'
-import { coreQueue, doajQueue, queryCore, queryDoaj, queryTrDizin } from './academic-sources-extra'
+import { coreQueue, doajQueue, openaireQueue, queryCore, queryDoaj, queryOpenAire, queryTrDizin, queryZenodo, zenodoQueue } from './academic-sources-extra'
 import {
     ENCYCLOPEDIA_NAMES,
     filterRelevantEntries,
@@ -92,6 +92,8 @@ export type AcademicSourceLabel =
     | 'TR Dizin'
     | 'CORE'
     | 'DOAJ'
+    | 'OpenAIRE'
+    | 'Zenodo'
     | 'Philosophical Canon'
     | 'Web Search'
 
@@ -170,6 +172,8 @@ export type AcademicSourceId =
     | 'doaj'
     | 'sep'
     | 'iep'
+    | 'openaire'
+    | 'zenodo'
 
 export interface AcademicSourceStatus {
     source: AcademicSourceId
@@ -276,6 +280,8 @@ export function __resetAcademicSearchStateForTests(minIntervalMs = 3_000, extraM
     arxivQueue.reset(minIntervalMs)
     coreQueue.reset(extraMs)
     doajQueue.reset(extraMs)
+    zenodoQueue.reset(extraMs)
+    openaireQueue.reset(extraMs)
     s2Queue.reset(extraMs)
     __resetCooldownsForTests()
 }
@@ -444,6 +450,8 @@ export function planAcademicSources(query: string, options?: AcademicSearchOptio
         doaj: true,
         sep: true,
         iep: true,
+        openaire: true,
+        zenodo: true,
     }
     const skipReason: SourceRoutingPlan['skipReason'] = {}
     const skip = (id: AcademicSourceId, reason: AcademicSourceReason) => {
@@ -1563,6 +1571,8 @@ const SOURCE_ORDER: AcademicSourceId[] = [
     'trdizin',
     'doaj',
     'core',
+    'openaire',
+    'zenodo',
 ]
 
 type SourceJob = {
@@ -1871,6 +1881,12 @@ async function searchAcademicCorpusCore(
                 break
             case 'core':
                 add(id, () => queryCore({ ...ctx, limit: Math.min(limit, 5) }, cleanQuery))
+                break
+            case 'openaire':
+                add(id, () => queryOpenAire({ ...ctx, limit: Math.min(limit, 5) }, cleanQuery))
+                break
+            case 'zenodo':
+                add(id, () => queryZenodo({ ...ctx, limit: Math.min(limit, 5) }, cleanQuery))
                 break
         }
     }

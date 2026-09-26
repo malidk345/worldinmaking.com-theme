@@ -107,6 +107,8 @@ describe('search_academic_corpus tool & academic-search', () => {
                 if (String(url).includes('api.openalex.org')) return new Response(JSON.stringify(openAlexBody), { status: 200 })
                 if (String(url).includes('api.crossref.org')) return new Response(JSON.stringify({ message: { items: [] } }), { status: 200 })
                 if (String(url).includes('semanticscholar')) return new Response(JSON.stringify({ total: 0, data: [] }), { status: 200 })
+                if (String(url).includes('openaire')) return new Response(JSON.stringify({ results: [] }), { status: 200 })
+                if (String(url).includes('zenodo')) return new Response(JSON.stringify({ hits: { hits: [] } }), { status: 200 })
                 return new Response('{}', { status: 404 })
             }) as unknown as typeof fetch
 
