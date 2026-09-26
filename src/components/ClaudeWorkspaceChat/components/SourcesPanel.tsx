@@ -186,7 +186,7 @@ function AcademicActions({
   // "Added" only after the notebook confirmed it (the handler resolves false on a nack,
   // a duplicate or a timeout and shows its own message).
   const [adding, setAdding] = useState(false)
-  const [anchor, setAnchor] = useState<DOMRect | null>(null)
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const addToNotebook = async (notebookId: string) => {
     if (!onAddToNotebook || adding) return
     setAdding(true)
@@ -232,7 +232,7 @@ function AcademicActions({
             type="button"
             onClick={(event) => {
               if (adding) return
-              setAnchor(event.currentTarget.getBoundingClientRect())
+              setAnchor(event.currentTarget)
             }}
             disabled={adding}
             className={actionClass}

@@ -58,7 +58,7 @@ export function ArtifactWindowContent({
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
   const [copied, setCopied] = useState(false)
   const [inserted, setInserted] = useState(false)
-  const [notebookAnchor, setNotebookAnchor] = useState<DOMRect | null>(null)
+  const [notebookAnchor, setNotebookAnchor] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
     setActiveTab('preview')
@@ -131,7 +131,7 @@ export function ArtifactWindowContent({
           <>
             <button
               type="button"
-              onClick={(event) => setNotebookAnchor(event.currentTarget.getBoundingClientRect())}
+              onClick={(event) => setNotebookAnchor(event.currentTarget)}
               className={`flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs font-medium cursor-pointer transition-all shadow-2xs ${
                 inserted
                   ? 'border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-semibold'
