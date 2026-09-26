@@ -170,7 +170,7 @@ export function academicToolOutcomes(messages: ToolRoundMessage[] | undefined): 
 
 function seedSucceeded(messages: ToolRoundMessage[] | undefined): boolean {
     const outcomes = academicToolOutcomes(messages)
-    for (const name of ACADEMIC_SEED_TOOLS) {
+    for (const name of Array.from(ACADEMIC_SEED_TOOLS)) {
         if (outcomes.get(name) === true) return true
     }
     return false
@@ -248,7 +248,7 @@ export function selectTurnTools<T extends { function: { name: string } }>(
         if (questionWantsNotebook(input.question)) {
             for (const name of NOTEBOOK_TOOLS) wanted.add(name)
         }
-        for (const name of ACADEMIC_SEED_TOOLS) {
+        for (const name of Array.from(ACADEMIC_SEED_TOOLS)) {
             if (outcomes.get(name) === false) wanted.add(name)
         }
         return tools.filter((tool) => wanted.has(tool.function.name))
