@@ -28,20 +28,21 @@ export default async function handler(req: Request) {
     if (header !== secret) return json({ success: false, error: 'Unauthorized' }, 401)
 
     const tasks = await popPendingBotTasks(5)
-    const results: Array<{ id: string; ok: boolean; error?: string }> = []
-    for (const task of tasks) {
-        try {
-            if (task.task_type === 'philosopher_tick') {
-                const tickReq = (task.payload as { tickReq?: unknown })?.tickReq || task.payload
-                await runPhilosopherBotTick(tickReq as any)
+    const results = await Promise.all(
+        tasks.map(async (task) => {
+            try {
+                if (task.task_type === 'philosopher_tick') {
+                    const tickReq = (task.payload as { tickReq?: unknown })?.tickReq || task.payload
+                    await runPhilosopherBotTick(tickReq as any)
+                }
+                await markBotTaskComplete(task.id, true)
+                return { id: task.id, ok: true }
+            } catch (err: any) {
+                await markBotTaskComplete(task.id, false, err?.message || 'failed')
+                return { id: task.id, ok: false, error: err?.message || 'failed' }
             }
-            await markBotTaskComplete(task.id, true)
-            results.push({ id: task.id, ok: true })
-        } catch (err: any) {
-            await markBotTaskComplete(task.id, false, err?.message || 'failed')
-            results.push({ id: task.id, ok: false, error: err?.message || 'failed' })
-        }
-    }
+        })
+    )
 
     return json({ success: true, claimed: tasks.length, results })
 }
