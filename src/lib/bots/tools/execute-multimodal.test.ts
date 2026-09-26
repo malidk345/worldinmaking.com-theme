@@ -3,13 +3,22 @@ import { executeToolCall } from './execute'
 
 describe('Multimodal Tools: analyze_image, transcribe_audio, synthesize_speech', () => {
     const originalFetch = globalThis.fetch
-    const liveToken =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5ZHlwaXNnZmFrc3FramRyYWl1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njg0NDAyMSwiZXhwIjoyMDgyNDIwMDIxfQ.YV4wfUArW2rgExeNxNbaH6BnuekfNAnE4_1vnS7oqCs'
+    // Live worker tests need a real token from the environment — never commit one.
+    const liveToken = process.env.WIM_LIVE_WORKER_TOKEN || ''
     const liveWorkerUrl = 'https://worldinmaking-storage.dursunkayamustafa.workers.dev'
 
     beforeEach(() => {
         vi.restoreAllMocks()
     })
+
+    /** The SSRF guard resolves the media host over DoH before calling the worker. */
+    const DOH_PREFIX = 'https://cloudflare-dns.com/dns-query'
+    const withPublicDns = (fetchMock: ReturnType<typeof vi.fn>) =>
+        vi.fn(async (url: unknown, init?: unknown) =>
+            String(url).startsWith(DOH_PREFIX)
+                ? { ok: true, json: async () => ({ Status: 0, Answer: [{ type: 1, data: '93.184.216.34' }] }) }
+                : fetchMock(url, init)
+        )
 
     afterEach(() => {
         globalThis.fetch = originalFetch
@@ -36,7 +45,7 @@ describe('Multimodal Tools: analyze_image, transcribe_audio, synthesize_speech',
                     model: '@cf/llava-hf/llava-1.5-7b-hf',
                 }),
             })
-            globalThis.fetch = fetchMock
+            globalThis.fetch = withPublicDns(fetchMock) as unknown as typeof fetch
 
             const result = await executeToolCall(
                 {
@@ -65,7 +74,7 @@ describe('Multimodal Tools: analyze_image, transcribe_audio, synthesize_speech',
             expect(sentBody.prompt).toBe('What is written on the board?')
         })
 
-        it('connects to live Cloudflare worker and recognizes real image', async () => {
+        it.skipIf(!liveToken)('connects to live Cloudflare worker and recognizes real image', async () => {
             const result = await executeToolCall(
                 {
                     id: 'call-v-live',
@@ -109,7 +118,7 @@ describe('Multimodal Tools: analyze_image, transcribe_audio, synthesize_speech',
                     vtt: 'WEBVTT\n00:00 -> 00:02 Varoluş özden önce gelir.',
                 }),
             })
-            globalThis.fetch = fetchMock
+            globalThis.fetch = withPublicDns(fetchMock) as unknown as typeof fetch
 
             const result = await executeToolCall(
                 {
@@ -157,7 +166,7 @@ describe('Multimodal Tools: analyze_image, transcribe_audio, synthesize_speech',
                     content_type: 'audio/mpeg',
                 }),
             })
-            globalThis.fetch = fetchMock
+            globalThis.fetch = withPublicDns(fetchMock) as unknown as typeof fetch
 
             const result = await executeToolCall(
                 {
@@ -183,7 +192,7 @@ describe('Multimodal Tools: analyze_image, transcribe_audio, synthesize_speech',
             expect(parsed.markdown).toContain('[🔊 Dinle:')
         })
 
-        it('connects to live Cloudflare worker and synthesizes real playable audio in R2', async () => {
+        it.skipIf(!liveToken)('connects to live Cloudflare worker and synthesizes real playable audio in R2', async () => {
             const result = await executeToolCall(
                 {
                     id: 'call-s-live',

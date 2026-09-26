@@ -73,6 +73,43 @@
 - **Verify:** vitest `src` 659 passed / 6 failed (same 6 pre-existing failures + 37 unloadable files as `main`; +70 new tests); `typecheck:shell` only the 5 pre-existing `WallpaperName` errors; `lint:shell --quiet` clean; Playwright tool-loop / agent-modes / ask-ai-harness 104 passed / 11 failed — same failing set as `main`. `next build` compiles (unpdf warnings about guarded Node APIs only). Local UI run with mocked `/api/chat` (sample citations): style selector, Copy MLA / Chicago, Sources BibTeX / RIS, Chicago whole-reply footnotes, notebook References export and Options toggle all pass; exported files parse in bibtexparser 2 / rispy. Live: `find_quotes` on DergiPark OA PDFs (compressed) returns verbatim Turkish passages with printed page numbers (checked against `pdftotext`); `main`'s `read_document` returned binary PDF bytes for the same files.
 - **Known limits:** unpdf adds ~2.4 MB raw / ~0.6 MB gzip to the edge bundle (lazy-loaded); pdf.js CPU on large PDFs needs the paid Workers CPU limit (Node measurement: 0.5–0.7 s CPU for 12–30-page DergiPark PDFs). Notebook reference parsing is heuristic (non-DOI entries keep the parsed text). DergiPark rate-limits repeated downloads (429 reported as a failed source).
 
+### 2026-09-26 — Grok Bot / Cursor (fix: CI typecheck gate + vitest infra; remove committed service-role token from tests)
+
+- **Scope:** Test / CI health only, branched from `main` (`1c5dacaa`). No runtime behavior change; no Supabase schema/data, quota, font, wallpaper or window-animation changes.
+- **Typecheck shell:** `SiteSettings.wallpaper` in `src/context/App.tsx` hard-coded seven wallpapers and missed `keyboard-garden`, so the 5 gated `WallpaperName` TS2322 errors failed CI (and CI never reached the lint step). It now uses `WallpaperName` from `lib/wallpaperChrome` (single source of truth).
+- **Vitest infra:** `vitest.config.ts` mirrors the notebook-app rules of `next.config.js` (inside `src/notebook-app`, `lib/*` → the notebook's own lib; `~/`, `scenes/`, `posthog-js`, `@posthog/react`, `use-resize-observer` → the lemon-ui shim; `@posthog/lemon-ui` alias); new `tests/vitest/setup.ts` (jest-dom matchers, `jest` → `vi`, jsdom `getAnimations` stub); devDependencies `@testing-library/{react,dom,jest-dom,user-event}`, `timekeeper`. 9 vendored PostHog test files that need PostHog's real `~/types` / dayjs setup / `@tiptap/markdown` / DateFilter / Jest module mocks are listed in `QUARANTINED_TESTS` with the reason. Result: `vitest run src` 918 passed / 3 skipped (live) / 0 failed (was 609 passed / 4 failed, 34 files unloadable).
+- **Stale tests fixed:** multimodal alias tests mocked `fetch` without the DoH lookup the SSRF guard now does (DoH-aware mock); `verified_corpus_search` URL check is case-insensitive (Scholar URL keeps "Nietzsche"); `export_notebook` heading ids are slugs (`section-1`).
+- **Security:** `execute-multimodal.test.ts` and `execute-image.test.ts` contained a hard-coded Supabase **service_role** JWT for the live project (public repo, in history since 2026-07-31). Removed; the live-worker tests now run only with `WIM_LIVE_WORKER_TOKEN` set. **The key must be rotated by the owner** — removing it from the tree does not remove it from git history.
+- **Handoff:** vitest on Node 22 needs the `canvas` native module built (pnpm 10 skips its build script; no Node 22 prebuild) — otherwise every jsdom test file fails to start. CI does not run vitest yet.
+
+### 2026-09-26 — Grok (fix: academic turns no longer send the studio tool schemas)
+
+- **Why:** One academic search was ~32k provider tokens (~52k with related papers) while the sidebar recorded ~290. Each act round re-sent ~33.5k chars of all 42 tool schemas plus ~12.8k chars of system text. The meter still does not count schema or system text (pricing unchanged).
+- **Ask-mode research turns** (papers, DOI, literatür, makale, kaynak, or a canon thinker in a real question) send the literature + notebook tools only. Studio schemas stay off: artifact, concept map, image, windows, voice, flashcards, publish, export, sandbox. A question that also asks for those (çiz, kavram haritası, seslendir, pencere, …) keeps the full list.
+- **Follow-ups** `related_papers` / `find_quotes` / `annotated_bibliography` are omitted until this turn has a corpus or canon hit, or the question already asks for related papers, quotes, or a bibliography. Plan and execute are unchanged.
+- **Protocol:** those turns use a short academic protocol (cite rules kept, artifact recipes dropped) so the system text is not repeated at the old size every round.
+- **Not changed:** weekly meter, limits, tool behavior once a tool is actually called, notebook body in the user prompt.
+- **Files:** `src/lib/bots/tools/turn-tools.ts` (+ test), `src/lib/bots/tools/loop.ts`.
+- **Verify:** `src/lib/bots/tools/turn-tools.test.ts`. No Playwright (user directive).
+
+### 2026-09-26 — Grok (fix: streamed words no longer glue; Gemini and Anthropic see host notes)
+
+- **Symptom:** While an answer was still streaming, words stuck together (`Helloworld`) until the finished bubble replaced the draft. Multi-step writing (plan board, “keep writing”, memories) never reached Gemini, and Anthropic received the base prompt twice plus the notes.
+- **Stream:** `stripLeakedToolMarkup` trims, which is right for the stored answer and wrong per SSE chunk. `stripLeakedToolMarkupForStream` keeps a clean chunk exactly, including the space at the edge, and still strips a leaked tool call. Used in `pipeline.emitPublic` and the tools-off answer retry. The finished answer is still trimmed.
+- **Host channel:** Plan board, private thought, memories and continue-nudges are written onto `messages[0]` after the base system string is frozen. Gemini sent that frozen string as `systemInstruction` and skipped system turns. Anthropic sent the frozen string and every system turn. `systemTextFromMessages` sends the live system turn once (fallback only when there is no system message). Notebook body was already in the user prompt; this does not move it.
+- **Not changed:** weekly token meter, limits, tool schemas. Academic search still re-sends the full tool list on every act round; the sidebar does not count that schema.
+- **Files:** `src/lib/bots/tools/{leak,pipeline,loop,gemini,anthropic}.ts`, `system-channel.ts` (new), tests alongside.
+- **Verify:** focused unit tests in those files. No Playwright (user directive).
+
+### 2026-09-26 — Grok (fix: Ask AI composer must not adopt an old chat; budget status lives in the sidebar)
+
+- **Symptom:** Opening WIM AI and starting to type sometimes swapped the blank composer for the newest stored thread. At the same moment the composer showed “checking weekly budget…”.
+- **Cause:** Supabase session restore emits `wim-identity-changed` (same event as login and token refresh). The handler replaced the in-memory list with stored threads, which omit the unsent opener. Remote sync then did `setActiveChatId(merged[0])` whenever the open id was missing. The same identity event blanked the quota snapshot, and `quota === null` rendered the checking line under `ChatInput`. Empty `activeChatId` also fell through to `chats[0]`.
+- **Session model:** The open composer is not history. Hydration may refresh the sidebar but must not move the composer onto another thread. `reinsertOpenThread` puts the live opener back when storage/remote dropped it. A tombstoned open thread becomes a new blank draft, never the newest old chat. Same-owner identity (token refresh) does not replace the live list. An owner change keeps an unsent draft or opens a blank one, then loads that account’s history beside it. Deleting the open chat opens a blank draft instead of the next history row.
+- **Quota model:** Composer never prints budget copy. Send stays fail-closed until `allowed === true`. Sidebar Usage is the only status surface (quiet “Usage” while unknown, meter once known, limit / Study only when blocked). `shouldBlankQuotaOnIdentity` blanks the snapshot only when the owner key changes, so a token refresh does not flash a null quota.
+- **Files:** `src/lib/chat-session.ts` (+ test), `src/lib/chat-usage-client.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `components/ChatInput.tsx`, `components/Sidebar.tsx`.
+- **Verify:** `src/lib/chat-session.test.ts`. No Playwright (user directive).
+
 ### 2026-09-25 — Grok Bot / Cursor (fix: package D — tool quota surcharge, notebook leftovers, Ask AI render loop)
 
 - **Scope:** Branch from `main` (`d2ff3e8d`, includes #846). No Supabase schema/data changes (read-only SELECTs on `wim_chat_token_usage` / `increment_wim_chat_token_usage` only), no change to the base token estimate, limits or fail-closed logic.

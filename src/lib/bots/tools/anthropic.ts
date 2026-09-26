@@ -2,6 +2,7 @@ import type { ToolCall } from './execute'
 import { fetchWithTransientRetry } from './provider-retry'
 import { OPENAI_CHAT_TOOLS, type OpenAiToolSpec } from './spec'
 import type { ChatMessage } from './pipeline'
+import { systemTextFromMessages } from './system-channel'
 
 const ANTHROPIC_TIMEOUT_MS = 45_000
 
@@ -117,14 +118,8 @@ export async function anthropicToolCompletion(params: {
             stream: true,
         }
 
-        const systemArr: string[] = []
-        if (params.systemPrompt) systemArr.push(params.systemPrompt)
-        for (const m of params.messages) {
-            if (m.role === 'system' && m.content) systemArr.push(m.content)
-        }
-        if (systemArr.length > 0) {
-            body.system = systemArr.join('\n\n')
-        }
+        const system = systemTextFromMessages(params.messages, params.systemPrompt || '')
+        if (system) body.system = system
 
         if (!params.omitTools) {
             const rawTools = params.tools || OPENAI_CHAT_TOOLS

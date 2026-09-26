@@ -30,6 +30,7 @@ import {
     migrateAppearanceSettings,
     resolveKeptWallpaper,
     SITE_APPEARANCE_DEFAULTS_VERSION,
+    type WallpaperName,
 } from '../lib/wallpaperChrome'
 import { getSessionAccessToken } from 'lib/wim-auth'
 import { createWorldRoom } from '../lib/world-account'
@@ -976,14 +977,8 @@ export interface SiteSettings {
     theme: 'light' | 'dark' | string
     skinMode: 'modern' | 'classic'
     iconSet: 'default' | 'pixel'
-    wallpaper:
-        | 'cobalt'
-        | 'hogzilla'
-        | 'keyboard-mint'
-        | 'draft-world'
-        | 'rain-embers'
-        | 'plaza-bang'
-        | 'paper-white'
+    /** Every wallpaper in `wallpaperChrome` (incl. keyboard-garden) — one source of truth. */
+    wallpaper: WallpaperName
     reduceTransparency?: boolean
     clickBehavior?: 'single' | 'double'
     performanceBoost?: boolean

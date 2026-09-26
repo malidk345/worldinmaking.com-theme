@@ -125,8 +125,9 @@ describe('generate_image tool execution', () => {
         expect(parsed.dimensions).toBe('1024x576')
     })
 
-    it('connects to live Cloudflare worker and receives valid generated image URL with aspect ratio', async () => {
-        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5ZHlwaXNnZmFrc3FramRyYWl1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njg0NDAyMSwiZXhwIjoyMDgyNDIwMDIxfQ.YV4wfUArW2rgExeNxNbaH6BnuekfNAnE4_1vnS7oqCs'
+    // Live worker test needs a real token from the environment — never commit one.
+    const token = process.env.WIM_LIVE_WORKER_TOKEN || ''
+    it.skipIf(!token)('connects to live Cloudflare worker and receives valid generated image URL with aspect ratio', async () => {
         const result = await executeToolCall(
             {
                 id: 'call-live',
