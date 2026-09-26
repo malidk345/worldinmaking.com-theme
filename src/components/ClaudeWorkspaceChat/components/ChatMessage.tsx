@@ -24,6 +24,7 @@ import { resolveDiffApplySpanText, diffApplyButtonLabel, type DiffApplyUiStatus 
 import { dispatchNotebookOsEvent, isNotebookOsListenerAlive } from '../../../lib/notebook-os-dispatch';
 import { notebookWindowPath } from '../../../lib/window-path';
 import { linkifyCitationMarkers, parseCitationHref } from '../../../lib/ai/citation-markers';
+import { inlineCitationLabels } from '../../../lib/ai/citation-format';
 import { useAppActions } from '../../../context/App';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -622,6 +623,10 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const baseMarkdownText = isLiveAnswer ? ensureClosedCodeFences(textToProcess) : textToProcess;
   // [P3] / [3] markers → small buttons opening that source (ids = chat.ts citation ids).
   const citationIdsKey = (message.citations || []).map((c) => c.id).join(',');
+  const citationLabels = React.useMemo(
+    () => inlineCitationLabels(message.citations || []),
+    [message.citations]
+  );
   const markdownText = React.useMemo(
     () =>
       message.citations?.length
@@ -772,22 +777,23 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                               title="Not found in this answer's sources"
                               data-citation-marker="unknown"
                             >
-                              {cite.id}
+                              {`P${cite.id}`}
                             </span>
                           );
                         }
+                        const label = citationLabels.get(cite.id) || `P${cite.id}`
                         return (
                           <button
                             type="button"
                             onClick={(event) =>
                               onOpenSources?.(message.citations, event.currentTarget.getBoundingClientRect(), cite.id)
                             }
-                            className="mx-0.5 inline-flex items-center rounded border border-primary/25 bg-accent/50 px-1 align-[1px] text-[10.5px] font-medium leading-4 text-primary font-sans hover:bg-accent cursor-pointer transition-colors"
+                            className="mx-0.5 inline-flex max-w-[18rem] items-center truncate rounded border border-primary/25 bg-accent/50 px-1 align-[1px] text-[10.5px] font-medium leading-4 text-primary font-sans hover:bg-accent cursor-pointer transition-colors"
                             title={source.title}
-                            aria-label={`Source ${cite.id}: ${source.title}`}
+                            aria-label={`${label}. ${source.title}`}
                             data-citation-marker={cite.id}
                           >
-                            {cite.id}
+                            {label}
                           </button>
                         );
                       }

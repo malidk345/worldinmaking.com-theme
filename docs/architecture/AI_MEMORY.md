@@ -58,6 +58,11 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (fix: an inline citation showed only its number)
+
+- **Why:** `[P7]` was drawn as a chip whose text was `7`. In the sentence that reads as a stray digit, not a citation.
+- **Now:** The chip is the author and year (`Heidegger, 1977`), or the title / filename when there is no author. Two works with the same author and year also show a short title. A marker with no source card is `P7`, not `7`.
+
 ### 2026-09-26 — Grok (fix: follow-up questions must re-read the uploaded PDF)
 
 - **Why:** The first pass may open a few pages. The next question then saw those pages pasted into the earlier user turn (about three `[Page N]` blocks) and the `read_document` results kept in history. The model treated what it had already seen as the whole file and did not call the tool again.

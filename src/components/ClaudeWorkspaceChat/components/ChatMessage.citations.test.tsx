@@ -39,7 +39,15 @@ describe('ChatMessage inline numbered citations', () => {
       isTypingDone: true,
       citations: [
         { id: 1, kind: 'web', title: 'A site', url: 'https://a.example', snippet: '' },
-        { id: 2, kind: 'paper', title: 'The Question Concerning Technology', url: 'https://doi.org/10.1234/qct', snippet: '' },
+        {
+          id: 2,
+          kind: 'paper',
+          title: 'The Question Concerning Technology',
+          url: 'https://doi.org/10.1234/qct',
+          snippet: '',
+          authors: ['Martin Heidegger'],
+          year: 1977,
+        },
       ],
     }
     act(() => {
@@ -49,9 +57,9 @@ describe('ChatMessage inline numbered citations', () => {
     })
     const markers = Array.from(container.querySelectorAll<HTMLElement>('[data-citation-marker]'))
     expect(markers.map((m) => [m.tagName, m.textContent, m.dataset.citationMarker])).toEqual([
-      ['BUTTON', '2', '2'],
-      ['BUTTON', '1', '1'],
-      ['SPAN', '9', 'unknown'],
+      ['BUTTON', 'Heidegger, 1977', '2'],
+      ['BUTTON', 'A site', '1'],
+      ['SPAN', 'P9', 'unknown'],
     ])
     expect(container.querySelector('code')?.textContent).toBe('[2]')
     act(() => markers[0].click())
