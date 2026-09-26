@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { chatAuthHeadersFresh } from './chat-remote'
-import { WIM_IDENTITY_EVENT } from './wim-identity'
+import { getAuthUserId, WIM_IDENTITY_EVENT } from './wim-identity'
+import { shouldBlankQuotaOnIdentity } from './chat-session'
 
 export interface TokenQuotaSnapshot {
     subject: string
@@ -50,10 +51,19 @@ export function syncTokenQuotaCacheForIdentity(): void {
     clearCachedTokenQuota()
 }
 
+export function quotaOwnerKey(): string {
+    return getAuthUserId() || 'guest'
+}
+
 if (typeof window !== 'undefined') {
+    let rememberedQuotaOwner = quotaOwnerKey()
     window.addEventListener(WIM_IDENTITY_EVENT, () => {
-        clearCachedTokenQuota()
-        // Refetch for the new owner so ChatInput does not keep a stale allowed:true.
+        const next = quotaOwnerKey()
+        if (shouldBlankQuotaOnIdentity(rememberedQuotaOwner, next)) {
+            clearCachedTokenQuota()
+        }
+        rememberedQuotaOwner = next
+        // Refetch in the background. Same-owner token refresh must not blank the snapshot.
         void fetchTokenQuota()
     })
 }
@@ -130,8 +140,9 @@ export async function fetchTokenQuota(): Promise<TokenQuotaSnapshot | null> {
 }
 
 export function useTokenQuota() {
-    // Cold start with no cache → null until fetch settles (ChatInput fails closed).
+    // Cold start with no cache → null until fetch settles (send stays fail-closed, no composer copy).
     const [quota, setQuota] = useState<TokenQuotaSnapshot | null>(getCachedTokenQuota)
+    const ownerRef = useRef(quotaOwnerKey())
 
     useEffect(() => {
         let mounted = true
@@ -162,8 +173,12 @@ export function useTokenQuota() {
         }
 
         const onIdentity = () => {
-            clearCachedTokenQuota()
-            setQuota(null)
+            const next = quotaOwnerKey()
+            if (shouldBlankQuotaOnIdentity(ownerRef.current, next)) {
+                clearCachedTokenQuota()
+                setQuota(null)
+            }
+            ownerRef.current = next
             void fetchTokenQuota().then((data) => {
                 if (mounted && data) setQuota(data)
             })

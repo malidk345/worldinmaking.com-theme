@@ -58,6 +58,15 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (fix: Ask AI composer must not adopt an old chat; budget status lives in the sidebar)
+
+- **Symptom:** Opening WIM AI and starting to type sometimes swapped the blank composer for the newest stored thread. At the same moment the composer showed “checking weekly budget…”.
+- **Cause:** Supabase session restore emits `wim-identity-changed` (same event as login and token refresh). The handler replaced the in-memory list with stored threads, which omit the unsent opener. Remote sync then did `setActiveChatId(merged[0])` whenever the open id was missing. The same identity event blanked the quota snapshot, and `quota === null` rendered the checking line under `ChatInput`. Empty `activeChatId` also fell through to `chats[0]`.
+- **Session model:** The open composer is not history. Hydration may refresh the sidebar but must not move the composer onto another thread. `reinsertOpenThread` puts the live opener back when storage/remote dropped it. A tombstoned open thread becomes a new blank draft, never the newest old chat. Same-owner identity (token refresh) does not replace the live list. An owner change keeps an unsent draft or opens a blank one, then loads that account’s history beside it. Deleting the open chat opens a blank draft instead of the next history row.
+- **Quota model:** Composer never prints budget copy. Send stays fail-closed until `allowed === true`. Sidebar Usage is the only status surface (quiet “Usage” while unknown, meter once known, limit / Study only when blocked). `shouldBlankQuotaOnIdentity` blanks the snapshot only when the owner key changes, so a token refresh does not flash a null quota.
+- **Files:** `src/lib/chat-session.ts` (+ test), `src/lib/chat-usage-client.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, `components/ChatInput.tsx`, `components/Sidebar.tsx`.
+- **Verify:** `src/lib/chat-session.test.ts`. No Playwright (user directive).
+
 ### 2026-09-25 — Grok Bot / Cursor (fix: package D — tool quota surcharge, notebook leftovers, Ask AI render loop)
 
 - **Scope:** Branch from `main` (`d2ff3e8d`, includes #846). No Supabase schema/data changes (read-only SELECTs on `wim_chat_token_usage` / `increment_wim_chat_token_usage` only), no change to the base token estimate, limits or fail-closed logic.
