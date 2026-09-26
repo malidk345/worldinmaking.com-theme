@@ -58,6 +58,11 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (fix: chat recenters after the answer finishes)
+
+- **Why:** Not while tokens stream. The pin holds the user bubble at the top until the turn ends, then it is released. Tool rows and the plan list did not collapse in that same render: `Activity` waited for `useLayoutEffect` and the plan waited for `useEffect`. Those commits ran after settle had measured the tall tree, shrunk the spacer, and cleared the one-shot scroll restore. The browser then clamped `scrollTop` by the lost height, so the finished exchange slid down toward the middle of the pane. ResizeObserver wrote `scrollTop` back, but WebKit applies that clamp after the observer, and the deferred frame read only the already-cleared settle ref, so the correction never ran. Chromium scroll tests never collapsed a React state update after the measure, which is why the earlier pin patches kept passing.
+- **Now:** Completed tools and a finished plan collapse in the same render as `isStreaming: false`, before the scroller measures. The post-settle frame restores from the sticky scroll position, not the cleared one-shot ref.
+
 ### 2026-09-26 — Grok (notebook menu matches the menu bar and opens on the button)
 
 - The picker uses the menu-bar chrome (`data-scheme="primary"`, 13px rows, same shadow) and opens against the control that was pressed: under it, or above when the window edge is in the way. It follows that control if the thread scrolls.

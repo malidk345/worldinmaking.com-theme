@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { IconChevronDown } from '@posthog/icons'
 
 export type ActivityStatus = 'pending' | 'in_progress' | 'completed' | 'failed'
@@ -57,12 +57,16 @@ export function Activity({
     const hasDetails = substeps.length > 0 || !!details
     const shouldExpand = hasDetails && status !== 'completed' && status !== 'failed'
     const [expanded, setExpanded] = useState(shouldExpand)
+    // Collapse in this render when the turn settles (in_progress → completed).
+    // A useLayoutEffect setState collapsed tool details one commit later, after
+    // the chat scroller had already measured scrollTop and dropped the pin.
+    const [trackedExpand, setTrackedExpand] = useState(shouldExpand)
+    if (trackedExpand !== shouldExpand) {
+        setTrackedExpand(shouldExpand)
+        setExpanded(shouldExpand)
+    }
     const live = status === 'in_progress'
     const pending = status === 'pending'
-
-    useLayoutEffect(() => {
-        setExpanded(shouldExpand)
-    }, [shouldExpand])
 
     const titleInner =
         live && animate ? (

@@ -174,10 +174,13 @@ function PlanningActivity({ item, isLive }: { item: TimelineItem; isLive: boolea
   const live = isLive || item.status === 'running' || todos.some((todo) => todo.status === 'in_progress')
   const hasMultiple = todos.length > 1
   const [expanded, setExpanded] = useState(isLive)
-
-  React.useEffect(() => {
+  // Same commit as isLive flipping false. useEffect collapsed the plan after
+  // paint, which clamped the chat scroller once the pin had already been cleared.
+  const [trackedLive, setTrackedLive] = useState(isLive)
+  if (trackedLive !== isLive) {
+    setTrackedLive(isLive)
     setExpanded(isLive)
-  }, [isLive])
+  }
 
   return (
     <div
