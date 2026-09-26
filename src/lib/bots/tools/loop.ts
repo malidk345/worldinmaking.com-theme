@@ -41,7 +41,7 @@ import {
     type GatheredToolResult,
     type ToolLoopFallback,
 } from './answer-recovery'
-import { stripLeakedToolMarkup } from './leak'
+import { stripLeakedToolMarkup, stripLeakedToolMarkupForStream } from './leak'
 import type { AgentActivity } from '../agent/activity'
 import { fetchWithTransientRetry } from './provider-retry'
 
@@ -661,10 +661,7 @@ async function synthesizeAnswerWithoutTools(input: {
         omitTools: true,
         maxTokens: SYNTHESIS_MAX_TOKENS,
         onToken: (text) => {
-            // Strip leaked tool markup, but keep chunk-edge whitespace when nothing
-            // leaked (stripLeakedToolMarkup trims, which glues streamed words).
-            const stripped = stripLeakedToolMarkup(text)
-            const cleaned = stripped === text.trim() ? text : stripped
+            const cleaned = stripLeakedToolMarkupForStream(text)
             if (!cleaned) return
             streamed += cleaned
             input.onToken?.(cleaned)
