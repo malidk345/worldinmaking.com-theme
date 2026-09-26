@@ -104,7 +104,7 @@ import {
   type NotebookAckResult,
 } from '../../lib/notebook-os-dispatch';
 import { openNotebookWindow as openNotebookWindowInOs } from '../../lib/open-notebook-window';
-import { resolveNotebookAddTarget, type NotebookAddTarget } from '../../lib/notebook-add-target';
+import { actionNeedsNotebookPick, resolveNotebookAddTarget, type NotebookAddTarget } from '../../lib/notebook-add-target';
 import { notebookHasSource, notebookSourceKey } from '../../lib/notebook-citations';
 import { formatReference } from '../../lib/ai/citation-styles';
 import { getCitationStyle } from '../../lib/citation-style-pref';
@@ -330,9 +330,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   }
 
   /**
-   * Target for an add: explicit id → bound/open notebook → most recently updated notebook
-   * → a new notebook (existing createNotebook path; guest = localStorage, signed-in = the
-   * same local store plus its remote sync). Never the /notebooks list, which has no listener.
+   * Target for an add that already names a notebook. UI clicks pass that id
+   * (the user picked it, or created a new one). With no id, fall back to the
+   * bound/open notebook, then the most recent, then create — never the list.
    */
   const resolveAddTarget = (notebookId?: string) =>
     resolveNotebookAddTarget({
@@ -2369,8 +2369,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           }
 
           if (parsed.type === 'action') {
-            const isDestructive = ['rewrite_notebook_document', 'replace_notebook_selection', 'insert_notebook_block', 'annotate_notebook', 'add_notebook_footnote'].includes(parsed.action.type);
-            const applied = isDestructive ? false : executeOSAction(assistantMessageId, parsed.action, targetChatId);
+            const needsNotebookConfirm = actionNeedsNotebookPick(parsed.action.type);
+            const applied = needsNotebookConfirm ? false : executeOSAction(assistantMessageId, parsed.action, targetChatId);
             streamedAction = { ...parsed.action, executed: applied };
             if (!applied) {
               updateAssistantMessage(targetChatId, assistantMessageId, { osAction: streamedAction });
@@ -2831,7 +2831,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         const targetId =
           action.type === 'create_notebook'
             ? customEvent.detail?.notebookId
-            : action.payload.notebookId || notebookBind?.notebookId;
+            : action.payload.notebookId;
 
         // If it's create_notebook, we grab the new ID from the ack if possible, or just accept the ack.
         // For others, we only ack if the ID matches or if we didn't specify one.
@@ -2855,6 +2855,19 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }, 5000);
     }
 
+    const pickedNotebookId = (): string | null => {
+      if (!actionNeedsNotebookPick(action.type)) {
+        failClosedNotebookMount()
+        return null
+      }
+      const id = action.payload?.notebookId
+      if (!id) {
+        failClosedNotebookMount()
+        return null
+      }
+      return id
+    }
+
     try {
       if (action.type === 'create_notebook') {
         const nb = createNotebook(action.payload.title || 'AI Generated Notes', action.payload.content || '');
@@ -2876,14 +2889,16 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         // Manually fire the ack since createNotebook doesn't via the event listener paths in App.tsx
         window.dispatchEvent(new CustomEvent('wimNotebookAck', { detail: { notebookId: nb.id } }));
       } else if (action.type === 'insert_notebook_block') {
-        // executeOSAction's own ack listener drives the card; only fail fast when the
-        // notebook could not be reached at all.
-        void insertIntoNotebook(action.payload.content || '', action.payload.notebookId).then((result) => {
+        const nbId = pickedNotebookId()
+        if (!nbId) return false
+        // The card's ack listener marks Applied; fail fast only when the notebook cannot be reached.
+        void insertIntoNotebook(action.payload.content || '', nbId).then((result) => {
           if (!result.ok && result.error === 'not_reachable') failClosedNotebookMount();
         });
       } else if (action.type === 'rewrite_notebook_document') {
-        const nbId = action.payload.notebookId || notebookBind?.notebookId;
-        const notebookPath = nbId ? notebookWindowPath(nbId) : '/notebooks';
+        const nbId = pickedNotebookId()
+        if (!nbId) return false
+        const notebookPath = notebookWindowPath(nbId)
         void dispatchNotebookOsEvent(
           'wimNotebookInsertText',
           {
@@ -2902,8 +2917,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (!ok) failClosedNotebookMount();
         });
       } else if (action.type === 'replace_notebook_selection') {
-        const nbId = action.payload.notebookId || notebookBind?.notebookId;
-        const notebookPath = nbId ? notebookWindowPath(nbId) : '/notebooks';
+        const nbId = pickedNotebookId()
+        if (!nbId) return false
+        const notebookPath = notebookWindowPath(nbId)
         void dispatchNotebookOsEvent(
           'wimNotebookReplaceSelection',
           {
@@ -2922,8 +2938,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (!ok) failClosedNotebookMount();
         });
       } else if (action.type === 'update_notebook_title') {
-        const nbId = action.payload.notebookId || notebookBind?.notebookId;
-        const notebookPath = nbId ? notebookWindowPath(nbId) : '/notebooks';
+        const nbId = pickedNotebookId()
+        if (!nbId) return false
+        const notebookPath = notebookWindowPath(nbId)
         void dispatchNotebookOsEvent(
           'wimNotebookSetTitle',
           {
@@ -3004,8 +3021,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           updateSiteSettings({ ...siteSettings, reduceTransparency: action.payload.reduce_transparency });
         }
       } else if (action.type === 'annotate_notebook') {
-        const nbId = action.payload.notebookId || notebookBind?.notebookId;
-        const notebookPath = nbId ? notebookWindowPath(nbId) : '/notebooks';
+        const nbId = pickedNotebookId()
+        if (!nbId) return false
+        const notebookPath = notebookWindowPath(nbId)
         void dispatchNotebookOsEvent(
           'wimNotebookAddAnnotation',
           {
@@ -3024,8 +3042,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
           if (!ok) failClosedNotebookMount();
         });
       } else if (action.type === 'add_notebook_footnote') {
-        const nbId = action.payload.notebookId || notebookBind?.notebookId;
-        const notebookPath = nbId ? notebookWindowPath(nbId) : '/notebooks';
+        const nbId = pickedNotebookId()
+        if (!nbId) return false
+        const notebookPath = notebookWindowPath(nbId)
         void dispatchNotebookOsEvent(
           'wimNotebookAddFootnote',
           {
@@ -3440,37 +3459,35 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     [isArtifactsOpen, activeArtifact?.id, isArtifactExpanded]
   )
 
-  // Whole-reply "Add": citation markers become notebook footnotes (user's style); the button only
-  // says "Added" after the notebook confirms the insert.
-  const handleAddMessageToNotebook = useCallback(async (message: Message): Promise<boolean> => {
-    const result = await insertIntoNotebookRef.current(messageToNotebookMarkdown(message, getCitationStyle()))
+  // Whole-reply "Add": the user picks the notebook first. Citation markers become footnotes
+  // in their style. The button says "Added" only after that notebook confirms the insert.
+  const handleAddMessageToNotebook = useCallback(async (message: Message, notebookId: string): Promise<boolean> => {
+    const result = await insertIntoNotebookRef.current(messageToNotebookMarkdown(message, getCitationStyle()), notebookId)
     if (!result.ok) addToast({ description: notebookAckErrorMessage(result.error), duration: 2800 })
     return result.ok
   }, [addToast])
 
-  // Sources panel "Add to notebook": reference (user's style) as a footnote on the selected notebook
-  // text (live selection first, then the one-shot sticky selection); without a selection,
-  // append it. Resolves true only when the notebook confirmed the change.
+  // Sources panel "Add to notebook": the chosen notebook gets the reference (user's style).
+  // A footnote is pinned only when that notebook is the open one and it has a selection.
+  // Any other notebook just receives the reference at the end.
   const activeNotebookIdRef = useRef<string | undefined>(undefined)
   activeNotebookIdRef.current = activeNotebookInfo?.id
-  const handleAddCitationToNotebook = useCallback(async (citation: WebCitation): Promise<boolean> => {
+  const handleAddCitationToNotebook = useCallback(async (citation: WebCitation, notebookId: string): Promise<boolean> => {
     const reference = formatReference(citation, getCitationStyle())
     const source = notebookSourceKey(citation)
-    const notebookId = activeNotebookIdRef.current
-    // Cheap pre-check against the stored copy; the notebook re-checks its live text.
-    if (notebookId && notebookHasSource(getNotebook(notebookId)?.content, source)) {
+    if (notebookHasSource(getNotebook(notebookId)?.content, source)) {
       addToast({ description: notebookAckErrorMessage('duplicate_source'), duration: 2400 })
       return false
     }
-    const selection = notebookId ? resolveNotebookSelection(notebookId) : { text: '', sticky: false }
+    const openId = activeNotebookIdRef.current
+    const selection = notebookId === openId ? resolveNotebookSelection(notebookId) : { text: '', sticky: false }
     let result: NotebookAckResult
-    if (notebookId && selection.text) {
+    if (notebookId === openId && selection.text) {
       result = await sendToNotebookRef.current(
         'wimNotebookAddFootnote',
         { text: reference, spanText: selection.text, source, quiet: true },
         notebookId
       )
-      // The sticky selection is single-use: never pin a second source on a stale phrase.
       if (selection.sticky) clearStickyNotebookSelection()
     } else {
       result = await insertIntoNotebookRef.current(reference, notebookId, { source })

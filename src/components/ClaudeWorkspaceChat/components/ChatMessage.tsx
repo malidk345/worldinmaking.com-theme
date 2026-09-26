@@ -17,6 +17,7 @@ import { Copy, Check, Edit2, RotateCcw, FileInput, Columns } from 'lucide-react'
 import { SourceFavicon } from './SourceFavicon';
 import { IconDocument, IconImage } from '@posthog/icons';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
+import { NotebookTargetMenu } from './NotebookTargetMenu';
 import { readNotebookChatBind, readNotebookSelection, peekStickyNotebookSelection, consumeStickyNotebookSelection } from '../../../lib/notebook-chat-bind';
 import { getNotebook } from '../../../notebook-app/scenes/notebooks/notebookStorage';
 import { resolveDiffApplySpanText, diffApplyButtonLabel, type DiffApplyUiStatus } from '../../../lib/chat/diff-apply';
@@ -69,7 +70,7 @@ interface ChatMessageProps {
   onExecuteOSAction?: (msgId: string, action: OSActionCardType) => void;
   onHumanRespond?: (messageId: string, action: 'run' | 'revise' | 'answer', payload?: string) => void;
   /** Resolves false when the notebook did not confirm the insert (the button then never says "Added"). */
-  onAddToNotebook?: (message: Message) => Promise<boolean> | boolean | void;
+  onAddToNotebook?: (message: Message, notebookId: string) => Promise<boolean> | boolean | void;
   onOpenByok?: () => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
   onContinue?: (messageId: string) => void;
@@ -611,6 +612,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const [copied, setCopied] = useState(false);
   const [addedToNotebook, setAddedToNotebook] = useState(false);
   const [addingToNotebook, setAddingToNotebook] = useState(false);
+  const [notebookMenuAnchor, setNotebookMenuAnchor] = useState<DOMRect | null>(null);
+  const [notebookMenuContent, setNotebookMenuContent] = useState<string | null>(null);
   // Strip host/tool leaks from stored bubbles (pre-fix polluted localStorage).
   const displayedText = isUser ? message.content : stripLeakedToolMarkup(message.content || '');
   const isLiveAnswer = !isUser && !!message.isStreaming;
@@ -804,10 +807,9 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                             onAddToNotebook={
                               onAddToNotebook
                                 ? () => {
-                                    onAddToNotebook({
-                                      ...message,
-                                      content: `[🔊 ${textContent || 'Voice Note'}](${hrefStr})`,
-                                    });
+                                    const rect = new DOMRect(window.innerWidth / 2, Math.max(80, window.innerHeight / 3), 0, 0)
+                                    setNotebookMenuAnchor(rect)
+                                    setNotebookMenuContent(`[🔊 ${textContent || 'Voice Note'}](${hrefStr})`)
                                   }
                                 : undefined
                             }
@@ -913,7 +915,14 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             <OSActionCard
               action={message.osAction}
               isStreaming={isLiveAnswer}
-              onExecute={() => onExecuteOSAction?.(message.id, message.osAction!)}
+              onExecute={(notebookId) =>
+                onExecuteOSAction?.(
+                  message.id,
+                  notebookId
+                    ? { ...message.osAction!, payload: { ...message.osAction!.payload, notebookId } }
+                    : message.osAction!
+                )
+              }
             />
           ) : null}
 
@@ -979,18 +988,10 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                 <button
                   type="button"
                   disabled={addingToNotebook}
-                  onClick={async () => {
+                  onClick={(event) => {
                     if (addingToNotebook) return
-                    setAddingToNotebook(true)
-                    let ok: boolean | void = false
-                    try {
-                      ok = await onAddToNotebook(message)
-                    } finally {
-                      setAddingToNotebook(false)
-                    }
-                    if (ok === false) return
-                    setAddedToNotebook(true)
-                    setTimeout(() => setAddedToNotebook(false), 2000)
+                    setNotebookMenuAnchor(event.currentTarget.getBoundingClientRect())
+                    setNotebookMenuContent(null)
                   }}
                   className={`flex items-center gap-1 px-1.5 py-0.5 text-[12px] rounded transition-transform duration-150 active:scale-[0.92] hover:scale-[1.05] cursor-pointer ${
                     addedToNotebook ? 'text-primary font-semibold bg-accent/50 dark:bg-accent/40' : 'hover:text-primary'
@@ -1015,6 +1016,30 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                   )}
                 </button>
               )}
+              <NotebookTargetMenu
+                anchor={notebookMenuAnchor}
+                onClose={() => {
+                  setNotebookMenuAnchor(null)
+                  setNotebookMenuContent(null)
+                }}
+                onSelect={async (notebookId) => {
+                  if (!onAddToNotebook || addingToNotebook) return
+                  setAddingToNotebook(true)
+                  let ok: boolean | void = false
+                  try {
+                    const payload = notebookMenuContent
+                      ? { ...message, content: notebookMenuContent }
+                      : message
+                    ok = await onAddToNotebook(payload, notebookId)
+                  } finally {
+                    setAddingToNotebook(false)
+                    setNotebookMenuContent(null)
+                  }
+                  if (ok === false) return
+                  setAddedToNotebook(true)
+                  setTimeout(() => setAddedToNotebook(false), 2000)
+                }}
+              />
 
               {message.citations && message.citations.length > 0 && (
                 <button

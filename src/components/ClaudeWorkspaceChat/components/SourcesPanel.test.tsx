@@ -20,6 +20,11 @@ vi.mock('../../../notebook-app/lib/lemon-ui/LemonSelect/LemonSelect', () => ({
   ),
 }))
 
+vi.mock('../../../notebook-app/scenes/notebooks/notebookStorage', () => ({
+  getNotebooks: () => [{ id: 'nb-ethics', title: 'Ethics', updatedAt: '2026-09-26T12:00:00.000Z' }],
+  createNotebook: (title?: string) => ({ id: 'nb-new', title: title || 'Research Notes' }),
+}))
+
 // React 18 act() environment flag for non-RTL rendering.
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -117,7 +122,11 @@ describe('SourcesPanel', () => {
 
     const add = Array.from(detail.querySelectorAll('button')).find((b) => b.textContent?.includes('Add to notebook')) as HTMLButtonElement
     await act(async () => add.click())
-    expect(onAdd).toHaveBeenCalledWith(paper)
+    expect(onAdd).not.toHaveBeenCalled()
+    const row = document.body.querySelector('[data-testid="notebook-target-nb-ethics"]') as HTMLButtonElement
+    expect(row?.textContent).toContain('Ethics')
+    await act(async () => row.click())
+    expect(onAdd).toHaveBeenCalledWith(paper, 'nb-ethics')
   })
 
   it('shows "Added" only after the notebook confirmed it; "Adding…" while waiting', async () => {
@@ -126,17 +135,42 @@ describe('SourcesPanel', () => {
     render(<SourcesPanel citations={[paper]} onClose={() => undefined} onAddToNotebook={onAdd} />)
     const detail = container.querySelector('[data-testid="source-detail"]') as HTMLElement
     const add = () => Array.from(detail.querySelectorAll('button')).find((b) => /Add|Adding/.test(b.textContent || '') && !b.textContent?.includes('Copy')) as HTMLButtonElement
-    await act(async () => add().click())
+    const choose = async () => {
+      await act(async () => add().click())
+      const row = document.body.querySelector('[data-testid="notebook-target-nb-ethics"]') as HTMLButtonElement
+      await act(async () => row.click())
+    }
+    await choose()
     expect(add().textContent).toContain('Adding…')
     expect(add().disabled).toBe(true)
-    await act(async () => add().click()) // double click while pending does nothing
+    await act(async () => add().click()) // disabled while pending
     expect(onAdd).toHaveBeenCalledTimes(1)
+    expect(onAdd).toHaveBeenCalledWith(paper, 'nb-ethics')
     await act(async () => resolveAdd(false)) // notebook rejected it
     expect(add().textContent).toContain('Add to notebook')
     expect(detail.textContent).not.toContain('Added')
-    await act(async () => add().click())
+    await choose()
     await act(async () => resolveAdd(true))
     expect(detail.textContent).toContain('Added')
+  })
+
+  it('can add the source to a notebook created from the menu', async () => {
+    const onAdd = vi.fn(async () => true)
+    render(<SourcesPanel citations={[paper]} onClose={() => undefined} onAddToNotebook={onAdd} />)
+    const detail = container.querySelector('[data-testid="source-detail"]') as HTMLElement
+    const add = Array.from(detail.querySelectorAll('button')).find((b) => b.textContent?.includes('Add to notebook')) as HTMLButtonElement
+    await act(async () => add.click())
+    const createNew = document.body.querySelector('[data-testid="notebook-target-new"]') as HTMLButtonElement
+    await act(async () => createNew.click())
+    const input = document.body.querySelector('input[aria-label="New notebook title"]') as HTMLInputElement
+    await act(async () => {
+      const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+      setValue?.call(input, 'Field notes')
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    const create = document.body.querySelector('[data-testid="notebook-target-create"]') as HTMLButtonElement
+    await act(async () => create.click())
+    expect(onAdd).toHaveBeenCalledWith(paper, 'nb-new')
   })
 
   it('opens the source requested by an inline marker and marks encyclopedia / unverified items', () => {

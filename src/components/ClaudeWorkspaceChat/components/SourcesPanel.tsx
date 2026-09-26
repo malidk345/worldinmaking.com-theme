@@ -9,6 +9,7 @@ import { citationExportFile, downloadCitationFile, type CitationExportFormat } f
 import { useCitationStyle } from '../../../lib/citation-style-pref'
 import { LemonSelect } from '../../../notebook-app/lib/lemon-ui/LemonSelect/LemonSelect'
 import { SourceFavicon } from './SourceFavicon'
+import { NotebookTargetMenu } from './NotebookTargetMenu'
 
 interface SourcesPanelProps {
   citations: WebCitation[]
@@ -16,7 +17,7 @@ interface SourcesPanelProps {
   /** Source to select first (e.g. an inline [3] marker was clicked). */
   initialActiveId?: number | null
   /** Adds the source's reference (chosen style) to the notebook (footnote on the selection, else appended). */
-  onAddToNotebook?: (citation: WebCitation) => Promise<boolean> | boolean | void
+  onAddToNotebook?: (citation: WebCitation, notebookId: string) => Promise<boolean> | boolean | void
   onClose: () => void
 }
 
@@ -185,12 +186,13 @@ function AcademicActions({
   // "Added" only after the notebook confirmed it (the handler resolves false on a nack,
   // a duplicate or a timeout and shows its own message).
   const [adding, setAdding] = useState(false)
-  const addToNotebook = async () => {
+  const [anchor, setAnchor] = useState<DOMRect | null>(null)
+  const addToNotebook = async (notebookId: string) => {
     if (!onAddToNotebook || adding) return
     setAdding(true)
     let ok: boolean | void = false
     try {
-      ok = await onAddToNotebook(citation)
+      ok = await onAddToNotebook(citation, notebookId)
     } finally {
       setAdding(false)
     }
@@ -225,16 +227,22 @@ function AcademicActions({
         {copied ? 'Copied' : `Copy ${citationStyleLabel(style)}`}
       </button>
       {onAddToNotebook ? (
-        <button
-          type="button"
-          onClick={addToNotebook}
-          disabled={adding}
-          className={actionClass}
-          title="Add as a footnote on the selected notebook text, or append to the notebook"
-        >
-          {added ? <Check className="h-3 w-3" /> : <FileInput className="h-3 w-3" />}
-          {added ? 'Added' : adding ? 'Adding…' : 'Add to notebook'}
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={(event) => {
+              if (adding) return
+              setAnchor(event.currentTarget.getBoundingClientRect())
+            }}
+            disabled={adding}
+            className={actionClass}
+            title="Choose a notebook, or make a new one"
+          >
+            {added ? <Check className="h-3 w-3" /> : <FileInput className="h-3 w-3" />}
+            {added ? 'Added' : adding ? 'Adding…' : 'Add to notebook'}
+          </button>
+          <NotebookTargetMenu anchor={anchor} onClose={() => setAnchor(null)} onSelect={addToNotebook} />
+        </>
       ) : null}
     </div>
   )

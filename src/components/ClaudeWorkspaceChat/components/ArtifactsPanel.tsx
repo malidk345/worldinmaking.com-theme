@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { Artifact, ArtifactOrigin } from '../types';
+import { NotebookTargetMenu } from './NotebookTargetMenu';
 import { artifactToNotebookMarkdown } from '../../../lib/notebook-artifact-block';
 import { artifactLooksLikeMermaid, cleanMermaidSource } from '../../../lib/mermaid-loader';
 import { WIM_PAPER, wrapHtmlArtifactDocument } from '../../../lib/wim-artifact-theme';
@@ -82,7 +83,7 @@ interface ArtifactsPanelProps {
   onClose: () => void;
   allArtifacts?: Artifact[];
   onSelectArtifact?: (artifact: Artifact) => void;
-  onInsertToNotebook?: (content: string) => void;
+  onInsertToNotebook?: (content: string, notebookId: string) => void | Promise<unknown>;
   onHealArtifact?: (artifact: Artifact, content: string) => void;
   contained?: boolean;
 }
@@ -106,6 +107,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
   const [copied, setCopied] = useState(false);
   const [inserted, setInserted] = useState(false);
+  const [notebookAnchor, setNotebookAnchor] = useState<DOMRect | null>(null);
   const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
   const [showCopyOptions, setShowCopyOptions] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null)
@@ -302,11 +304,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
             {onInsertToNotebook ? (
               <button
                 type="button"
-                onClick={() => {
-                  onInsertToNotebook(artifactToNotebookMarkdown(artifact))
-                  setInserted(true)
-                  setTimeout(() => setInserted(false), 2000)
-                }}
+                onClick={(event) => setNotebookAnchor(event.currentTarget.getBoundingClientRect())}
                 className={`flex items-center gap-1.5 px-2.5 text-[13px] cursor-pointer transition-colors ${
                   inserted ? 'text-emerald-600 font-semibold bg-emerald-50' : 'text-[#3d3d3d] hover:bg-[#fafafa]'
                 }`}
@@ -373,6 +371,18 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
               </div>
             )}
           </div>
+          {onInsertToNotebook ? (
+            <NotebookTargetMenu
+              anchor={notebookAnchor}
+              onClose={() => setNotebookAnchor(null)}
+              onSelect={async (notebookId) => {
+                const result = await onInsertToNotebook(artifactToNotebookMarkdown(artifact), notebookId)
+                if (result && typeof result === 'object' && 'ok' in result && (result as { ok?: boolean }).ok === false) return
+                setInserted(true)
+                window.setTimeout(() => setInserted(false), 2000)
+              }}
+            />
+          ) : null}
 
           {onToggleExpand && (
             <button

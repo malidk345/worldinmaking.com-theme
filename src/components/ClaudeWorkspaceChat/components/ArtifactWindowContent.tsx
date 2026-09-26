@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { Artifact } from '../types'
 import { artifactToNotebookMarkdown } from '../../../lib/notebook-artifact-block'
+import { NotebookTargetMenu } from './NotebookTargetMenu'
 import { artifactLooksLikeMermaid, cleanMermaidSource } from '../../../lib/mermaid-loader'
 import { WIM_PAPER, wrapHtmlArtifactDocument } from '../../../lib/wim-artifact-theme'
 import { Copy, Check, FileInput, Code2, Play } from 'lucide-react'
@@ -45,7 +46,7 @@ const SimulationArtifactRenderer = dynamic(
 
 interface ArtifactWindowContentProps {
   artifact: Artifact
-  onInsertToNotebook?: (content: string) => void
+  onInsertToNotebook?: (content: string, notebookId: string) => void | Promise<unknown>
   onHealArtifact?: (artifact: Artifact, content: string) => void
 }
 
@@ -57,6 +58,7 @@ export function ArtifactWindowContent({
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
   const [copied, setCopied] = useState(false)
   const [inserted, setInserted] = useState(false)
+  const [notebookAnchor, setNotebookAnchor] = useState<DOMRect | null>(null)
 
   useEffect(() => {
     setActiveTab('preview')
@@ -68,9 +70,10 @@ export function ArtifactWindowContent({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleInsert = () => {
+  const handleInsert = async (notebookId: string) => {
     if (!onInsertToNotebook) return
-    onInsertToNotebook(artifactToNotebookMarkdown(artifact))
+    const result = await onInsertToNotebook(artifactToNotebookMarkdown(artifact), notebookId)
+    if (result && typeof result === 'object' && 'ok' in result && (result as { ok?: boolean }).ok === false) return
     setInserted(true)
     setTimeout(() => setInserted(false), 2000)
   }
@@ -125,27 +128,34 @@ export function ArtifactWindowContent({
         </div>
 
         {onInsertToNotebook && (
-          <button
-            type="button"
-            onClick={handleInsert}
-            className={`flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs font-medium cursor-pointer transition-all shadow-2xs ${
-              inserted
-                ? 'border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-semibold'
-                : 'border-primary/30 bg-primary text-primary hover:bg-accent'
-            }`}
-          >
-            {inserted ? (
-              <>
-                <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Added to notebook ✓</span>
-              </>
-            ) : (
-              <>
-                <FileInput className="h-3.5 w-3.5 text-secondary" />
-                <span>Add to notebook</span>
-              </>
-            )}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={(event) => setNotebookAnchor(event.currentTarget.getBoundingClientRect())}
+              className={`flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs font-medium cursor-pointer transition-all shadow-2xs ${
+                inserted
+                  ? 'border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-semibold'
+                  : 'border-primary/30 bg-primary text-primary hover:bg-accent'
+              }`}
+            >
+              {inserted ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Added to notebook ✓</span>
+                </>
+              ) : (
+                <>
+                  <FileInput className="h-3.5 w-3.5 text-secondary" />
+                  <span>Add to notebook</span>
+                </>
+              )}
+            </button>
+            <NotebookTargetMenu
+              anchor={notebookAnchor}
+              onClose={() => setNotebookAnchor(null)}
+              onSelect={handleInsert}
+            />
+          </>
         )}
       </div>
 
