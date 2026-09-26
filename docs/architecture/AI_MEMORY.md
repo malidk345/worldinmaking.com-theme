@@ -58,6 +58,11 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (fix: notebook picker import inside the notebook app)
+
+- **Why:** `lib/…` from a notebook-app file is rewritten to the notebook’s own lib, so the Pages build could not find `notebook-add-target`.
+- **Now:** `OSActionCard` imports that helper by relative path into `src/lib`.
+
 ### 2026-09-26 — Grok (ask which notebook before adding)
 
 - **Why:** Add, Apply, Rewrite and the sources/artifact inserts went to the most recently updated notebook without asking.
