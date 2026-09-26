@@ -8,8 +8,8 @@ import { LEGAL_PATHS, LEGAL_TITLES, type LegalPath } from 'lib/legal-paths'
 export { LEGAL_PATHS, LEGAL_TITLES }
 export type { LegalPath }
 
-const EFFECTIVE = '4 September 2026'
-const CONTACT = 'mustafa@worldinmaking.com'
+const EFFECTIVE = '26 September 2026'
+const CONTACT = 'info@worldinmaking.com'
 const SITE = 'https://worldinmaking.com'
 
 function Doc({
@@ -107,10 +107,13 @@ function TermsContent() {
                 <H>6. AI features</H>
                 <P>
                     WIM AI, philosopher bots, and notebook co-authoring send prompts and relevant context to
-                    third-party model providers. Outputs can be wrong, biased, or incomplete. They are not professional
-                    advice. You are responsible for how you use outputs. Do not submit data you are not allowed to
-                    share with processors listed in Subprocessors. Optional bring-your-own keys stay in your browser
-                    unless you send a request that includes them.
+                    third-party model providers. A literature search also sends the query you typed — not your password
+                    and not your account email — to public scholarly services named in the Privacy Policy. Outputs can
+                    be wrong, incomplete, out of date, or poorly attributed. They are not legal, medical, financial, or
+                    other professional advice, and they are not a substitute for reading the cited work. You are
+                    responsible for how you use outputs. Do not submit data you are not allowed to share with
+                    processors listed in Subprocessors. Optional bring-your-own keys stay in your browser unless a
+                    request you send includes them.
                 </P>
             </section>
             <section>
@@ -225,77 +228,110 @@ function PrivacyContent() {
                 <P>
                     Prompts, selected notebook or chat context, and outputs are sent to model providers to fulfil your
                     request. Your prompts are not used to train a foundation model owned by the operator. Providers’
-                    own retention and training policies may apply; see Subprocessors. Do not paste secrets or
-                    special-category data you are not willing to send to those providers.
+                    own retention and training policies may apply; see Subprocessors. Do not paste secrets, passwords,
+                    or special-category data (health, biometric, political, religious, or similar) that you are not
+                    willing to send to those providers.
                 </P>
             </section>
             <section>
-                <H>5. Sharing</H>
+                <H>5. Scholarly and web lookups</H>
+                <P>
+                    If you ask WIM AI to search the literature or open a page, the query or URL you asked for is sent
+                    to the relevant public service: OpenAlex, Crossref, Semantic Scholar, arXiv, PubMed / NCBI, Europe
+                    PMC, DOAJ, CORE, TR Dizin, Unpaywall, and, where the question calls for it, encyclopedia or web
+                    sources. Those requests do not include your password or your account email. They identify the site
+                    with the contact address {CONTACT}, so the service can apply its polite rate pool. Results can be
+                    incomplete when a source is rate-limited. They are not a representation that a work exists, is
+                    open-access, or says what the model later claims.
+                </P>
+            </section>
+            <section>
+                <H>6. Sharing</H>
                 <P>
                     Data is shared with processors who host, authenticate, bill, deliver AI, or (if you consent) analyse
-                    product use, under their terms. Data is shared if required by law or to protect rights and safety.
+                    product use, under their terms. A literature query is shared with the scholarly services in section
+                    5 only to answer that request. Data is shared if required by law or to protect rights and safety.
                     Public content you publish is visible to anyone. Collaborators you invite see what you share with
-                    them. There are no employees.
+                    them. There are no employees. Personal data is not sold and is not shared with advertisers.
                 </P>
             </section>
             <section>
-                <H>6. International transfers</H>
+                <H>7. International transfers</H>
                 <P>
-                    Infrastructure may be in the Republic of Korea (Supabase), the United States, the EU, or other
-                    regions used by Cloudflare, Lemon Squeezy, and AI providers. Where GDPR applies, adequacy decisions
-                    or standard contractual clauses with those processors are relied on where they offer them.
+                    Infrastructure may be in the Republic of Korea or another region of the Supabase project, the
+                    United States, the EU, or other regions used by Cloudflare, Lemon Squeezy, PostHog, and AI or
+                    scholarly providers. Where GDPR applies, adequacy decisions or standard contractual clauses are
+                    relied on where those processors offer them. The operator does not claim that every vendor has
+                    signed a transfer tool with this personal project. If that matters for data you control, do not
+                    upload it.
                 </P>
             </section>
             <section>
-                <H>7. Cookies and local storage</H>
+                <H>8. Cookies and local storage</H>
                 <P>
                     Essential storage keeps you signed in and remembers wallpaper, windows, and theme. Advertising
-                    cookies are not used. Analytics cookies run only if you accept them on the first-visit banner. See{' '}
-                    <Link href="/cookies">Cookies</Link>.
+                    cookies are not used. Analytics (PostHog) run only if you accept them on the first-visit banner.
+                    See <Link href="/cookies">Cookies</Link>.
                 </P>
             </section>
             <section>
-                <H>8. Retention</H>
+                <H>9. Retention</H>
                 <P>
                     Account and content stay until you delete them or the account is closed. Backups may linger for a
-                    short period. Cancelled study records may be kept for tax and dispute purposes. Logs are kept only
-                    as long as needed for security and operations.
+                    short rotation after that. Cancelled study records may be kept as long as tax, accounting, or a
+                    payment dispute requires. Security logs are kept only as long as needed to detect abuse and to
+                    operate the Service. Analytics events, if you accepted them, follow the analytics vendor’s retention
+                    for that project.
                 </P>
             </section>
             <section>
-                <H>9. Your rights</H>
+                <H>10. Your rights</H>
                 <P>
                     Depending on where you live you may access, correct, export, or delete personal data, object to or
                     restrict certain processing, and withdraw consent. Use Account to change email or password, download
                     a copy of your data, cancel study, or delete the account. Deletion removes the auth user and
-                    associated cloud records the operator controls; published copies others already saw cannot always be
-                    pulled back. Local browser copies may remain until you clear the device. You may complain to a
-                    supervisory authority (in Türkiye: KVKK; in the EEA: your local DPA).
+                    associated cloud records the operator controls. It cannot always pull back copies already public, or
+                    copies a processor must keep by law. Local browser copies remain until you clear the device.
+                </P>
+                <P>
+                    Under Turkish Law No. 6698 (KVKK) Art. 11 you may ask whether your data is processed, request
+                    information if it is, learn the purpose and whether it is used accordingly, know the third parties
+                    it is transferred to in Türkiye or abroad, request correction, request deletion or destruction,
+                    object to a result produced exclusively by automated analysis, and claim compensation for unlawful
+                    processing. Send the application to {CONTACT}. State who you are, which right you use, and, if you
+                    have an account, the email on that account. The operator replies within thirty days (KVKK Art. 13).
+                    If the reply is missing or insufficient you may apply to the Personal Data Protection Board
+                    (Kişisel Verileri Koruma Kurulu). EEA and UK residents may also complain to their local supervisory
+                    authority. These rights are free unless a request is manifestly unfounded or excessive.
                 </P>
             </section>
             <section>
-                <H>10. Children</H>
-                <P>The Service is not directed at children under 16. Their data is not knowingly collected.</P>
+                <H>11. Children</H>
+                <P>
+                    The Service is not directed at children under 16. Their data is not knowingly collected. If you
+                    believe a child has an account, write to {CONTACT} and the operator will delete it.
+                </P>
             </section>
             <section>
-                <H>11. Security</H>
+                <H>12. Security</H>
                 <P>
                     TLS in transit, access controls, and database row-level security are used. No method is perfectly
                     secure. Tell the operator promptly at {CONTACT} if you believe an account is compromised.
                 </P>
             </section>
             <section>
-                <H>12. Changes</H>
+                <H>13. Changes</H>
                 <P>
                     Updates will be posted here with a new effective date. Material changes may also be noted in the
                     product. Continued use after the date is acceptance.
                 </P>
             </section>
             <section>
-                <H>13. Contact</H>
+                <H>14. Contact</H>
                 <P>
-                    Privacy requests: {CONTACT}. See also <Link href="/terms">Terms</Link> and{' '}
-                    <Link href="/subprocessors">Subprocessors</Link>.
+                    Privacy and KVKK requests: {CONTACT}. The operator is an individual, not a company, so there is no
+                    registered data-protection officer and no company address. See also <Link href="/terms">Terms</Link>{' '}
+                    and <Link href="/subprocessors">Subprocessors</Link>.
                 </P>
             </section>
         </Doc>
@@ -306,39 +342,64 @@ function CookiesContent() {
     return (
         <Doc title="Cookies" seo="How worldinmaking uses essential storage and optional analytics.">
             <section>
-                <H>1. What is stored</H>
+                <H>1. Who to write to</H>
+                <OperatorNote />
                 <P>
-                    The desk is a web app. It uses cookies and local storage. Advertising cookies are not used. There is
-                    no company ad network.
+                    Questions about cookies or local storage: {CONTACT}. This notice is part of the{' '}
+                    <Link href="/privacy">Privacy Policy</Link>. Advertising cookies are not used. There is no company
+                    ad network and no sale of personal data.
                 </P>
             </section>
             <section>
-                <H>2. Essential</H>
+                <H>2. Essential storage</H>
                 <P>
-                    Sign-in session (Supabase), desk layout, wallpaper, theme, and similar settings on this device.
-                    These are needed for the Service to work. They are not optional.
+                    These items are required for the desk to sign you in and remember the workspace. They are not
+                    optional, and they are not used for advertising. The legal basis is the contract for the Service,
+                    and, for the consent record itself, the need to honour a refusal.
+                </P>
+                <P>
+                    Sign-in is handled by Supabase. The auth client may store a session cookie and, on this device,
+                    local storage such as a session token and an account id. Clearing them signs you out.
+                </P>
+                <P>
+                    Appearance and desk state stay in local storage on this browser, including theme and site settings.
+                    The key <span className="font-medium text-primary">cookie_consent</span> stores only “yes” or “no”
+                    so the banner does not ask again and so a refusal is remembered. It is not an analytics cookie.
                 </P>
             </section>
             <section>
-                <H>3. Analytics (optional)</H>
+                <H>3. Analytics, only if you accept</H>
                 <P>
-                    If you press Accept on the first-visit banner, analytics cookies or local storage may be used to
-                    measure product use (page views, feature use, rough device info, a distinct id). Session replay may
-                    run with password fields masked. If you press Decline, analytics stay off: no analytics cookies, no
-                    replay, no product events. You can change this later by clearing site data for {SITE} and answering
-                    the banner again.
+                    If you press Accept, PostHog may set its own cookies and local storage (names beginning with ph_)
+                    and may record product events: pages, feature use, a distinct id, and rough browser and device
+                    data. Session replay may run. Password fields are masked. Other fields you type can appear in a
+                    replay, so do not accept analytics on a shared or sensitive session if that matters to you.
+                </P>
+                <P>
+                    If you press Decline, analytics stay off. Capturing is opted out, persistence is memory only for
+                    that page load, and replay does not run. The choice is stored in cookie_consent so the refusal
+                    sticks. There is no second toggle in Account. To change your mind, clear site data for {SITE} and
+                    answer the banner again.
                 </P>
             </section>
             <section>
-                <H>4. Processors</H>
+                <H>4. How long</H>
                 <P>
-                    Essential auth/storage: Supabase and this browser. Optional product analytics if you accept them.
-                    Payments (on Lemon’s own pages, not this desk): Lemon Squeezy. Details:{' '}
-                    <Link href="/subprocessors">Subprocessors</Link>.
+                    Essential storage lasts until you sign out or clear site data for this browser. The consent value
+                    lasts until you clear it. PostHog cookies, if you accepted them, last for the lifetime that vendor
+                    sets, or until you clear site data, whichever is sooner.
                 </P>
             </section>
             <section>
-                <H>5. Contact</H>
+                <H>5. Processors</H>
+                <P>
+                    Essential auth and database: Supabase, plus this browser. Edge delivery: Cloudflare. Optional
+                    analytics: PostHog, only after Accept. Payments happen on Lemon Squeezy’s pages, under Lemon’s own
+                    cookies, not under this banner. Details: <Link href="/subprocessors">Subprocessors</Link>.
+                </P>
+            </section>
+            <section>
+                <H>6. Contact</H>
                 <P>
                     {CONTACT}. See <Link href="/privacy">Privacy</Link>.
                 </P>
@@ -376,12 +437,20 @@ function RefundContent() {
                 </P>
             </section>
             <section>
-                <H>4. EU/UK withdrawal</H>
+                <H>4. EU, UK, and Türkiye withdrawal</H>
                 <P>
                     If you are a consumer in the EEA or UK, you may have a 14-day right of withdrawal for distance
-                    contracts. Study is digital content/services supplied immediately when payment succeeds. By
-                    checking out you ask for immediate access. Where the law allows, that means the withdrawal right
-                    ends once that access is provided. Mandatory consumer rights that cannot be waived still apply.
+                    contracts. If you are a consumer in Türkiye, Law No. 6502 and the Distance Contracts Regulation
+                    give a similar 14-day right of withdrawal, counted from the conclusion of the contract for a
+                    service that is performed immediately.
+                </P>
+                <P>
+                    Study is digital content and a digital service, supplied as soon as payment succeeds. By checking
+                    out you ask for that immediate access. Where the law allows, the withdrawal right ends once
+                    performance has begun with your prior consent and, where the statute requires it, your
+                    acknowledgement that the right will end. Mandatory consumer rights that cannot be waived still
+                    apply, including rights against a defective charge. A request that the law still allows should be
+                    sent to {CONTACT} and to Lemon Squeezy. The operator will not pretend to be the merchant of record.
                 </P>
             </section>
             <section>
@@ -420,10 +489,13 @@ function GuidelinesContent() {
                 </P>
             </section>
             <section>
-                <H>4. Reports</H>
+                <H>4. Reports and enforcement</H>
                 <P>
-                    Email {CONTACT} with a link and a short description. The operator may remove content, limit an
-                    account, or ignore a report that is incomplete. There is no guaranteed response time.
+                    Email {CONTACT} with the URL, the date if you have it, and a short description of the problem. The
+                    operator may remove the content, limit the account, or decline a report that does not identify the
+                    material. There is no trust-and-safety team and no guaranteed response time. A serious illegal
+                    report (including sexual content involving a minor) is acted on as soon as the operator sees it.
+                    Repeat violations can end the account under the Terms.
                 </P>
             </section>
         </Doc>
@@ -450,10 +522,22 @@ function CopyrightContent() {
                 <H>3. Notices</H>
                 <P>
                     WorldInMaking is not a registered company and the operator is not a designated DMCA agent with the
-                    U.S. Copyright Office. Good-faith infringement notices are still read. Email {CONTACT} with: the
-                    work claimed, the URL on {SITE}, your contact details, and a statement that you believe the use is
-                    not authorised. Knowingly false notices may have legal consequences in your country. The operator
-                    may remove material while looking into a notice.
+                    U.S. Copyright Office. Good-faith notices are still read. Email {CONTACT} with all of the following:
+                    your name and a way to reach you; a description of the work you claim; the exact URL on {SITE}; a
+                    statement that you have a good-faith belief the use is not authorised by the owner, the owner’s
+                    agent, or the law; and a statement, under penalty of perjury where your law imposes that, that the
+                    notice is accurate and that you are the owner or authorised to act for the owner. Knowingly false
+                    notices may have legal consequences in your country. The operator may remove or disable the
+                    material while the notice is considered, and may tell the member who posted it.
+                </P>
+            </section>
+            <section>
+                <H>4. Counter-notice</H>
+                <P>
+                    If your material was removed and you believe that was a mistake, email {CONTACT} with the URL, why
+                    you are entitled to post it, and your contact details. The operator may restore the material or
+                    leave it down. This is not a court, and it is not a DMCA counter-notice procedure, because no
+                    designated agent is registered.
                 </P>
             </section>
         </Doc>
@@ -464,12 +548,20 @@ function DpaContent() {
     return (
         <Doc title="Data Processing Addendum" seo="GDPR processing terms for worldinmaking.">
             <section>
-                <H>1. Roles</H>
+                <H>1. Roles and particulars</H>
                 <P>
                     For account, billing metadata, and telemetry, the operator is the controller (a real person, not a
                     company). For notebooks, chats, and files you store so the Service can run on your instructions, the
                     operator acts as processor and you as controller (or as a processor for your own customers). This
-                    addendum applies when GDPR or UK GDPR requires a processor contract (Art. 28).
+                    addendum applies when GDPR or UK GDPR requires a processor contract (Art. 28). It is incorporated
+                    into the Terms when you store content on the Service.
+                </P>
+                <P>
+                    Subject matter: hosting and displaying your content, and generating replies you request. Duration:
+                    the life of the account, plus the backup rotation described in the Privacy Policy. Nature and
+                    purpose: storage, sync, sharing you turn on, and AI responses. Type of data: account identifiers,
+                    text, files, and prompts you submit. Categories of data subjects: you, and people named in content
+                    you choose to upload. Contact for this addendum: {CONTACT}.
                 </P>
             </section>
             <section>
@@ -507,7 +599,7 @@ function DpaContent() {
             <section>
                 <H>6. Transfers and audits</H>
                 <P>
-                    Transfers outside the EEA/UK follow section 6 of the Privacy Policy. Reasonable information to
+                    Transfers outside the EEA/UK follow section 7 of the Privacy Policy. Reasonable information to
                     demonstrate compliance is available on written request, subject to confidentiality. This is a
                     personal project; on-site audits are by agreement and at your expense unless the operator is in
                     material breach.
@@ -545,13 +637,20 @@ function BaaContent() {
 
 function SubprocessorsContent() {
     const rows: Array<[string, string, string]> = [
-        ['Supabase', 'Auth, database, file storage, realtime', 'United States / region of the project (Asia Pacific)'],
+        ['Supabase', 'Auth, database, file storage, realtime', 'Project region (may include Asia Pacific or the United States)'],
         ['Cloudflare', 'CDN, DNS, edge hosting', 'Global'],
         ['Lemon Squeezy', 'Merchant of record, checkout, invoices', 'United States'],
-        ['Groq', 'AI inference for WIM AI / bots', 'United States'],
-        ['Google (Gemini)', 'AI inference', 'United States / EU as offered by Google'],
-        ['OpenAI', 'AI inference when enabled or via your key', 'United States'],
-        ['Analytics provider', 'Product analytics (only if you accept analytics cookies)', 'United States / EU as configured'],
+        ['Groq', 'AI inference for WIM AI and bots', 'United States'],
+        ['Google (Gemini)', 'AI inference', 'United States or the EU, as Google offers'],
+        ['NVIDIA', 'AI inference when that provider is used', 'United States'],
+        ['OpenAI', 'AI inference only if enabled or if you supply a key', 'United States'],
+        ['Anthropic', 'AI inference only if you supply your own key', 'United States'],
+        ['PostHog', 'Product analytics and optional session replay, only if you accept analytics', 'United States or the EU, matching the configured host'],
+        [
+            'Scholarly sources',
+            'OpenAlex, Semantic Scholar, Crossref, Unpaywall, NCBI, arXiv, Europe PMC, DOAJ, CORE, TR Dizin: the query you asked to search, plus the site contact address',
+            'Varies by source',
+        ],
     ]
     return (
         <Doc title="Subprocessors" seo="Processors worldinmaking uses to run the desk.">

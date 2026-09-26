@@ -58,6 +58,12 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (legal contact and notices)
+
+- **Contact:** public legal pages and the academic polite-pool default are `info@worldinmaking.com`. The old personal Gmail is no longer the fallback. Cloudflare `ACADEMIC_CONTACT_EMAIL` still overrides it when set.
+- **Notices:** cookies name the real stores (session, `cookie_consent`, PostHog only after Accept). Privacy adds KVKK Art. 11 / 13 and scholarly lookups. Refunds mention Turkish Law No. 6502. Subprocessors name PostHog, NVIDIA, optional OpenAI/Anthropic keys, and the scholarly sources. The operator remains an individual, not a company.
+- **Files:** `src/components/Legal/index.tsx`, `src/lib/bots/academic-common.ts`, academic search test.
+
 ### 2026-09-26 — Grok (fix: ask mode thinks inside the action, not in a separate reflect)
 
 - **Why:** Ask mode already decides on the action call (native reasoning plus the tool choice, or the answer). The extra reflect after every tool result cannot call a tool, so it does not decide the next turn. It resends the results, writes a 256-token note, and the next call thinks again. On Gemini that note is not the native thought. The native thought continues via the tool-call signature.

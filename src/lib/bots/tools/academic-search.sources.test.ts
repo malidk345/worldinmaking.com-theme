@@ -125,14 +125,14 @@ describe('academic search step 1 — sources, keys, status, payload', () => {
             const result = await searchAcademicCorpus('sleep deprivation clinical memory', { env: {} })
             const oa = callFor(calls, 'openalex')
             expect(new URL(oa.url).searchParams.get('api_key')).toBeNull()
-            expect(new URL(oa.url).searchParams.get('mailto')).toBe('dursunkayamustafa@gmail.com')
+            expect(new URL(oa.url).searchParams.get('mailto')).toBe('info@worldinmaking.com')
             const s2 = callFor(calls, 's2')
             expect((s2.init?.headers as Record<string, string>)['x-api-key']).toBeUndefined()
             const ncbi = callFor(calls, 'esearch')
             expect(new URL(ncbi.url).searchParams.get('api_key')).toBeNull()
             expect(result.ok).toBe(true)
             expect(resolveAcademicApiKeys({ ACADEMIC_CONTACT_EMAIL: 'not-an-email' }).contactEmail).toBe(
-                'dursunkayamustafa@gmail.com'
+                'info@worldinmaking.com'
             )
         })
     })
