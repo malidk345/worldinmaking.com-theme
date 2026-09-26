@@ -52,6 +52,18 @@ function buildPayload(event: AiTurnTelemetry) {
 
 const POSTHOG_CAPTURE_TIMEOUT_MS = 2_000
 
+const pendingCaptures = new Set<Promise<unknown>>()
+
+/**
+ * Wait for in-flight `wim_ai_turn` captures (each is capped at POSTHOG_CAPTURE_TIMEOUT_MS).
+ * Edge cancels outstanding fetches when the response ends; call this before closing a
+ * stream that ends right after `recordAiTurn`, or failed turns never reach PostHog.
+ */
+export async function flushAiTurnTelemetry(): Promise<void> {
+    if (pendingCaptures.size === 0) return
+    await Promise.allSettled(Array.from(pendingCaptures))
+}
+
 function captureAiTurnPosthog(payload: AiTurnPayload, env?: EnvStore): void {
     try {
         const store = env ?? getRuntimeEnv()
@@ -71,14 +83,18 @@ function captureAiTurnPosthog(payload: AiTurnPayload, env?: EnvStore): void {
 
         const controller = new AbortController()
         const timer = setTimeout(() => controller.abort(), POSTHOG_CAPTURE_TIMEOUT_MS)
-        fetch(`${host}/capture/`, {
+        const capture = fetch(`${host}/capture/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body,
             signal: controller.signal,
         })
             .catch(() => undefined)
-            .finally(() => clearTimeout(timer))
+            .finally(() => {
+                clearTimeout(timer)
+                pendingCaptures.delete(capture)
+            })
+        pendingCaptures.add(capture)
     } catch {
         /* telemetry must never break a request */
     }

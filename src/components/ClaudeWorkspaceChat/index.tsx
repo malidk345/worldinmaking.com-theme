@@ -87,7 +87,9 @@ import {
   isAbortError,
   shouldSilentRetryChatStream,
   chatStreamErrorTelemetryProps,
+  chatStreamDoneTelemetryProps,
   userFacingChatStreamMessage,
+  type ChatStreamFailStage,
 } from '../../lib/chat-stream-errors';
 import usePostHog from '../../hooks/usePostHog';
 
@@ -1654,6 +1656,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     let isStreamComplete = false;
     let backendError = false;
     let streamErrorKind: Message["errorKind"] | undefined;
+    let streamErrorCode: string | undefined;
+    let streamStage: ChatStreamFailStage = 'request';
     let streamedQualityGate: Message["qualityGate"] | undefined;
     const streamStartedAt = Date.now();
     let streamChunkCount = 0;
@@ -1911,6 +1915,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
       const reader = sseRes.body.getReader();
       streamReaderRef.current = reader;
+      streamStage = 'stream';
       stallTimer = setInterval(() => {
         if (Date.now() - lastMeaningfulAt < STREAM_STALL_MS) return;
         stalledByWatchdog = true;
@@ -2418,6 +2423,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             console.error('[workspace chat] backend error:', parsed.message);
             backendError = true;
             const errCode = (parsed as { code?: string }).code || '';
+            streamErrorCode = errCode || undefined;
             const classifiedSse = classifyChatStreamError({
               code: errCode,
               message: String(parsed.message || ''),
@@ -2510,6 +2516,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         }
       }
 
+      streamStage = 'finalize';
       let finalCleanContent = sanitizePublicAssistantText(accumulatedContent);
       if (!finalCleanContent && !backendError && streamedArtifacts.length === 0 && !streamedHumanTurn) {
         throw new Error('AI returned no content');
@@ -2549,6 +2556,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             'wim chat stream fail',
             chatStreamErrorTelemetryProps({
               kind: streamErrorKind,
+              code: streamErrorCode,
+              stage: 'stream',
               hadPublicText: Boolean(accumulatedContent.trim()),
               hadStreamProgress: hadMeaningfulStreamProgress || streamChunkCount > 0,
               durationMs: Date.now() - streamStartedAt,
@@ -2594,6 +2603,23 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       }
 
       isStreamComplete = true; // successfully reached the end!
+      if (!backendError) {
+        try {
+          posthog?.capture?.(
+            'wim chat stream done',
+            chatStreamDoneTelemetryProps({
+              durationMs: Date.now() - streamStartedAt,
+              chunkCount: streamChunkCount,
+              byteLength: streamByteLength,
+              agentMode: turnAgentMode,
+              retried: networkRetryUsed,
+              hadPublicText: Boolean(finalCleanContent.trim()),
+            })
+          );
+        } catch {
+          /* telemetry must never break chat */
+        }
+      }
     } catch (err: any) {
       cancelTokenFlushRaf();
       if (isAbortError(err)) {
@@ -2692,6 +2718,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
             chatStreamErrorTelemetryProps({
               kind: telemetryKind,
               httpStatus,
+              code: errCode || streamErrorCode,
+              stage: streamStage,
               hadPublicText: Boolean(displayContent.trim()),
               hadStreamProgress: hadMeaningfulStreamProgress || streamChunkCount > 0,
               durationMs: Date.now() - streamStartedAt,

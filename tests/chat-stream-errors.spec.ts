@@ -5,6 +5,7 @@ import {
   isTransientNetworkError,
   shouldSilentRetryChatStream,
   chatStreamErrorTelemetryProps,
+  chatStreamDoneTelemetryProps,
 } from '../src/lib/chat-stream-errors'
 
 test.describe('chat-stream-errors classifier', () => {
@@ -169,5 +170,37 @@ test.describe('chat-stream-errors classifier', () => {
     })
     const keys = Object.keys(props)
     expect(keys.some((k) => /prompt|email|message|body|content/i.test(k))).toBe(false)
+  })
+
+  test('fail telemetry separates backend code and failure stage', () => {
+    const props = chatStreamErrorTelemetryProps({
+      kind: 'provider',
+      code: 'PROVIDER_UNAVAILABLE',
+      stage: 'stream',
+      hadPublicText: false,
+      durationMs: 4200,
+    })
+    expect(props.code).toBe('PROVIDER_UNAVAILABLE')
+    expect(props.stage).toBe('stream')
+  })
+
+  test('done telemetry stays PII-free', () => {
+    const props = chatStreamDoneTelemetryProps({
+      durationMs: 812.4,
+      chunkCount: 9,
+      byteLength: 2048,
+      agentMode: 'ask',
+      retried: false,
+      hadPublicText: true,
+    })
+    expect(props).toEqual({
+      durationMs: 812,
+      chunkCount: 9,
+      byteLength: 2048,
+      agentMode: 'ask',
+      retried: false,
+      hadPublicText: true,
+    })
+    expect(Object.keys(props).some((k) => /prompt|email|message|body|content/i.test(k))).toBe(false)
   })
 })

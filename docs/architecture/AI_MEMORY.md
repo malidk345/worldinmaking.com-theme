@@ -58,6 +58,15 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Claude (fix: chat stream failures — one server retry, failed-turn telemetry, stage and code on the client event)
+
+- **Why:** `wim chat stream fail` rose from 21 to 24 September. Most recent failures were backend SSE `error` events (all providers failed) after thinking started, in one burst on 24 September. No `wim_ai_turn` with `ok:false` ever reached PostHog: the capture is fire-and-forget and Edge cancels it when the stream closes right after the failure.
+- **Server:** `src/pages/api/chat.ts` retries the whole turn once, after 1.5 s, when the result is `PROVIDER_UNAVAILABLE`, no public text went out, no tool event fired, and the client did not stop. It sends a `generation` / `started` phase with detail `Retrying` first. Rules live in `src/lib/bots/provider-retry.ts`. Empty replies and skipped live search do not retry.
+- **Telemetry:** `flushAiTurnTelemetry()` in `src/lib/bots/telemetry.ts` waits for in-flight captures (2 s cap each). The provider-failure branch awaits it before `controller.close()`.
+- **Client:** `wim chat stream fail` now has `code` (backend code) and `stage` (`request` / `stream` / `finalize`). New `wim chat stream done` on success, same shape without `kind`.
+- **Not changed:** the error card and Retry button, the client pre-stream network retry, the gateway fallback chain.
+- **Verify:** `src/lib/bots/provider-retry.test.ts` (vitest, `--environment node` when canvas is not built), `tests/chat-stream-errors.spec.ts`, `pnpm typecheck:shell`.
+
 ### 2026-09-26 — Grok (fix: notebook picker import inside the notebook app)
 
 - **Why:** `lib/…` from a notebook-app file is rewritten to the notebook’s own lib, so the Pages build could not find `notebook-add-target`.
