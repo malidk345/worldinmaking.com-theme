@@ -58,6 +58,14 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (fix: ask mode thinks inside the action, not in a separate reflect)
+
+- **Why:** Ask mode already decides on the action call (native reasoning plus the tool choice, or the answer). The extra reflect after every tool result cannot call a tool, so it does not decide the next turn. It resends the results, writes a 256-token note, and the next call thinks again. On Gemini that note is not the native thought. The native thought continues via the tool-call signature.
+- **Ask:** no separate THINK, including after tools and when web search is forced. Thought UI still shows the action call's native reasoning.
+- **Plan and execute:** the short reflect stays. It is the step brake (search more, or scratchpad and stop).
+- **Not done:** turning on Anthropic extended thinking. That has to live on the action call and be sent back with the tool turn, not as another reflect.
+- **Files:** `src/lib/bots/tools/pipeline.ts` (+ test).
+
 ### 2026-09-26 — Grok (fix: academic answer rounds stop resending tool schemas)
 
 - **Why:** Narrowing the research bundle (#852) still attached that bundle to the round that writes the answer. The chain (related papers, quotes, bibliography) has to stay available once, or the model cannot choose it.
