@@ -1092,46 +1092,63 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
 
 
   const pinSpacerRef = useRef<HTMLDivElement>(null);
-  const [pinSpacerHeight, setPinSpacerHeight] = useState(0);
-  /** While set, hold this user message near the scroller top — only while the reply streams. */
+  /** While set, hold this user message near the scroller top until the user scrolls. */
   const pinnedMessageIdRef = useRef<string | null>(null);
   /** Suppress scroll-event pin release while we programmatically re-assert the pin. */
   const applyingPinScrollRef = useRef(false);
-  /** scrollTop captured at settle — one-shot restore after Thought collapse (post-clamp). */
+  /** scrollTop captured when the user already left the pin — one-shot restore after collapse. */
   const settleScrollTopRef = useRef<number | null>(null);
   /** Sticky post-settle view Y until the user scrolls — covers AppWindow clientHeight growth. */
   const stickyViewScrollTopRef = useRef<number | null>(null);
+  /** Bumped when the user takes the scroll, so late settle frames cannot re-pin. */
+  const pinHoldTokenRef = useRef(0);
+  const pinHoldTimersRef = useRef<number[]>([]);
 
-  const clearMessagePin = useCallback(() => {
-    pinnedMessageIdRef.current = null;
+  const clearPinHoldTimers = useCallback(() => {
+    for (const id of pinHoldTimersRef.current) window.clearTimeout(id);
+    pinHoldTimersRef.current = [];
   }, []);
 
   /**
-   * Sync min spacer for current scrollTop (DOM first, then React state).
+   * Spacer height is DOM-only. A React `height` style was winning the next
+   * commit and shrinking the tail after we had already restored scrollTop,
+   * so the browser clamped the finished exchange toward the middle.
+   */
+  const setSpacerDomHeight = useCallback((height: number) => {
+    const spacerEl = pinSpacerRef.current;
+    if (!spacerEl) return;
+    const next = Math.max(0, Math.round(height));
+    if (spacerEl.style.height !== `${next}px`) spacerEl.style.height = `${next}px`;
+  }, []);
+
+  const clearMessagePin = useCallback(() => {
+    pinHoldTokenRef.current += 1;
+    clearPinHoldTimers();
+    pinnedMessageIdRef.current = null;
+  }, [clearPinHoldTimers]);
+
+  /**
+   * Sync min spacer for current scrollTop (DOM first).
    * Used when scrollTop has not been clamped yet (e.g. AppWindow resize RO).
    */
   const preserveViewWithMinSpacer = useCallback(() => {
     const scroller = chatScrollRef.current;
     const spacerEl = pinSpacerRef.current;
     if (!scroller) {
-      if (spacerEl) spacerEl.style.height = '0px';
-      setPinSpacerHeight(0);
+      setSpacerDomHeight(0);
       return;
     }
     applyingPinScrollRef.current = true;
-    const nextSpacer = applyMinSpacerToPreserveScrollTop(scroller, spacerEl);
-    setPinSpacerHeight((prev) => (prev === nextSpacer ? prev : nextSpacer));
+    applyMinSpacerToPreserveScrollTop(scroller, spacerEl);
     requestAnimationFrame(() => {
       applyingPinScrollRef.current = false;
     });
-  }, []);
+  }, [setSpacerDomHeight]);
 
   /**
    * After Thought/tool collapse the browser may already have clamped scrollTop.
    * Grow spacer for the saved settle (or sticky) scrollTop and write it back.
-   * The first layout pass nulls settle; the deferred frame must still read sticky,
-   * because a later collapse clamps after that pass (Safari applies the clamp
-   * after ResizeObserver, so the observer write does not stick).
+   * Used only when the user already released the pin.
    */
   const restoreSettledScrollTop = useCallback((allowSticky = false) => {
     const scroller = chatScrollRef.current;
@@ -1142,8 +1159,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       return;
     }
     applyingPinScrollRef.current = true;
-    const nextSpacer = applyMinSpacerForScrollTop(scroller, pinSpacerRef.current, saved);
-    setPinSpacerHeight((prev) => (prev === nextSpacer ? prev : nextSpacer));
+    applyMinSpacerForScrollTop(scroller, pinSpacerRef.current, saved);
     if (Math.abs(scroller.scrollTop - saved) > 1) {
       scroller.scrollTop = saved;
     }
@@ -1152,33 +1168,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       applyingPinScrollRef.current = false;
     });
   }, []);
-
-  /**
-   * Drop the pin (no idle RO re-pin). Capture scrollTop *before* React paints the
-   * settled (collapsed Thought) UI. #795's immediate minSpacer undershot because it
-   * measured while Thought was still tall; RO then ran after the clamp and could
-   * not restore. Restore via useLayoutEffect + rAF using the saved scrollTop.
-   */
-  const clearMessagePinPreservingView = useCallback(() => {
-    const scroller = chatScrollRef.current;
-    if (scroller) {
-      settleScrollTopRef.current = scroller.scrollTop;
-      stickyViewScrollTopRef.current = scroller.scrollTop;
-    }
-    pinnedMessageIdRef.current = null;
-    // Keep current spacer this frame — collapse may need a larger one after paint.
-    const spacerEl = pinSpacerRef.current;
-    const keep = spacerEl?.offsetHeight ?? 0;
-    if (spacerEl) spacerEl.style.height = `${keep}px`;
-    setPinSpacerHeight((prev) => (prev === keep ? prev : keep));
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        // Settle was cleared by the layout pass. Read sticky so this frame
-        // still repairs a clamp that landed after that measurement.
-        restoreSettledScrollTop(true);
-      });
-    });
-  }, [restoreSettledScrollTop]);
 
   const findPinnedMessageEl = useCallback((messageId: string): HTMLElement | null => {
     const scroller = chatScrollRef.current;
@@ -1191,26 +1180,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
   }, []);
 
   /**
-   * Re-assert scrollTop so the pinned user bubble keeps a stable Y as the
-   * assistant reply grows. No React state — ResizeObserver-safe.
-   */
-  const maintainPinnedScroll = useCallback(() => {
-    const messageId = pinnedMessageIdRef.current;
-    if (!messageId) return;
-    const scroller = chatScrollRef.current;
-    const el = findPinnedMessageEl(messageId);
-    if (!scroller || !el) return;
-    applyingPinScrollRef.current = true;
-    scrollElementToScrollerPin(scroller, el, CHAT_PIN_TOP_PADDING_PX);
-    // Release on next frame so the synthetic scroll event from scrollTop assign is ignored.
-    requestAnimationFrame(() => {
-      applyingPinScrollRef.current = false;
-    });
-  }, [findPinnedMessageEl]);
-
-  /**
    * Establish the pin: bottom spacer + scrollTop so the message sits near the
-   * top with a small inset. Call once on send (retries until DOM is ready).
+   * top with a small inset. Call once on send, and again after settle when
+   * the reply collapses.
    */
   const establishMessagePin = useCallback((messageId: string) => {
     const scroller = chatScrollRef.current;
@@ -1233,7 +1205,6 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (pinSpacerRef.current) {
       pinSpacerRef.current.style.height = `${nextSpacer}px`;
     }
-    setPinSpacerHeight(nextSpacer);
     scrollElementToScrollerPin(scroller, el, CHAT_PIN_TOP_PADDING_PX);
     requestAnimationFrame(() => {
       applyingPinScrollRef.current = false;
@@ -1254,20 +1225,78 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     attemptPin(0);
   }, [establishMessagePin]);
 
+  const schedulePinHold = useCallback(() => {
+    clearPinHoldTimers();
+    const token = pinHoldTokenRef.current;
+    const run = () => {
+      if (pinHoldTokenRef.current !== token) return;
+      const messageId = pinnedMessageIdRef.current;
+      if (!messageId) return;
+      establishMessagePin(messageId);
+    };
+    requestAnimationFrame(() => {
+      requestAnimationFrame(run);
+    });
+    // Collapse, web fonts, and citation chips can shrink the thread after the
+    // settle commit. Re-pin from the bubble itself — a saved scrollTop is already
+    // the clamped (centered) value by then.
+    pinHoldTimersRef.current = [60, 180, 420].map((ms) => window.setTimeout(run, ms));
+  }, [clearPinHoldTimers, establishMessagePin]);
+
+  /** User moved the viewport. Later settle frames must not yank back to the bubble. */
+  const releasePinForUserGesture = useCallback(() => {
+    pinHoldTokenRef.current += 1;
+    clearPinHoldTimers();
+    const scroller = chatScrollRef.current;
+    if (scroller) {
+      settleScrollTopRef.current = scroller.scrollTop;
+      stickyViewScrollTopRef.current = scroller.scrollTop;
+    }
+    pinnedMessageIdRef.current = null;
+  }, [clearPinHoldTimers]);
+
+  /**
+   * Stream ended. If the user never left the question, keep that bubble on the
+   * same inset — do not drop the pin and hope a saved scrollTop survives the
+   * collapse. If they already scrolled, only protect that scrollTop.
+   */
+  const clearMessagePinPreservingView = useCallback(() => {
+    const messageId = pinnedMessageIdRef.current;
+    if (messageId && establishMessagePin(messageId)) {
+      schedulePinHold();
+      return;
+    }
+    const scroller = chatScrollRef.current;
+    if (scroller) {
+      settleScrollTopRef.current = scroller.scrollTop;
+      stickyViewScrollTopRef.current = scroller.scrollTop;
+    }
+    pinnedMessageIdRef.current = null;
+    const spacerEl = pinSpacerRef.current;
+    const keep = spacerEl?.offsetHeight ?? 0;
+    if (spacerEl) spacerEl.style.height = `${keep}px`;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        restoreSettledScrollTop(true);
+      });
+    });
+  }, [establishMessagePin, restoreSettledScrollTop, schedulePinHold]);
 
   const scrollChatToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     const scroller = chatScrollRef.current;
     if (!scroller) return;
+    pinHoldTokenRef.current += 1;
+    clearPinHoldTimers();
     pinnedMessageIdRef.current = null;
     settleScrollTopRef.current = null;
     stickyViewScrollTopRef.current = null;
-    setPinSpacerHeight(0);
+    setSpacerDomHeight(0);
     if (behavior === 'auto') {
       scroller.scrollTop = scroller.scrollHeight;
     } else {
       scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
     }
-  }, []);
+  }, [clearPinHoldTimers, setSpacerDomHeight]);
 
   useEffect(() => {
     const scroller = chatScrollRef.current;
@@ -1279,14 +1308,9 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       stickyViewScrollTopRef.current = null;
     };
 
-    const releasePinForManualScroll = () => {
-      if (!pinnedMessageIdRef.current) return;
-      clearMessagePinPreservingView();
-    };
-
     const onTouchMove = () => {
       if (pinnedMessageIdRef.current) {
-        releasePinForManualScroll();
+        releasePinForUserGesture();
         return;
       }
       // After settle: touch is user intent — clear sticky so RO does not yank back.
@@ -1299,7 +1323,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const onWheel = (e: WheelEvent) => {
       if (Math.abs(e.deltaY) > 2 || Math.abs(e.deltaX) > 2) {
         if (pinnedMessageIdRef.current) {
-          releasePinForManualScroll();
+          releasePinForUserGesture();
         } else if (
           stickyViewScrollTopRef.current != null ||
           settleScrollTopRef.current != null
@@ -1317,7 +1341,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     const onScroll = () => {
       if (applyingPinScrollRef.current) return;
       if (!pinnedMessageIdRef.current) return;
-      releasePinForManualScroll();
+      releasePinForUserGesture();
     };
 
     scroller.addEventListener('touchmove', onTouchMove, { passive: true });
@@ -1325,33 +1349,31 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     scroller.addEventListener('scroll', onScroll, { passive: true });
 
     const observer = new ResizeObserver(() => {
-      // Pin is stream-only: never re-assert after the turn settles (idle image/font/layout
-      // changes were yanking scrollTop back to the user bubble — upward jumps).
-      if (pinnedMessageIdRef.current && isStreamingRef.current) {
-        maintainPinnedScroll();
+      // Hold the question on its inset until the user scrolls, including after
+      // the answer finishes. Measuring from the bubble (not a saved scrollTop)
+      // still works once the browser has already clamped.
+      if (pinnedMessageIdRef.current) {
+        establishMessagePin(pinnedMessageIdRef.current);
         return;
       }
-      // Post-settle: Thought/tool collapse or AppWindow clientHeight change can drop
-      // maxScroll under scrollTop. Grow spacer for sticky/saved Y and restore — do not re-pin.
-      if (!pinnedMessageIdRef.current) {
-        const desired = stickyViewScrollTopRef.current;
-        if (desired != null) {
-          applyingPinScrollRef.current = true;
-          const nextSpacer = applyMinSpacerForScrollTop(
-            scroller,
-            pinSpacerRef.current,
-            desired
-          );
-          setPinSpacerHeight((prev) => (prev === nextSpacer ? prev : nextSpacer));
-          if (Math.abs(scroller.scrollTop - desired) > 1) {
-            scroller.scrollTop = desired;
-          }
-          requestAnimationFrame(() => {
-            applyingPinScrollRef.current = false;
-          });
-        } else {
-          preserveViewWithMinSpacer();
+      // User left the pin: Thought/tool collapse or AppWindow clientHeight change
+      // can drop maxScroll under scrollTop. Grow spacer for sticky/saved Y.
+      const desired = stickyViewScrollTopRef.current;
+      if (desired != null) {
+        applyingPinScrollRef.current = true;
+        applyMinSpacerForScrollTop(
+          scroller,
+          pinSpacerRef.current,
+          desired
+        );
+        if (Math.abs(scroller.scrollTop - desired) > 1) {
+          scroller.scrollTop = desired;
         }
+        requestAnimationFrame(() => {
+          applyingPinScrollRef.current = false;
+        });
+      } else {
+        preserveViewWithMinSpacer();
       }
     });
     observer.observe(scroller);
@@ -1363,17 +1385,28 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       scroller.removeEventListener('scroll', onScroll);
       observer.disconnect();
     };
-  }, [activeChatId, clearMessagePinPreservingView, maintainPinnedScroll, preserveViewWithMinSpacer, Boolean(activeChat?.messages.length)]);
+  }, [activeChatId, establishMessagePin, preserveViewWithMinSpacer, releasePinForUserGesture, Boolean(activeChat?.messages.length)]);
 
-  // After settle: React commits Thought/tool collapse in the same turn as pin clear.
-  // useLayoutEffect runs after that DOM update and restores saved scrollTop before paint.
+  // Settle commits the collapsed reply in this same turn. Re-pin before paint
+  // so the question does not sit in the middle for a frame. Do not run when a
+  // new turn starts — the fresh pin is applied on the next frame.
+  const pinLayoutStreamingRef = useRef(false);
   useLayoutEffect(() => {
+    const streaming = isStreaming || Boolean(activeChat?.messages.at(-1)?.isStreaming);
+    const ended = pinLayoutStreamingRef.current && !streaming;
+    pinLayoutStreamingRef.current = streaming;
+    if (!ended) return;
+    const messageId = pinnedMessageIdRef.current;
+    if (messageId) {
+      establishMessagePin(messageId);
+      return;
+    }
     if (settleScrollTopRef.current == null) return;
     restoreSettledScrollTop();
   }, [
     isStreaming,
     activeChat?.messages.at(-1)?.isStreaming,
-    activeChat?.messages.at(-1)?.thinkingProcess,
+    establishMessagePin,
     restoreSettledScrollTop,
   ]);
 
@@ -1382,7 +1415,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     if (!pinBottomOnNextChatRef.current) return;
     pinBottomOnNextChatRef.current = false;
     pinnedMessageIdRef.current = null;
-    setPinSpacerHeight(0);
+    setSpacerDomHeight(0);
     scrollChatToBottom('auto');
   }, [activeChatId, scrollChatToBottom]);
 
@@ -1595,7 +1628,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
       });
     } else {
       clearMessagePin();
-      setPinSpacerHeight(0);
+      setSpacerDomHeight(0);
       requestAnimationFrame(() => scrollChatToBottom('auto'));
     }
     abortActiveStream();
@@ -2725,8 +2758,8 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         setIsStreaming(false);
         setStreamStatus(null);
         streamReaderRef.current = null;
-        // Clear pin (no idle RO re-pin) but keep min spacer so settle does not
-        // clamp scrollTop into older history (short-reply post-#794 yank).
+        // Keep the question pinned (spacer is DOM-only). Clearing the pin here
+        // let the next React commit shrink the tail and clamp scrollTop.
         clearMessagePinPreservingView();
       }
     }
@@ -2783,7 +2816,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
     abortActiveStream()
     setIsStreaming(false)
     setStreamStatus(null)
-    // Release pin; keep min spacer so Stop does not yank into older history.
+    // Keep the question where the stream left it.
     clearMessagePinPreservingView()
     const chatId = activeChatIdRef.current
     const chat = chatsRef.current.find((c) => c.id === chatId)
@@ -3537,18 +3570,22 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
         abortActiveStream()
         setIsStreaming(false)
         setStreamStatus(null)
+        pinHoldTokenRef.current += 1
+        clearPinHoldTimers()
         pinnedMessageIdRef.current = null
-        setPinSpacerHeight(0)
+        setSpacerDomHeight(0)
       }
       if (id !== activeChatId) {
         pinBottomOnNextChatRef.current = true
+        pinHoldTokenRef.current += 1
+        clearPinHoldTimers()
         pinnedMessageIdRef.current = null
-        setPinSpacerHeight(0)
+        setSpacerDomHeight(0)
       }
       setActiveChatId(id)
       setComposerDraftNonce((n) => n + 1)
     },
-    [activeChatId, abortActiveStream]
+    [activeChatId, abortActiveStream, clearPinHoldTimers, setSpacerDomHeight]
   )
 
   const isChatEmpty = !activeChat || activeChat.messages.length === 0;
@@ -3627,8 +3664,7 @@ export default function App({ onClose, layout = 'overlay' }: { onClose?: () => v
               <div
                 ref={pinSpacerRef}
                 aria-hidden
-                className="pointer-events-none w-full shrink-0"
-                style={{ height: pinSpacerHeight }}
+                className="pointer-events-none w-full shrink-0 [overflow-anchor:none]"
               />
               <div ref={chatBottomRef} className="h-px w-full" />
             </div>
