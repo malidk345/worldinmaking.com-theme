@@ -205,6 +205,8 @@ export async function geminiToolCompletion(params: {
     onToken?: (text: string) => void
     onThinking?: (text: string) => void
     omitTools?: boolean
+    /** Strip function schemas without the short think-phase token budget. */
+    dropToolSchemas?: boolean
     maxTokens?: number
     timeoutMs?: number
     tools?: OpenAiToolSpec[]
@@ -237,7 +239,7 @@ export async function geminiToolCompletion(params: {
             systemInstruction: { parts: [{ text: systemTextFromMessages(params.messages, params.systemPrompt) }] },
             contents: openaiMessagesToGeminiContents(params.messages),
         }
-        if (!params.omitTools) {
+        if (!params.omitTools && !params.dropToolSchemas) {
             baseBody.tools = [{ functionDeclarations: toGeminiFunctionDeclarations(params.tools || OPENAI_CHAT_TOOLS) }]
             baseBody.toolConfig = { functionCallingConfig }
         }

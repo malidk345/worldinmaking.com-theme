@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
     messagesUsedAcademicSeed,
+    questionFollowUpNames,
     researchProtocolFor,
     selectTurnTools,
+    shouldOmitResearchWrite,
 } from './turn-tools'
 
 const NAMES = [
@@ -88,5 +90,129 @@ describe('selectTurnTools', () => {
             ])
         ).toBe(true)
         expect(messagesUsedAcademicSeed([{ tool_calls: [{ function: { name: 'web_search' } }] }])).toBe(false)
+    })
+})
+
+const seedMessages = [
+    {
+        role: 'assistant',
+        tool_calls: [{ id: 'c1', function: { name: 'search_academic_corpus' } }],
+    },
+    { role: 'tool', tool_call_id: 'c1', content: '{"ok":true,"papers":[]}' },
+]
+
+describe('post-seed tool schemas', () => {
+    it('drops the corpus schema after a successful search and keeps the chain', () => {
+        const selected = names(
+            selectTurnTools(tools, {
+                mode: 'ask',
+                question: 'Heidegger technology sources',
+                academicFollowUps: true,
+                messages: seedMessages,
+            })
+        )
+        expect(selected).not.toContain('search_academic_corpus')
+        expect(selected).toEqual(expect.arrayContaining(['related_papers', 'find_quotes', 'annotated_bibliography', 'web_search']))
+        expect(selected).not.toContain('insert_notebook_block')
+        expect(selected).not.toContain('create_artifact')
+        expect(selected).not.toContain('generate_image')
+    })
+
+    it('keeps notebook tools only when the question asks to save', () => {
+        const selected = names(
+            selectTurnTools(tools, {
+                mode: 'ask',
+                question: 'Heidegger sources, deftere ekle',
+                academicFollowUps: true,
+                messages: seedMessages,
+            })
+        )
+        expect(selected).toContain('insert_notebook_block')
+        expect(selected).not.toContain('search_academic_corpus')
+    })
+
+    it('keeps a failed search so the model can retry it', () => {
+        const failed = [
+            {
+                role: 'assistant',
+                tool_calls: [{ id: 'c1', function: { name: 'search_academic_corpus' } }],
+            },
+            { role: 'tool', tool_call_id: 'c1', content: '{"ok":false,"error":"timeout"}' },
+        ]
+        expect(
+            names(
+                selectTurnTools(tools, {
+                    mode: 'ask',
+                    question: 'Heidegger technology sources',
+                    messages: failed,
+                })
+            )
+        ).toContain('search_academic_corpus')
+    })
+
+    it('still sends follow-up schemas on the first turn after papers', () => {
+        expect(
+            shouldOmitResearchWrite({
+                mode: 'ask',
+                question: 'Heidegger technology sources',
+                messages: seedMessages,
+            })
+        ).toBe(false)
+    })
+
+    it('drops schemas on the write after the chain already ran', () => {
+        const chained = [
+            ...seedMessages,
+            {
+                role: 'assistant',
+                content: null,
+                tool_calls: [{ id: 'c2', function: { name: 'related_papers' } }],
+            },
+            { role: 'tool', tool_call_id: 'c2', content: '{"ok":true}' },
+        ]
+        expect(
+            shouldOmitResearchWrite({
+                mode: 'ask',
+                question: 'Heidegger technology sources',
+                messages: chained,
+            })
+        ).toBe(true)
+        expect(questionFollowUpNames('Heidegger technology sources')).toEqual([])
+    })
+
+    it('keeps the write tools-on when a requested quote has not been fetched', () => {
+        const looked = [
+            ...seedMessages,
+            { role: 'assistant', content: 'Checking the paper.' },
+        ]
+        expect(
+            shouldOmitResearchWrite({
+                mode: 'ask',
+                question: 'Heidegger technology sources, alıntı getir',
+                messages: looked,
+            })
+        ).toBe(false)
+        expect(questionFollowUpNames('Heidegger technology sources, alıntı getir')).toContain('find_quotes')
+    })
+
+    it('does not strip schemas for plan mode or a non-research question', () => {
+        const chained = [
+            ...seedMessages,
+            { role: 'assistant', content: 'done' },
+        ]
+        expect(
+            shouldOmitResearchWrite({
+                mode: 'plan',
+                question: 'Heidegger technology sources',
+                messages: chained,
+            })
+        ).toBe(false)
+        expect(
+            shouldOmitResearchWrite({
+                mode: 'ask',
+                question: 'merhaba',
+                messages: chained,
+            })
+        ).toBe(false)
     })
 })
