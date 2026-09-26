@@ -26,7 +26,14 @@ import { isAuthDetail, isRateLimitDetail, isToolProtocolReject } from '../provid
 import { modeAfterResume, resumeUserMessage, type AgentCheckpoint, type ResumeAction } from '../agent/checkpoint'
 import type { HumanTurn } from '../agent/human'
 import { modeSystemPrompt, nodeStatusLabel, parseAgentMode, PLAN_TOOL_PROTOCOL, type AgentMode } from '../agent/modes'
-import { OPENAI_CHAT_TOOLS, TOOL_PROTOCOL, toolsForAgentMode, type OpenAiToolSpec } from './spec'
+import { OPENAI_CHAT_TOOLS, TOOL_PROTOCOL, type OpenAiToolSpec } from './spec'
+import {
+    ACADEMIC_SEED_TOOLS,
+    messagesUsedAcademicSeed,
+    questionWantsAcademicFollowUps,
+    researchProtocolFor,
+    selectTurnTools,
+} from './turn-tools'
 import { runAgentNodePipeline, type NodeEvent, type RoundFailure } from './pipeline'
 import {
     answerIncompleteMessage,
@@ -733,9 +740,25 @@ export async function runToolLoop(params: {
     let agentMode = resumed
         ? modeAfterResume(params.resumeAction!, parseAgentMode(params.checkpoint!.agentMode))
         : parseAgentMode(params.agentMode)
+    const question = (params.languageSample || params.userPrompt || '').slice(0, 8_000)
+    const researchProtocol = agentMode === 'ask' ? researchProtocolFor(question) : null
     const modePrompt = modeSystemPrompt(agentMode)
-    const protocol = agentMode === 'plan' ? PLAN_TOOL_PROTOCOL : TOOL_PROTOCOL
+    const protocol = agentMode === 'plan' ? PLAN_TOOL_PROTOCOL : researchProtocol || TOOL_PROTOCOL
     const systemPrompt = [params.systemPrompt, modePrompt, protocol].filter(Boolean).join('\n\n')
+    const toolGate = {
+        academicFollowUps:
+            questionWantsAcademicFollowUps(question) || messagesUsedAcademicSeed(params.checkpoint?.messages),
+    }
+    const toolsForThisRound = () =>
+        selectTurnTools(OPENAI_CHAT_TOOLS, {
+            mode: agentMode,
+            question,
+            academicFollowUps: toolGate.academicFollowUps,
+        })
+    const onTool = (event: ToolEvent) => {
+        if (event.status === 'done' && ACADEMIC_SEED_TOOLS.has(event.name)) toolGate.academicFollowUps = true
+        params.onTool?.(event)
+    }
     const onMode = (mode: AgentMode) => {
         agentMode = mode
         params.onMode?.(mode)
@@ -794,7 +817,7 @@ export async function runToolLoop(params: {
                         omitTools,
                         maxTokens,
                         timeoutMs,
-                        tools: toolsForAgentMode(agentMode),
+                        tools: toolsForThisRound(),
                         signal: params.signal,
                     }),
             })
@@ -814,7 +837,7 @@ export async function runToolLoop(params: {
                         omitTools,
                         maxTokens,
                         timeoutMs,
-                        tools: toolsForAgentMode(agentMode),
+                        tools: toolsForThisRound(),
                         signal: params.signal,
                     }),
             })
@@ -836,7 +859,7 @@ export async function runToolLoop(params: {
                             omitTools,
                             maxTokens,
                             timeoutMs,
-                            tools: toolsForAgentMode(agentMode),
+                            tools: toolsForThisRound(),
                             signal: params.signal,
                         }),
                 })
@@ -861,7 +884,7 @@ export async function runToolLoop(params: {
                                 omitTools,
                                 maxTokens,
                                 timeoutMs,
-                                tools: toolsForAgentMode(agentMode),
+                                tools: toolsForThisRound(),
                                 signal: params.signal,
                             }),
                     })
@@ -888,7 +911,7 @@ export async function runToolLoop(params: {
                                 omitTools,
                                 maxTokens,
                                 timeoutMs: timeoutMs || GEMINI_TIMEOUT_MS,
-                                tools: toolsForAgentMode(agentMode),
+                                tools: toolsForThisRound(),
                                 signal: params.signal,
                             }),
                     })
@@ -1001,7 +1024,7 @@ export async function runToolLoop(params: {
             baseMessages,
             onToken: params.onToken,
             onThinking: params.onThinking,
-            onTool: params.onTool,
+            onTool,
             onNode: params.onNode,
             onMode,
             onHuman: params.onHuman,

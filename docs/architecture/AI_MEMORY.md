@@ -58,6 +58,16 @@
 
 ## 5. AI Change History & Log
 
+### 2026-09-26 — Grok (fix: academic turns no longer send the studio tool schemas)
+
+- **Why:** One academic search was ~32k provider tokens (~52k with related papers) while the sidebar recorded ~290. Each act round re-sent ~33.5k chars of all 42 tool schemas plus ~12.8k chars of system text. The meter still does not count schema or system text (pricing unchanged).
+- **Ask-mode research turns** (papers, DOI, literatür, makale, kaynak, or a canon thinker in a real question) send the literature + notebook tools only. Studio schemas stay off: artifact, concept map, image, windows, voice, flashcards, publish, export, sandbox. A question that also asks for those (çiz, kavram haritası, seslendir, pencere, …) keeps the full list.
+- **Follow-ups** `related_papers` / `find_quotes` / `annotated_bibliography` are omitted until this turn has a corpus or canon hit, or the question already asks for related papers, quotes, or a bibliography. Plan and execute are unchanged.
+- **Protocol:** those turns use a short academic protocol (cite rules kept, artifact recipes dropped) so the system text is not repeated at the old size every round.
+- **Not changed:** weekly meter, limits, tool behavior once a tool is actually called, notebook body in the user prompt.
+- **Files:** `src/lib/bots/tools/turn-tools.ts` (+ test), `src/lib/bots/tools/loop.ts`.
+- **Verify:** `src/lib/bots/tools/turn-tools.test.ts`. No Playwright (user directive).
+
 ### 2026-09-26 — Grok (fix: Ask AI composer must not adopt an old chat; budget status lives in the sidebar)
 
 - **Symptom:** Opening WIM AI and starting to type sometimes swapped the blank composer for the newest stored thread. At the same moment the composer showed “checking weekly budget…”.
