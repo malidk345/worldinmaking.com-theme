@@ -34,7 +34,7 @@ const DEFAULT_RETRY_BACKOFF_MS = 700
 const RETRY_MIN_REMAINING_MS = 1_500
 /** Never park a source for longer than this, even if the server asks for hours. */
 const COOLDOWN_MAX_MS = 10 * 60_000
-export const DEFAULT_ACADEMIC_CONTACT_EMAIL = 'dursunkayamustafa@gmail.com'
+export const DEFAULT_ACADEMIC_CONTACT_EMAIL = 'info@worldinmaking.com'
 
 // Unicode property regexes are built via RegExp() because the repo's TS target
 // rejects the `u` literal flag; runtime (V8 / Workers) supports them.
