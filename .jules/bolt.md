@@ -53,3 +53,6 @@
 ## 2026-09-14 - Optimize Object.keys().some() allocation in loops
 **Learning:** Using `Object.keys(obj).some(...)` to check for key existence inside a render loop or array map allocates a redundant array of keys every iteration, causing significant O(N) memory churn and lookup overhead.
 **Action:** Replace `Object.keys(obj).some(key => key === 'target')` with a direct O(1) property check using `Object.prototype.hasOwnProperty.call(obj, 'target')` to eliminate intermediate arrays and speed up execution.
+## 2026-09-20 - Optimize React state updates on high-frequency DOM events
+**Learning:** Returning a new object reference on every pixel change during a `window.resize` event triggers massive, unnecessary React re-render cascades across components. Utilizing a functional state updater with shallow comparison (`prev => prev.xs === next.xs ... ? prev : next`) allows React to leverage `Object.is` equality and bail out of rendering. Additionally, appending `{ passive: true }` to the event listener ensures the UI thread is not blocked by high-frequency layout changes.
+**Action:** When implementing listeners for high-frequency events (e.g., `resize`, `scroll`, `mousemove`), always structure state updates to shallow-compare and return the previous reference if the computed value is identical, and include `{ passive: true }` when `preventDefault` is unused.
