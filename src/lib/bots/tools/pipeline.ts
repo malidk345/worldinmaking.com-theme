@@ -138,10 +138,14 @@ export const PUBLIC_CONTINUE_NUDGE =
     'Prefer continuing or refining the public text already in this bubble rather than restating it from the start.'
 
 /**
- * A separate THINK call blocks the public answer behind a second round trip.
- * Ask mode therefore plans inside the answer call: native reasoning and the
- * reply share one stream. Plan, execute, forced web search, and post-tool
- * reflection still get their own THINK.
+ * Ask mode has no separate THINK call.
+ * The decision already thinks natively in the same stream as the tool choice
+ * or the answer, and that thought continues (Gemini keeps the thought
+ * signature on the tool call). A reflect after tools cannot call a tool, so
+ * it cannot decide the next action. It only resends the results plus a short
+ * note, and the next call thinks again anyway.
+ * Plan and execute keep the short note. It is the step brake (fan out more
+ * research, or scratchpad and stop), not a second essay.
  */
 export function shouldRunThinkPhase(input: {
     userPrompt: string
@@ -150,6 +154,7 @@ export function shouldRunThinkPhase(input: {
     forceWebSearch?: boolean
     hasNewToolResults?: boolean
 }): boolean {
+    if (input.agentMode === 'ask') return false
     if (input.hasNewToolResults) return true
     if (input.stepCount > 0) return false
     if (input.agentMode === 'plan' || input.agentMode === 'execute') return true

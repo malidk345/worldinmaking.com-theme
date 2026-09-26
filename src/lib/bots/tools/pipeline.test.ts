@@ -16,6 +16,7 @@ import {
     normalizeFetchUrlCacheKey,
     researchToolCacheKey,
     shareInflight,
+    shouldRunThinkPhase,
     thinkInstructionFor,
     THINK_MAX_TOKENS,
     THINK_TIMEOUT_MS,
@@ -322,6 +323,85 @@ describe('Think-phase absorb demux (Thought UI vs content)', () => {
         expect(rounds).toBe(1)
         expect(thoughtUi.join('')).toContain('Reason first.')
         expect(publicTokens.join('')).toContain('Then the answer.')
+    })
+
+    it('ask mode thinks inside the tool call, not in a separate reflect', async () => {
+        expect(
+            shouldRunThinkPhase({
+                userPrompt: 'Heidegger and technology',
+                agentMode: 'ask',
+                stepCount: 0,
+                hasNewToolResults: true,
+            })
+        ).toBe(false)
+        expect(
+            shouldRunThinkPhase({
+                userPrompt: 'search the web',
+                agentMode: 'ask',
+                stepCount: 0,
+                forceWebSearch: true,
+            })
+        ).toBe(false)
+        expect(
+            shouldRunThinkPhase({
+                userPrompt: 'plan this',
+                agentMode: 'plan',
+                stepCount: 1,
+                hasNewToolResults: true,
+            })
+        ).toBe(true)
+
+        let reflectRounds = 0
+        let decisions = 0
+        const thoughtUi: string[] = []
+        const complete: AgentPipelineParams['complete'] = async (input) => {
+            if (input.omitTools) {
+                reflectRounds += 1
+                return { ok: true, content: 'This reflect must not run.', toolCalls: [] }
+            }
+            decisions += 1
+            if (decisions === 1) {
+                input.onThinking?.('native: search the corpus')
+                return {
+                    ok: true,
+                    content: '',
+                    toolCalls: [
+                        {
+                            id: 'call-think-1',
+                            name: 'todo_write',
+                            argumentsJson: JSON.stringify({
+                                tasks: [{ id: 't1', content: 'read the papers', status: 'completed' }],
+                            }),
+                        },
+                    ],
+                }
+            }
+            const system = input.messages.find((message) => message.role === 'system')
+            const sys = typeof system?.content === 'string' ? system.content : ''
+            expect(sys).not.toContain('<private_thought>')
+            input.onThinking?.('native: the papers are enough')
+            input.onToken?.('Final answer from the papers.')
+            return { ok: true, content: 'Final answer from the papers.', toolCalls: [] }
+        }
+
+        const result = await runAgentNodePipeline({
+            complete,
+            baseMessages: [
+                { role: 'system', content: 'You are a careful philosopher.' },
+                { role: 'user', content: longUserPrompt() },
+            ],
+            provider: 'test',
+            agentMode: 'ask',
+            maxSteps: 4,
+            onThinking: (piece) => thoughtUi.push(piece),
+        })
+
+        expect(result.ok).toBe(true)
+        expect(reflectRounds).toBe(0)
+        expect(decisions).toBe(2)
+        expect(thoughtUi.join('')).toContain('native: search the corpus')
+        expect(thoughtUi.join('')).toContain('native: the papers are enough')
+        expect(result.text).toContain('Final answer from the papers.')
     })
 
     it('does not glue a leading space onto the previous streamed chunk', async () => {
